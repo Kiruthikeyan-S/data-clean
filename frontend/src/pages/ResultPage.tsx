@@ -3,7 +3,6 @@ import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { ProcessResponse } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
-import { CleansingSummaryCard } from '../components/CleansingSummaryCard';
 import { DataQualityInspector } from '../components/DataQualityInspector';
 import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible';
 import { ProcessDetailsCollapsible } from '../components/ProcessDetailsCollapsible';
@@ -47,20 +46,12 @@ export const ResultPage: React.FC<ResultPageProps> = ({ result, onReset }) => {
         </div>
       )}
 
-      {/* 6-Dimension Interactive Data Quality Inspector */}
+      {/* 6-Dimension Interactive Data Quality Inspector (Missing Values, Duplicates, Wrong Data Types, Invalid Values, Outliers, Format Differences) */}
       {result.cleansing_report?.quality_audit && (
         <DataQualityInspector audit={result.cleansing_report.quality_audit} />
       )}
 
-      {/* Summary Metrics Card */}
-      {result.cleansing_report && (
-        <CleansingSummaryCard
-          report={result.cleansing_report}
-          classification={result.classification}
-        />
-      )}
-
-      {/* Structured Result Table */}
+      {/* Structured Result Table with Retained Records count */}
       <ResultTable result={result} />
 
       {/* Collapsible Extracted Text for unstructured docs */}

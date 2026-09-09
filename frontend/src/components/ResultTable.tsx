@@ -66,6 +66,14 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
               <span className="text-slate-400 mr-1">Detected Type:</span>
               <span className="text-slate-800 uppercase">{result.file_type}</span>
             </div>
+            {result.cleansing_report?.initial_rows !== undefined && result.classification === 'structured' && (
+              <div className="border-l border-slate-200 pl-4">
+                <span className="text-slate-400 mr-1">Retained Records:</span>
+                <span className="font-semibold text-slate-800 bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-100 font-mono text-[11px]">
+                  {result.cleansing_report.final_rows} / {result.cleansing_report.initial_rows} initial
+                </span>
+              </div>
+            )}
             <div className="border-l border-slate-200 pl-4 flex items-center gap-1.5">
               <span className="text-slate-400 mr-1">Status:</span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
