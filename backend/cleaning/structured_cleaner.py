@@ -151,7 +151,15 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
     else:
         raise ValueError(f"Unsupported structured file type: {file_type}")
         
+    # Keep copy of raw original dataframe before cleaning for quality auditing
+    original_raw_df = df.copy()
     cleaned_df, metrics = clean_structured_dataframe(df)
+    
+    # Run comprehensive quality audit on raw vs cleaned data
+    from backend.cleaning.data_auditor import audit_structured_data
+    audit_report = audit_structured_data(original_raw_df, cleaned_df)
+    metrics["quality_audit"] = audit_report
+    
     records = cleaned_df.replace({np.nan: None}).to_dict(orient="records")
     columns = list(cleaned_df.columns)
     

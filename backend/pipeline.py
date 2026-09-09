@@ -146,7 +146,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 modifications_count=metrics.get("modifications_count", 0),
                 change_highlights=metrics.get("change_highlights", []),
                 removed_samples=metrics.get("removed_samples", []),
-                categories=structured_categories
+                categories=structured_categories,
+                quality_audit=metrics.get("quality_audit")
             )
 
             steps.append(StepStatus(
@@ -333,12 +334,16 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 ),
             ]
 
+            from backend.cleaning.data_auditor import audit_unstructured_data
+            unstructured_audit = audit_unstructured_data(cleaned_text, validated_fields)
+
             cleansing_report = CleansingReport(
                 initial_rows=1,
                 final_rows=1,
                 modifications_count=len(highlights),
                 change_highlights=highlights,
-                categories=unstructured_categories
+                categories=unstructured_categories,
+                quality_audit=unstructured_audit
             )
 
             steps.append(StepStatus(

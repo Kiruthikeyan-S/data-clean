@@ -32,6 +32,31 @@ export interface CleansingCategory {
   details: string[];
 }
 
+export interface AuditDetailItem {
+  row_index?: number;
+  column: string;
+  original_value?: any;
+  cleaned_value?: any;
+  issue_description: string;
+  severity: 'warning' | 'info' | 'error';
+}
+
+export interface QualityDimension {
+  id: string; // 'missing_values' | 'duplicates' | 'wrong_data_types' | 'invalid_values' | 'outliers' | 'format_differences'
+  title: string;
+  count: number;
+  status: string;
+  summary: string;
+  affected_columns?: string[];
+  items: AuditDetailItem[];
+  raw_samples?: Array<Record<string, any>>;
+}
+
+export interface QualityAuditReport {
+  dimensions: QualityDimension[];
+  total_issues_handled: number;
+}
+
 export interface CleansingReport {
   initial_rows?: number;
   final_rows?: number;
@@ -43,6 +68,7 @@ export interface CleansingReport {
   change_highlights: string[];
   removed_samples?: Array<Record<string, any>>;
   categories?: CleansingCategory[];
+  quality_audit?: QualityAuditReport;
 }
 
 export interface ProcessSummary {

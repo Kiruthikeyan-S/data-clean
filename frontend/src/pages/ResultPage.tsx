@@ -4,6 +4,7 @@ import { ProcessResponse } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
 import { CleansingSummaryCard } from '../components/CleansingSummaryCard';
+import { DataQualityInspector } from '../components/DataQualityInspector';
 import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible';
 import { ProcessDetailsCollapsible } from '../components/ProcessDetailsCollapsible';
 
@@ -46,7 +47,12 @@ export const ResultPage: React.FC<ResultPageProps> = ({ result, onReset }) => {
         </div>
       )}
 
-      {/* Cleansing & Transformation Report Card (What was removed & changed) */}
+      {/* 6-Dimension Interactive Data Quality Inspector */}
+      {result.cleansing_report?.quality_audit && (
+        <DataQualityInspector audit={result.cleansing_report.quality_audit} />
+      )}
+
+      {/* Summary Metrics Card */}
       {result.cleansing_report && (
         <CleansingSummaryCard
           report={result.cleansing_report}

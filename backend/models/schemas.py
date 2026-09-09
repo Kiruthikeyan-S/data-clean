@@ -31,6 +31,28 @@ class CleansingCategory(BaseModel):
     description: str
     details: List[str] = []
 
+class AuditDetailItem(BaseModel):
+    row_index: Optional[int] = None
+    column: str
+    original_value: Optional[Any] = None
+    cleaned_value: Optional[Any] = None
+    issue_description: str
+    severity: str = "warning"  # "warning", "info", "error"
+
+class QualityDimension(BaseModel):
+    id: str  # "missing_values", "duplicates", "wrong_data_types", "invalid_values", "outliers", "format_differences"
+    title: str
+    count: int
+    status: str  # "Clean", "Fixed", "Detected", "Resolved"
+    summary: str
+    affected_columns: List[str] = []
+    items: List[AuditDetailItem] = []
+    raw_samples: Optional[List[Dict[str, Any]]] = None
+
+class QualityAuditReport(BaseModel):
+    dimensions: List[QualityDimension] = []
+    total_issues_handled: int = 0
+
 class CleansingReport(BaseModel):
     initial_rows: Optional[int] = None
     final_rows: Optional[int] = None
@@ -42,6 +64,7 @@ class CleansingReport(BaseModel):
     change_highlights: List[str] = []
     removed_samples: Optional[List[Dict[str, Any]]] = None
     categories: List[CleansingCategory] = []
+    quality_audit: Optional[QualityAuditReport] = None
 
 class ProcessSummary(BaseModel):
     total_records: int = 1
