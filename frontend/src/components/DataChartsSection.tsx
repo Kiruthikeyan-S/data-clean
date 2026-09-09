@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   BarChart3,
   ChevronDown,
@@ -10,7 +10,11 @@ import {
   Maximize2,
   X,
   Binary,
-  PieChart as PieIcon
+  PieChart as PieIcon,
+  Check,
+  CircleDot,
+  BarChart2,
+  Columns
 } from 'lucide-react';
 import { DataVisualizations, DatasetChart, MatplotlibPlot } from '../types';
 
@@ -21,6 +25,14 @@ interface DataChartsSectionProps {
 type ChartDisplayType = 'donut' | 'pie' | 'bar' | 'column';
 type TabViewMode = 'all' | 'interactive' | 'matplotlib';
 
+const CHART_TYPE_OPTIONS: { id: ChartDisplayType | 'auto'; label: string; desc: string; icon: React.FC<{ className?: string }> }[] = [
+  { id: 'auto', label: 'Auto (Recommended)', desc: 'Optimal visual based on data distribution', icon: LayoutGrid },
+  { id: 'donut', label: 'Donut Chart', desc: 'Ring chart with center summary metric', icon: CircleDot },
+  { id: 'pie', label: 'Pie Chart', desc: 'Solid proportional circular slices', icon: PieIcon },
+  { id: 'bar', label: 'Horizontal Bar', desc: 'Linear progress bars with value badges', icon: BarChart2 },
+  { id: 'column', label: 'Vertical Column', desc: 'Categorical distribution bar columns', icon: Columns },
+];
+
 export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizations }) => {
   const [isOpen, setIsOpen] = useState<boolean>(true);
   const [selectedColumn, setSelectedColumn] = useState<string>('all');
@@ -28,6 +40,27 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
   const [globalType, setGlobalType] = useState<ChartDisplayType | 'auto'>('auto');
   const [activeTab, setActiveTab] = useState<TabViewMode>('all');
   const [previewPlot, setPreviewPlot] = useState<MatplotlibPlot | null>(null);
+
+  // Dropdown states
+  const [isGlobalTypeDropdownOpen, setIsGlobalTypeDropdownOpen] = useState<boolean>(false);
+  const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState<boolean>(false);
+
+  const globalTypeDropdownRef = useRef<HTMLDivElement>(null);
+  const columnDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (globalTypeDropdownRef.current && !globalTypeDropdownRef.current.contains(event.target as Node)) {
+        setIsGlobalTypeDropdownOpen(false);
+      }
+      if (columnDropdownRef.current && !columnDropdownRef.current.contains(event.target as Node)) {
+        setIsColumnDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!visualizations || !visualizations.has_charts) {
     return null;
@@ -46,6 +79,7 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
 
   const handleGlobalTypeChange = (type: ChartDisplayType | 'auto') => {
     setGlobalType(type);
+    setIsGlobalTypeDropdownOpen(false);
     if (type !== 'auto') {
       const newOverrides: Record<string, ChartDisplayType> = {};
       charts.forEach((c) => {
@@ -65,6 +99,8 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
   };
 
   const totalVisualItems = charts.length + matplotlibPlots.length;
+  const currentGlobalOption = CHART_TYPE_OPTIONS.find((opt) => opt.id === globalType) || CHART_TYPE_OPTIONS[0];
+  const CurrentGlobalIcon = currentGlobalOption.icon;
 
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden transition-all">
@@ -80,7 +116,7 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
                 Data Visualizations & Statistical Plots
               </h2>
               <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                {totalVisualItems} {totalVisualItems === 1 ? 'Plot Available' : 'Plots Available'}
+                {totalVisualItems} {totalVisualItems === 1 ? 'Plot' : 'Plots'} Available
               </span>
             </div>
             <p className="text-xs text-slate-500">
@@ -114,8 +150,9 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
       {/* Expanded Content */}
       {isOpen && (
         <div className="p-5 space-y-6">
-          {/* Top Section View Tabs */}
+          {/* Top Section View Tabs & Dropdown Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 text-xs">
+            {/* View Mode Tabs */}
             <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
               <button
                 type="button"
@@ -158,29 +195,122 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
               )}
             </div>
 
-            {/* Global Chart Style Switcher for SVG Charts */}
-            {(activeTab === 'all' || activeTab === 'interactive') && charts.length > 0 && (
-              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-                <span className="text-[11px] text-slate-500 px-2 font-medium flex items-center gap-1">
-                  <LayoutGrid className="w-3 h-3 text-slate-400" />
-                  <span>Chart View:</span>
-                </span>
-                {(['auto', 'donut', 'pie', 'bar', 'column'] as const).map((mode) => (
+            {/* Dropdown Filters and Selectors */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Column Filter Dropdown */}
+              {(activeTab === 'all' || activeTab === 'interactive') && charts.length > 1 && (
+                <div className="relative" ref={columnDropdownRef}>
                   <button
-                    key={mode}
                     type="button"
-                    onClick={() => handleGlobalTypeChange(mode)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-medium capitalize transition-all ${
-                      globalType === mode
-                        ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
+                    onClick={() => {
+                      setIsColumnDropdownOpen(!isColumnDropdownOpen);
+                      setIsGlobalTypeDropdownOpen(false);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-2xs"
                   >
-                    {mode}
+                    <Filter className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Column:</span>
+                    <span className="font-semibold text-blue-600">
+                      {selectedColumn === 'all' ? `All Columns (${charts.length})` : selectedColumn}
+                    </span>
+                    <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isColumnDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
-                ))}
-              </div>
-            )}
+
+                  {/* Dropdown Menu */}
+                  {isColumnDropdownOpen && (
+                    <div className="absolute right-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-lg shadow-lg z-30 py-1 text-xs">
+                      <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        Filter By Column
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedColumn('all');
+                          setIsColumnDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-50 transition-colors ${
+                          selectedColumn === 'all' ? 'bg-blue-50/50 text-blue-700 font-semibold' : 'text-slate-700'
+                        }`}
+                      >
+                        <span>All Columns ({charts.length})</span>
+                        {selectedColumn === 'all' && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                      </button>
+                      {charts.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedColumn(c.column_name);
+                            setIsColumnDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-50 transition-colors ${
+                            selectedColumn === c.column_name ? 'bg-blue-50/50 text-blue-700 font-semibold' : 'text-slate-700'
+                          }`}
+                        >
+                          <span className="truncate">{c.column_name}</span>
+                          {selectedColumn === c.column_name && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Chart View Dropdown Button */}
+              {(activeTab === 'all' || activeTab === 'interactive') && charts.length > 0 && (
+                <div className="relative" ref={globalTypeDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsGlobalTypeDropdownOpen(!isGlobalTypeDropdownOpen);
+                      setIsColumnDropdownOpen(false);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-2xs"
+                  >
+                    <CurrentGlobalIcon className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Chart View:</span>
+                    <span className="font-semibold text-slate-900 capitalize">{currentGlobalOption.label.split(' ')[0]}</span>
+                    <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isGlobalTypeDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isGlobalTypeDropdownOpen && (
+                    <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-lg shadow-xl z-30 py-1 text-xs">
+                      <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        Select Diagram View Style
+                      </div>
+                      {CHART_TYPE_OPTIONS.map((opt) => {
+                        const Icon = opt.icon;
+                        const isSelected = globalType === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => handleGlobalTypeChange(opt.id)}
+                            className={`w-full text-left px-3 py-2 flex items-start gap-2.5 hover:bg-slate-50 transition-colors ${
+                              isSelected ? 'bg-blue-50/60 text-blue-900' : 'text-slate-700'
+                            }`}
+                          >
+                            <div className={`p-1 rounded mt-0.5 ${isSelected ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className={`font-medium ${isSelected ? 'font-bold text-blue-700' : 'text-slate-900'}`}>
+                                  {opt.label}
+                                </span>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 ml-1" />}
+                              </div>
+                              <p className="text-[11px] text-slate-400 truncate">{opt.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* AI Automated Insights */}
@@ -203,55 +333,18 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
 
           {/* 1. Interactive SVG Charts Section */}
           {(activeTab === 'all' || activeTab === 'interactive') && charts.length > 0 && (
-            <div className="space-y-4">
-              {/* Column Filter Tabs */}
-              {charts.length > 1 && (
-                <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                  <span className="text-slate-400 font-medium flex items-center gap-1 mr-1">
-                    <Filter className="w-3 h-3" />
-                    <span>Filter Column:</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedColumn('all')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                      selectedColumn === 'all'
-                        ? 'bg-blue-600 text-white shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    All Columns ({charts.length})
-                  </button>
-                  {charts.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setSelectedColumn(c.column_name)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                        selectedColumn === c.column_name
-                          ? 'bg-blue-600 text-white shadow-2xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {c.column_name}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredCharts.map((chart) => {
-                  const activeType = chartTypeOverrides[chart.id] || (chart.chart_type as ChartDisplayType) || 'donut';
-                  return (
-                    <ChartCard
-                      key={chart.id}
-                      chart={chart}
-                      currentType={activeType}
-                      onTypeChange={(type) => handleChartTypeChange(chart.id, type)}
-                    />
-                  );
-                })}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredCharts.map((chart) => {
+                const activeType = chartTypeOverrides[chart.id] || (chart.chart_type as ChartDisplayType) || 'donut';
+                return (
+                  <ChartCard
+                    key={chart.id}
+                    chart={chart}
+                    currentType={activeType}
+                    onTypeChange={(type) => handleChartTypeChange(chart.id, type)}
+                  />
+                );
+              })}
             </div>
           )}
 
@@ -391,7 +484,29 @@ interface ChartCardProps {
 }
 
 const ChartCard: React.FC<ChartCardProps> = ({ chart, currentType, onTypeChange }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const totalValue = chart.data.reduce((acc, curr) => acc + curr.value, 0);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const typeOptions: { id: ChartDisplayType; label: string; icon: React.FC<{ className?: string }> }[] = [
+    { id: 'donut', label: 'Donut Chart', icon: CircleDot },
+    { id: 'pie', label: 'Pie Chart', icon: PieIcon },
+    { id: 'bar', label: 'Horizontal Bar', icon: BarChart2 },
+    { id: 'column', label: 'Vertical Column', icon: Columns },
+  ];
+
+  const currentOption = typeOptions.find((t) => t.id === currentType) || typeOptions[0];
+  const CurrentIcon = currentOption.icon;
 
   return (
     <div className="border border-slate-200 rounded-lg p-4 bg-white flex flex-col justify-between hover:border-slate-300 transition-colors shadow-2xs">
@@ -402,22 +517,45 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, currentType, onTypeChange 
           <span className="text-[10px] text-slate-400 font-mono">Column: {chart.column_name}</span>
         </div>
 
-        {/* Diagram Option Switcher */}
-        <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[10px]">
-          {(['donut', 'pie', 'bar', 'column'] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => onTypeChange(type)}
-              className={`px-1.5 py-0.5 rounded capitalize font-medium transition-colors ${
-                currentType === type
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              {type}
-            </button>
-          ))}
+        {/* Diagram Dropdown Switcher */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            type="button"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 transition-colors"
+          >
+            <CurrentIcon className="w-3 h-3 text-blue-600" />
+            <span>{currentOption.label}</span>
+            <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isDropdownOpen && (
+            <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1 text-xs">
+              {typeOptions.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = currentType === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      onTypeChange(opt.id);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-slate-50 transition-colors ${
+                      isSelected ? 'bg-blue-50/50 text-blue-700 font-semibold' : 'text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-3 h-3 text-slate-500" />
+                      <span>{opt.label}</span>
+                    </div>
+                    {isSelected && <Check className="w-3 h-3 text-blue-600" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
