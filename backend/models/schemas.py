@@ -53,6 +53,24 @@ class QualityAuditReport(BaseModel):
     dimensions: List[QualityDimension] = []
     total_issues_handled: int = 0
 
+class ChartDataPoint(BaseModel):
+    label: str
+    value: float
+    percentage: Optional[float] = None
+    color: Optional[str] = None
+
+class DatasetChart(BaseModel):
+    id: str
+    title: str
+    chart_type: str  # "pie", "bar", "donut"
+    column_name: str
+    data: List[ChartDataPoint]
+
+class DataVisualizations(BaseModel):
+    has_charts: bool = False
+    summary_insights: List[str] = []
+    charts: List[DatasetChart] = []
+
 class CleansingReport(BaseModel):
     initial_rows: Optional[int] = None
     final_rows: Optional[int] = None
@@ -84,6 +102,7 @@ class ProcessResponse(BaseModel):
     steps: List[StepStatus]
     summary: ProcessSummary
     cleansing_report: Optional[CleansingReport] = None
+    visualizations: Optional[DataVisualizations] = None
     fields: Optional[List[ProcessedField]] = None
     structured_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None
     columns: Optional[List[str]] = None

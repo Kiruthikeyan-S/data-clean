@@ -80,6 +80,27 @@ export interface ProcessSummary {
   classification: string;
 }
 
+export interface ChartDataPoint {
+  label: string;
+  value: number;
+  percentage?: number;
+  color?: string;
+}
+
+export interface DatasetChart {
+  id: string;
+  title: string;
+  chart_type: 'pie' | 'bar' | 'donut';
+  column_name: string;
+  data: ChartDataPoint[];
+}
+
+export interface DataVisualizations {
+  has_charts: boolean;
+  summary_insights: string[];
+  charts: DatasetChart[];
+}
+
 export interface ProcessResponse {
   id: string;
   filename: string;
@@ -90,6 +111,7 @@ export interface ProcessResponse {
   steps: StepStatus[];
   summary: ProcessSummary;
   cleansing_report?: CleansingReport;
+  visualizations?: DataVisualizations;
   fields?: ProcessedField[];
   structured_data?: Record<string, any> | Array<Record<string, any>>;
   columns?: string[];

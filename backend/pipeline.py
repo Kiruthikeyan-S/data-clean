@@ -17,6 +17,7 @@ from backend.cleaning.structured_cleaner import read_and_clean_structured_file
 from backend.extraction.field_extractor import identify_fields, map_to_schema
 from backend.extraction.ai_extractor import extract_fields_with_llm
 from backend.validation.validator import validate_unstructured_fields, validate_structured_records
+from backend.analytics.chart_generator import generate_visualizations
 
 # In-memory storage for results and exports
 RESULTS_STORE: Dict[str, ProcessResponse] = {}
@@ -376,6 +377,9 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         classification=classification
     )
 
+    # Generate smart chart visualizations if applicable
+    visualizations = generate_visualizations(structured_data, columns)
+
     response = ProcessResponse(
         id=task_id,
         filename=filename,
@@ -386,6 +390,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         steps=steps,
         summary=summary,
         cleansing_report=cleansing_report,
+        visualizations=visualizations if visualizations and visualizations.has_charts else None,
         fields=fields_list,
         structured_data=structured_data,
         columns=columns,
