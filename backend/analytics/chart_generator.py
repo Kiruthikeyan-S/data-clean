@@ -68,10 +68,10 @@ def generate_visualizations(records: Any, columns: Optional[List[str]] = None) -
         except Exception:
             pass
 
-    # 2. Build Charts from Categorical Columns
-    for col_name in categorical_candidates[:4]:
+    # 2. Build Charts from Categorical Columns (up to 8 candidate dimensions)
+    for col_name in categorical_candidates[:8]:
         series = df[col_name].dropna().astype(str)
-        val_counts = series.value_counts().head(8)
+        val_counts = series.value_counts().head(10)
         
         data_points: List[ChartDataPoint] = []
         for i, (val, count) in enumerate(val_counts.items()):
@@ -84,12 +84,12 @@ def generate_visualizations(records: Any, columns: Optional[List[str]] = None) -
             ))
 
         if len(data_points) >= 2:
-            # Choose Pie for 2-4 unique values (e.g. Gender, Status) and Bar/Donut for 4-8
+            # Default chart type: Pie for 2-3 categories, Donut for 4-5, Bar for 6+
             chart_type = "pie" if len(data_points) <= 3 else ("donut" if len(data_points) <= 5 else "bar")
             formatted_title = f"{col_name.replace('_', ' ').title()} Distribution"
             
             charts.append(DatasetChart(
-                id=f"chart_{col_name.lower()}",
+                id=f"chart_{col_name.lower().replace(' ', '_')}",
                 title=formatted_title,
                 chart_type=chart_type,
                 column_name=col_name,
@@ -99,20 +99,20 @@ def generate_visualizations(records: Any, columns: Optional[List[str]] = None) -
             # Auto insight
             top_val = data_points[0].label
             top_pct = data_points[0].percentage
-            insights.append(f"{top_val} is the most frequent {col_name.replace('_', ' ')} representing {top_pct}% ({int(data_points[0].value)} records).")
+            insights.append(f"{top_val} is the most frequent {col_name.replace('_', ' ')} ({top_pct}%, {int(data_points[0].value)} records).")
 
     # 3. Add Numerical insights if available
-    for col_name, num_series in numerical_candidates[:2]:
+    for col_name, num_series in numerical_candidates[:3]:
         avg_val = round(num_series.mean(), 2)
         min_val = round(num_series.min(), 2)
         max_val = round(num_series.max(), 2)
-        insights.append(f"Average {col_name.replace('_', ' ')} is {avg_val} (ranging from {min_val} to {max_val}).")
+        insights.append(f"Average {col_name.replace('_', ' ')} is {avg_val} (min {min_val}, max {max_val}).")
 
     if len(charts) == 0:
         return DataVisualizations(has_charts=False, charts=[], summary_insights=[])
 
     return DataVisualizations(
         has_charts=True,
-        summary_insights=insights[:4],
+        summary_insights=insights[:6],
         charts=charts
     )
