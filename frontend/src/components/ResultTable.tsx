@@ -12,40 +12,40 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const isStructuredList = result.classification === 'structured' && Array.isArray(result.structured_data);
+  const isTabular = Array.isArray(result.structured_data);
 
-  // Tabular data for structured files
+  // Tabular data for multi-record datasets (CSV, Excel, JSON list, or multi-record text)
   const rawRows: Array<Record<string, any>> = useMemo(() => {
-    if (isStructuredList) {
+    if (isTabular) {
       return (result.structured_data as Array<Record<string, any>>) || [];
     }
     return [];
-  }, [result, isStructuredList]);
+  }, [result, isTabular]);
 
   const columns: string[] = useMemo(() => {
-    if (isStructuredList) {
+    if (isTabular) {
       return result.columns || (rawRows.length > 0 ? Object.keys(rawRows[0]) : []);
     }
     return ['Field', 'Standardized Value', 'Raw Extracted Value'];
-  }, [result, isStructuredList, rawRows]);
+  }, [result, isTabular, rawRows]);
 
   // Filter structured rows
   const filteredRows = useMemo(() => {
-    if (!isStructuredList) return [];
+    if (!isTabular) return [];
     if (!searchQuery.trim()) return rawRows;
     const q = searchQuery.toLowerCase();
     return rawRows.filter(row =>
       Object.values(row).some(val => val !== null && String(val).toLowerCase().includes(q))
     );
-  }, [rawRows, searchQuery, isStructuredList]);
+  }, [rawRows, searchQuery, isTabular]);
 
   // Pagination for structured rows
   const totalPages = Math.ceil(filteredRows.length / PAGE_SIZE) || 1;
   const paginatedRows = useMemo(() => {
-    if (!isStructuredList) return [];
+    if (!isTabular) return [];
     const start = (currentPage - 1) * PAGE_SIZE;
     return filteredRows.slice(start, start + PAGE_SIZE);
-  }, [filteredRows, currentPage, isStructuredList]);
+  }, [filteredRows, currentPage, isTabular]);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -66,7 +66,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
               <span className="text-slate-400 mr-1">Detected Type:</span>
               <span className="text-slate-800 uppercase">{result.file_type}</span>
             </div>
-            {result.cleansing_report?.initial_rows !== undefined && result.classification === 'structured' && (
+            {result.cleansing_report?.initial_rows !== undefined && isTabular && (
               <div className="border-l border-slate-200 pl-4">
                 <span className="text-slate-400 mr-1">Retained Records:</span>
                 <span className="font-semibold text-slate-800 bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-100 font-mono text-[11px]">
@@ -84,8 +84,8 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
           </div>
         </div>
 
-        {/* Search Input for Structured Datasets */}
-        {isStructuredList && rawRows.length > 0 && (
+        {/* Search Input for Structured & Multi-Record Datasets */}
+        {isTabular && rawRows.length > 0 && (
           <div className="relative min-w-[240px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -102,8 +102,8 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
         )}
       </div>
 
-      {/* Structured Multi-Record Table */}
-      {isStructuredList ? (
+      {/* Multi-Record Tabular Table */}
+      {isTabular ? (
         <div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-700">

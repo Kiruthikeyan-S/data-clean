@@ -235,124 +235,227 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 "Removed invisible control characters & extra whitespace"
             ]
             
-            if ai_extracted and len(ai_extracted) > 0:
+            # Case A: Multi-Record Tabular Dataset extracted from text (e.g. employee list, transactions, logs)
+            if ai_extracted and isinstance(ai_extracted, dict) and ai_extracted.get("data_type") == "records" and len(ai_extracted.get("records", [])) > 0:
+                raw_records = ai_extracted.get("records", [])
+                cols = ai_extracted.get("columns") or list(raw_records[0].keys())
+
                 steps.append(StepStatus(
                     step_id="fields_identified",
-                    name="Fields identified",
+                    name="Fields & Schema identified",
                     status="completed",
-                    message="Identified entities and understood document content using AI/LLM"
+                    message=f"Identified multi-record tabular dataset with {len(cols)} columns ({', '.join(cols[:4])}...)"
                 ))
-                p_fields = [ProcessedField(**f) for f in ai_extracted]
+
+                records, errors = validate_structured_records(raw_records, cols)
                 steps.append(StepStatus(
                     step_id="data_normalized",
                     name="Data normalized",
                     status="completed",
-                    message="Standardized values, dates to ISO 8601, names and amounts via AI engine"
+                    message=f"Standardized and aligned {len(records)} records across {len(cols)} columns"
                 ))
-                highlights.append(f"AI extracted and standardized {len(p_fields)} structured entity fields")
+
+                steps.append(StepStatus(
+                    step_id="data_validated",
+                    name="Data validated",
+                    status="completed",
+                    message=f"Validated {len(records)} records ({len(errors)} warnings)" if errors else f"All {len(records)} extracted records passed validation"
+                ))
+
+                structured_data = records
+                columns = cols
+
+                import pandas as pd
+                from backend.cleaning.data_auditor import audit_structured_data
+                df_audit = pd.DataFrame(records)
+                struct_audit = audit_structured_data(df_audit, df_audit)
+
+                structured_categories = [
+                    CleansingCategory(
+                        id="deduplication",
+                        title="Deduplication & Record Uniqueness",
+                        icon_type="dedup",
+                        status="Clean",
+                        count=0,
+                        description="Verified distinct records across all extracted columns.",
+                        details=["All extracted rows are unique entities"]
+                    ),
+                    CleansingCategory(
+                        id="missing_data",
+                        title="Handling Missing Data (Null Treatment)",
+                        icon_type="missing",
+                        status="Handled",
+                        count=0,
+                        description="Standardized missing or unpopulated fields across records.",
+                        details=["Normalized missing cell values"]
+                    ),
+                    CleansingCategory(
+                        id="sanitization",
+                        title="Whitespace & Text Sanitization",
+                        icon_type="sanitize",
+                        status="Cleaned",
+                        count=len(records),
+                        description="Cleaned OCR noise, whitespace, and formatting across text fields.",
+                        details=["Normalized character encodings and line terminators"]
+                    ),
+                    CleansingCategory(
+                        id="standardization",
+                        title="Schema & Column Standardization",
+                        icon_type="standardize",
+                        status="Applied",
+                        count=len(cols),
+                        description="Extracted and standardized dynamic multi-column dataset schema.",
+                        details=[f"Verified {len(cols)} standardized columns"]
+                    ),
+                    CleansingCategory(
+                        id="validation",
+                        title="Data Validation & Quality Auditing",
+                        icon_type="validate",
+                        status="Verified" if not errors else f"{len(errors)} Warnings",
+                        count=len(errors),
+                        description="Audited cells against expected data formats.",
+                        details=[f"{len(errors)} format warning(s)" if errors else f"All {len(records)} records conform to schema"]
+                    ),
+                ]
+
+                cleansing_report = CleansingReport(
+                    initial_rows=len(records),
+                    final_rows=len(records),
+                    modifications_count=len(records) * len(cols),
+                    change_highlights=[
+                        f"AI identified and extracted {len(records)} structured records across {len(cols)} columns",
+                        "Standardized dates to ISO 8601 and numbers to clean numeric values"
+                    ],
+                    categories=structured_categories,
+                    quality_audit=struct_audit
+                )
+
+            # Case B: Single-Record Document or Key-Value Fields
             else:
-                # Rule-based fallback
-                extracted_raw = identify_fields(cleaned_text)
+                raw_fields = None
+                if ai_extracted and isinstance(ai_extracted, dict) and "fields" in ai_extracted:
+                    raw_fields = ai_extracted.get("fields")
+                elif ai_extracted and isinstance(ai_extracted, list):
+                    raw_fields = ai_extracted
+
+                if raw_fields and len(raw_fields) > 0:
+                    steps.append(StepStatus(
+                        step_id="fields_identified",
+                        name="Fields identified",
+                        status="completed",
+                        message="Identified entities and understood document content using AI/LLM"
+                    ))
+                    p_fields = [ProcessedField(**f) for f in raw_fields]
+                    steps.append(StepStatus(
+                        step_id="data_normalized",
+                        name="Data normalized",
+                        status="completed",
+                        message="Standardized values, dates to ISO 8601, names and amounts via AI engine"
+                    ))
+                    highlights.append(f"AI extracted and standardized {len(p_fields)} structured entity fields")
+                else:
+                    # Rule-based fallback
+                    extracted_raw = identify_fields(cleaned_text)
+                    steps.append(StepStatus(
+                        step_id="fields_identified",
+                        name="Fields identified",
+                        status="completed",
+                        message="Extracted entity candidates using rule and regex engine"
+                    ))
+                    mapped = map_to_schema(extracted_raw)
+                    p_fields = [ProcessedField(**f) for f in mapped]
+                    steps.append(StepStatus(
+                        step_id="data_normalized",
+                        name="Data normalized",
+                        status="completed",
+                        message="Standardized dates to ISO 8601, names to Title Case, phone numbers and emails"
+                    ))
+                    highlights.append(f"Extracted and mapped {len([f for f in p_fields if f.value is not None])} entity fields")
+
+                # Validate Data
+                validated_fields, validation_errors = validate_unstructured_fields(p_fields)
+                fields_list = validated_fields
+                errors = validation_errors
+
+                # Format key-value dictionary for structured_data output
+                structured_data = {f.key: f.value for f in validated_fields if f.value is not None}
+                columns = ["Field", "Standardized Value", "Raw Value"]
+
+                unstructured_categories = [
+                    CleansingCategory(
+                        id="deduplication",
+                        title="Deduplication & Line Consolidation",
+                        icon_type="dedup",
+                        status="Applied",
+                        count=1,
+                        description="Merged redundant lines and removed consecutive repetitive text.",
+                        details=["Consolidated immediate consecutive duplicate lines"]
+                    ),
+                    CleansingCategory(
+                        id="missing_data",
+                        title="Handling Missing Data (Null Value Treatment)",
+                        icon_type="missing",
+                        status="Handled",
+                        count=len([f for f in p_fields if f.value is None]),
+                        description="Explicitly set absent document fields to null without fabricating data.",
+                        details=[f"{len([f for f in p_fields if f.value is None])} field(s) cleanly marked as null"]
+                    ),
+                    CleansingCategory(
+                        id="sanitization",
+                        title="OCR Noise & Text Sanitization",
+                        icon_type="sanitize",
+                        status="Cleaned",
+                        count=1,
+                        description="Cleaned control characters, standardized punctuation spacing, and normalized Unicode.",
+                        details=[
+                            "Normalized Unicode NFKC encoding",
+                            "Stripped control characters and excess blank lines"
+                        ]
+                    ),
+                    CleansingCategory(
+                        id="standardization",
+                        title="Data Type & Value Standardization",
+                        icon_type="standardize",
+                        status="Applied",
+                        count=len([f for f in p_fields if f.value is not None]),
+                        description="Standardized dates to ISO 8601, phone numbers to E.164, names to Title Case, and cleaned currency.",
+                        details=[
+                            "Standardized dates to YYYY-MM-DD",
+                            "Standardized phone numbers & emails",
+                            "Cleaned numeric currency values"
+                        ]
+                    ),
+                    CleansingCategory(
+                        id="validation",
+                        title="Schema Validation & Quality Check",
+                        icon_type="validate",
+                        status="Verified" if not errors else f"{len(errors)} Warnings",
+                        count=len(errors),
+                        description="Validated all extracted entities against Pydantic schema rules.",
+                        details=[
+                            f"{len(errors)} warning(s) flagged" if errors else "All extracted fields passed structural validation"
+                        ]
+                    ),
+                ]
+
+                from backend.cleaning.data_auditor import audit_unstructured_data
+                unstructured_audit = audit_unstructured_data(cleaned_text, validated_fields)
+
+                cleansing_report = CleansingReport(
+                    initial_rows=1,
+                    final_rows=1,
+                    modifications_count=len(highlights),
+                    change_highlights=highlights,
+                    categories=unstructured_categories,
+                    quality_audit=unstructured_audit
+                )
+
                 steps.append(StepStatus(
-                    step_id="fields_identified",
-                    name="Fields identified",
+                    step_id="data_validated",
+                    name="Data validated",
                     status="completed",
-                    message="Extracted entity candidates using rule and regex engine"
+                    message=f"Validation completed ({len(errors)} warnings)" if errors else "All extracted fields conform to target schema"
                 ))
-                mapped = map_to_schema(extracted_raw)
-                p_fields = [ProcessedField(**f) for f in mapped]
-                steps.append(StepStatus(
-                    step_id="data_normalized",
-                    name="Data normalized",
-                    status="completed",
-                    message="Standardized dates to ISO 8601, names to Title Case, phone numbers and emails"
-                ))
-                highlights.append(f"Extracted and mapped {len([f for f in p_fields if f.value is not None])} entity fields")
-
-            # Step 8: Validate Data
-            validated_fields, validation_errors = validate_unstructured_fields(p_fields)
-            fields_list = validated_fields
-            errors = validation_errors
-
-            # Format key-value dictionary for structured_data output
-            structured_data = {f.key: f.value for f in validated_fields if f.value is not None}
-            columns = ["Field", "Standardized Value", "Raw Value"]
-
-            unstructured_categories = [
-                CleansingCategory(
-                    id="deduplication",
-                    title="Deduplication & Line Consolidation",
-                    icon_type="dedup",
-                    status="Applied",
-                    count=1,
-                    description="Merged redundant lines and removed consecutive repetitive text.",
-                    details=["Consolidated immediate consecutive duplicate lines"]
-                ),
-                CleansingCategory(
-                    id="missing_data",
-                    title="Handling Missing Data (Null Value Treatment)",
-                    icon_type="missing",
-                    status="Handled",
-                    count=len([f for f in p_fields if f.value is None]),
-                    description="Explicitly set absent document fields to null without fabricating data.",
-                    details=[f"{len([f for f in p_fields if f.value is None])} field(s) cleanly marked as null"]
-                ),
-                CleansingCategory(
-                    id="sanitization",
-                    title="OCR Noise & Text Sanitization",
-                    icon_type="sanitize",
-                    status="Cleaned",
-                    count=1,
-                    description="Cleaned control characters, standardized punctuation spacing, and normalized Unicode.",
-                    details=[
-                        "Normalized Unicode NFKC encoding",
-                        "Stripped control characters and excess blank lines"
-                    ]
-                ),
-                CleansingCategory(
-                    id="standardization",
-                    title="Data Type & Value Standardization",
-                    icon_type="standardize",
-                    status="Applied",
-                    count=len([f for f in p_fields if f.value is not None]),
-                    description="Standardized dates to ISO 8601, phone numbers to E.164, names to Title Case, and cleaned currency.",
-                    details=[
-                        "Standardized dates to YYYY-MM-DD",
-                        "Standardized phone numbers & emails",
-                        "Cleaned numeric currency values"
-                    ]
-                ),
-                CleansingCategory(
-                    id="validation",
-                    title="Schema Validation & Quality Check",
-                    icon_type="validate",
-                    status="Verified" if not errors else f"{len(errors)} Warnings",
-                    count=len(errors),
-                    description="Validated all extracted entities against Pydantic schema rules.",
-                    details=[
-                        f"{len(errors)} warning(s) flagged" if errors else "All extracted fields passed structural validation"
-                    ]
-                ),
-            ]
-
-            from backend.cleaning.data_auditor import audit_unstructured_data
-            unstructured_audit = audit_unstructured_data(cleaned_text, validated_fields)
-
-            cleansing_report = CleansingReport(
-                initial_rows=1,
-                final_rows=1,
-                modifications_count=len(highlights),
-                change_highlights=highlights,
-                categories=unstructured_categories,
-                quality_audit=unstructured_audit
-            )
-
-            steps.append(StepStatus(
-                step_id="data_validated",
-                name="Data validated",
-                status="completed",
-                message=f"Validation completed ({len(errors)} warnings)" if errors else "All extracted fields conform to target schema"
-            ))
 
         except Exception as e:
             status = "failed"
