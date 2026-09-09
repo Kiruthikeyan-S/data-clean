@@ -95,10 +95,20 @@ export interface DatasetChart {
   data: ChartDataPoint[];
 }
 
+export interface MatplotlibPlot {
+  id: string;
+  title: string;
+  description: string;
+  plot_type: string;
+  image_base64: string;
+  columns_analyzed?: string[];
+}
+
 export interface DataVisualizations {
   has_charts: boolean;
   summary_insights: string[];
   charts: DatasetChart[];
+  matplotlib_plots?: MatplotlibPlot[];
 }
 
 export interface ProcessResponse {

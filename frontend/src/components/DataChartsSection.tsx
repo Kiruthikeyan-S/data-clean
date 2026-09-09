@@ -5,27 +5,41 @@ import {
   ChevronUp,
   Sparkles,
   LayoutGrid,
-  Filter
+  Filter,
+  Download,
+  Maximize2,
+  X,
+  Binary,
+  PieChart as PieIcon
 } from 'lucide-react';
-import { DataVisualizations, DatasetChart } from '../types';
+import { DataVisualizations, DatasetChart, MatplotlibPlot } from '../types';
 
 interface DataChartsSectionProps {
   visualizations?: DataVisualizations;
 }
 
 type ChartDisplayType = 'donut' | 'pie' | 'bar' | 'column';
+type TabViewMode = 'all' | 'interactive' | 'matplotlib';
 
 export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizations }) => {
   const [isOpen, setIsOpen] = useState<boolean>(true);
   const [selectedColumn, setSelectedColumn] = useState<string>('all');
   const [chartTypeOverrides, setChartTypeOverrides] = useState<Record<string, ChartDisplayType>>({});
   const [globalType, setGlobalType] = useState<ChartDisplayType | 'auto'>('auto');
+  const [activeTab, setActiveTab] = useState<TabViewMode>('all');
+  const [previewPlot, setPreviewPlot] = useState<MatplotlibPlot | null>(null);
 
-  if (!visualizations || !visualizations.has_charts || !visualizations.charts || visualizations.charts.length === 0) {
+  if (!visualizations || !visualizations.has_charts) {
     return null;
   }
 
-  const charts = visualizations.charts;
+  const charts = visualizations.charts || [];
+  const matplotlibPlots = visualizations.matplotlib_plots || [];
+
+  if (charts.length === 0 && matplotlibPlots.length === 0) {
+    return null;
+  }
+
   const filteredCharts = selectedColumn === 'all'
     ? charts
     : charts.filter((c) => c.column_name === selectedColumn);
@@ -50,6 +64,8 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
     }));
   };
 
+  const totalVisualItems = charts.length + matplotlibPlots.length;
+
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden transition-all">
       {/* Collapsible Header Bar */}
@@ -61,14 +77,14 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-slate-900 tracking-tight">
-                Data Distribution & Analytics
+                Data Visualizations & Statistical Plots
               </h2>
               <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                {charts.length} {charts.length === 1 ? 'Chart Available' : 'Charts Available'}
+                {totalVisualItems} {totalVisualItems === 1 ? 'Plot Available' : 'Plots Available'}
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Interactive visualizations and categorical distributions
+              Interactive distribution diagrams & Python Matplotlib scientific statistical plots
             </p>
           </div>
         </div>
@@ -83,12 +99,12 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
             {isOpen ? (
               <>
                 <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
-                <span>Hide Diagrams</span>
+                <span>Hide Visualizations</span>
               </>
             ) : (
               <>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-                <span>Show Diagrams ({charts.length})</span>
+                <span>Show Visualizations ({totalVisualItems})</span>
               </>
             )}
           </button>
@@ -97,63 +113,74 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
 
       {/* Expanded Content */}
       {isOpen && (
-        <div className="p-5 space-y-5">
-          {/* Options & Filter Bar */}
+        <div className="p-5 space-y-6">
+          {/* Top Section View Tabs */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 text-xs">
-            {/* Column Selector Tabs */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-slate-400 font-medium flex items-center gap-1 mr-1">
-                <Filter className="w-3 h-3" />
-                <span>Filter:</span>
-              </span>
+            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
               <button
                 type="button"
-                onClick={() => setSelectedColumn('all')}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  selectedColumn === 'all'
-                    ? 'bg-blue-600 text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                onClick={() => setActiveTab('all')}
+                className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                  activeTab === 'all'
+                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                All Columns ({charts.length})
+                All Visuals ({totalVisualItems})
               </button>
-              {charts.map((c) => (
+              {charts.length > 0 && (
                 <button
-                  key={c.id}
                   type="button"
-                  onClick={() => setSelectedColumn(c.column_name)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                    selectedColumn === c.column_name
-                      ? 'bg-blue-600 text-white shadow-2xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  onClick={() => setActiveTab('interactive')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
+                    activeTab === 'interactive'
+                      ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {c.column_name}
+                  <PieIcon className="w-3 h-3 text-blue-500" />
+                  <span>Interactive Diagrams ({charts.length})</span>
                 </button>
-              ))}
+              )}
+              {matplotlibPlots.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('matplotlib')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
+                    activeTab === 'matplotlib'
+                      ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Binary className="w-3 h-3 text-indigo-500" />
+                  <span>Matplotlib Plots ({matplotlibPlots.length})</span>
+                </button>
+              )}
             </div>
 
-            {/* Global Chart Style Switcher */}
-            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-              <span className="text-[11px] text-slate-500 px-2 font-medium flex items-center gap-1">
-                <LayoutGrid className="w-3 h-3 text-slate-400" />
-                <span>View:</span>
-              </span>
-              {(['auto', 'donut', 'pie', 'bar', 'column'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => handleGlobalTypeChange(mode)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-medium capitalize transition-all ${
-                    globalType === mode
-                      ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
+            {/* Global Chart Style Switcher for SVG Charts */}
+            {(activeTab === 'all' || activeTab === 'interactive') && charts.length > 0 && (
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                <span className="text-[11px] text-slate-500 px-2 font-medium flex items-center gap-1">
+                  <LayoutGrid className="w-3 h-3 text-slate-400" />
+                  <span>Chart View:</span>
+                </span>
+                {(['auto', 'donut', 'pie', 'bar', 'column'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => handleGlobalTypeChange(mode)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium capitalize transition-all ${
+                      globalType === mode
+                        ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* AI Automated Insights */}
@@ -174,22 +201,185 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
             </div>
           )}
 
-          {/* Charts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredCharts.map((chart) => {
-              const activeType = chartTypeOverrides[chart.id] || (chart.chart_type as ChartDisplayType) || 'donut';
-              return (
-                <ChartCard
-                  key={chart.id}
-                  chart={chart}
-                  currentType={activeType}
-                  onTypeChange={(type) => handleChartTypeChange(chart.id, type)}
-                />
-              );
-            })}
+          {/* 1. Interactive SVG Charts Section */}
+          {(activeTab === 'all' || activeTab === 'interactive') && charts.length > 0 && (
+            <div className="space-y-4">
+              {/* Column Filter Tabs */}
+              {charts.length > 1 && (
+                <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                  <span className="text-slate-400 font-medium flex items-center gap-1 mr-1">
+                    <Filter className="w-3 h-3" />
+                    <span>Filter Column:</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedColumn('all')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                      selectedColumn === 'all'
+                        ? 'bg-blue-600 text-white shadow-2xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    All Columns ({charts.length})
+                  </button>
+                  {charts.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedColumn(c.column_name)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                        selectedColumn === c.column_name
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {c.column_name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredCharts.map((chart) => {
+                  const activeType = chartTypeOverrides[chart.id] || (chart.chart_type as ChartDisplayType) || 'donut';
+                  return (
+                    <ChartCard
+                      key={chart.id}
+                      chart={chart}
+                      currentType={activeType}
+                      onTypeChange={(type) => handleChartTypeChange(chart.id, type)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 2. Matplotlib Statistical & Cluster Plots Section */}
+          {(activeTab === 'all' || activeTab === 'matplotlib') && matplotlibPlots.length > 0 && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Binary className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-xs font-bold text-slate-900 tracking-tight">
+                    Matplotlib Statistical & Cluster Plots
+                  </h3>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Scientific Python Engine
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {matplotlibPlots.map((plot) => (
+                  <MatplotlibPlotCard
+                    key={plot.id}
+                    plot={plot}
+                    onPreview={() => setPreviewPlot(plot)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Fullscreen Zoom Modal for Matplotlib Plots */}
+      {previewPlot && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+            <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">{previewPlot.title}</h3>
+                <p className="text-xs text-slate-500">{previewPlot.description}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewPlot.image_base64}
+                  download={`${previewPlot.id}.png`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors shadow-2xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download Plot</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPlot(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 flex items-center justify-center bg-slate-100/50 overflow-auto">
+              <img
+                src={previewPlot.image_base64}
+                alt={previewPlot.title}
+                className="max-h-[70vh] object-contain rounded-lg border border-slate-200 bg-white shadow-sm"
+              />
+            </div>
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Matplotlib Plot Card
+interface MatplotlibPlotCardProps {
+  plot: MatplotlibPlot;
+  onPreview: () => void;
+}
+
+const MatplotlibPlotCard: React.FC<MatplotlibPlotCardProps> = ({ plot, onPreview }) => {
+  return (
+    <div className="border border-slate-200 rounded-lg p-4 bg-white flex flex-col justify-between hover:border-slate-300 transition-colors shadow-2xs group">
+      <div>
+        <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-slate-100">
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">{plot.title}</h4>
+            <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{plot.description}</p>
+          </div>
+          <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100 flex-shrink-0">
+            {plot.plot_type}
+          </span>
+        </div>
+
+        {/* Plot Image */}
+        <div className="relative rounded-md overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center my-2 cursor-pointer" onClick={onPreview}>
+          <img
+            src={plot.image_base64}
+            alt={plot.title}
+            className="w-full h-auto object-contain transition-transform group-hover:scale-[1.01]"
+          />
+          <div className="absolute inset-0 bg-slate-900/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/95 text-slate-800 text-xs font-semibold shadow-md backdrop-blur-xs">
+              <Maximize2 className="w-3.5 h-3.5 text-blue-600" />
+              <span>Click to Enlarge</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Controls */}
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+        <div className="flex items-center gap-1 flex-wrap">
+          {plot.columns_analyzed?.map((col, idx) => (
+            <span key={idx} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
+              {col}
+            </span>
+          ))}
+        </div>
+        <a
+          href={plot.image_base64}
+          download={`${plot.id}.png`}
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors p-1"
+          title="Download high-resolution plot"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Save PNG</span>
+        </a>
+      </div>
     </div>
   );
 };

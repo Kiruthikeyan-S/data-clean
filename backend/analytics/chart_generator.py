@@ -3,7 +3,8 @@ import json
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
-from backend.models.schemas import DataVisualizations, DatasetChart, ChartDataPoint
+from backend.models.schemas import DataVisualizations, DatasetChart, ChartDataPoint, MatplotlibPlot
+from backend.analytics.matplotlib_generator import generate_matplotlib_plots
 
 CHART_PALETTE = [
     "#2563eb",  # Blue
@@ -108,11 +109,15 @@ def generate_visualizations(records: Any, columns: Optional[List[str]] = None) -
         max_val = round(num_series.max(), 2)
         insights.append(f"Average {col_name.replace('_', ' ')} is {avg_val} (min {min_val}, max {max_val}).")
 
-    if len(charts) == 0:
-        return DataVisualizations(has_charts=False, charts=[], summary_insights=[])
+    # 4. Generate High-Res Scientific Matplotlib Statistical & Cluster Plots
+    matplotlib_plots = generate_matplotlib_plots(records, columns)
+
+    if len(charts) == 0 and len(matplotlib_plots) == 0:
+        return DataVisualizations(has_charts=False, charts=[], matplotlib_plots=[], summary_insights=[])
 
     return DataVisualizations(
         has_charts=True,
         summary_insights=insights[:6],
-        charts=charts
+        charts=charts,
+        matplotlib_plots=matplotlib_plots
     )

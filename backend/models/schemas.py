@@ -66,10 +66,19 @@ class DatasetChart(BaseModel):
     column_name: str
     data: List[ChartDataPoint]
 
+class MatplotlibPlot(BaseModel):
+    id: str
+    title: str
+    description: str
+    plot_type: str  # "cluster", "distribution", "correlation", "box"
+    image_base64: str
+    columns_analyzed: List[str] = []
+
 class DataVisualizations(BaseModel):
     has_charts: bool = False
     summary_insights: List[str] = []
     charts: List[DatasetChart] = []
+    matplotlib_plots: List[MatplotlibPlot] = []
 
 class CleansingReport(BaseModel):
     initial_rows: Optional[int] = None
