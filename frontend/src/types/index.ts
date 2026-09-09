@@ -78,6 +78,9 @@ export interface ProcessSummary {
   processing_time_ms: number;
   file_type: string;
   classification: string;
+  file_size_bytes?: number;
+  processed_at?: string;
+  quality_score?: number;
 }
 
 export interface ChartDataPoint {
@@ -118,6 +121,8 @@ export interface ProcessResponse {
   mime_type: string;
   classification: 'structured' | 'unstructured';
   status: 'completed' | 'validation_error' | 'failed';
+  processed_at?: string;
+  file_size_bytes?: number;
   steps: StepStatus[];
   summary: ProcessSummary;
   cleansing_report?: CleansingReport;

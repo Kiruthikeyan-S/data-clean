@@ -365,16 +365,24 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
             errors.append(ValidationErrorItem(field="file", message=f"Failed to process unstructured file: {str(e)}"))
 
     processing_time_ms = round((time.time() - start_time) * 1000, 2)
+    from datetime import datetime
+    processed_at_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    file_size = len(file_bytes)
     
     total_records = len(structured_data) if isinstance(structured_data, list) else (1 if structured_data else 0)
-    
+    valid_records = max(0, total_records - (1 if errors and classification == "unstructured" else len(errors)))
+    quality_score = round((valid_records / total_records) * 100.0, 1) if total_records > 0 else 100.0
+
     summary = ProcessSummary(
         total_records=total_records,
-        valid_records=total_records - (1 if errors and classification == "unstructured" else len(errors)),
+        valid_records=valid_records,
         invalid_records=len(errors),
         processing_time_ms=processing_time_ms,
         file_type=file_type,
-        classification=classification
+        classification=classification,
+        file_size_bytes=file_size,
+        processed_at=processed_at_str,
+        quality_score=quality_score
     )
 
     # Generate smart chart visualizations if applicable
@@ -387,6 +395,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         mime_type=mime_type,
         classification=classification,
         status=status,
+        processed_at=processed_at_str,
+        file_size_bytes=file_size,
         steps=steps,
         summary=summary,
         cleansing_report=cleansing_report,
