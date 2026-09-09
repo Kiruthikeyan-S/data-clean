@@ -302,6 +302,14 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                 </tbody>
               </table>
             </div>
+          ) : selectedDimension.count > 0 ? (
+            <div className="py-6 px-4 bg-blue-50/40 rounded-lg border border-blue-100 mt-3 text-center">
+              <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-2">
+                <Info className="w-4 h-4" />
+              </div>
+              <p className="text-xs font-bold text-blue-900">{selectedDimension.count} {selectedDimension.title} Processed</p>
+              <p className="text-xs text-slate-600 mt-1 max-w-lg mx-auto">{selectedDimension.summary}</p>
+            </div>
           ) : (
             <div className="py-8 text-center bg-slate-50/50 rounded-lg border border-dashed border-slate-200 mt-3">
               <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2 border border-emerald-100">

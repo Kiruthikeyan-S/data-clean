@@ -367,15 +367,35 @@ def audit_unstructured_data(raw_text: str, fields: List[ProcessedField]) -> Qual
         ) for f in missing]
     ))
 
-    # 2. Duplicates
-    dup_lines_count = len(raw_text.split("\n")) - len(set(raw_text.split("\n")))
+    # 2. Duplicates (Find actual non-empty duplicate lines)
+    raw_lines = [l.strip() for l in raw_text.splitlines() if len(l.strip()) > 1]
+    seen_lines = set()
+    dup_lines: List[str] = []
+    for line in raw_lines:
+        if line.lower() in seen_lines:
+            dup_lines.append(line)
+        else:
+            seen_lines.add(line.lower())
+
+    dup_items = [
+        AuditDetailItem(
+            column="Source Document Text",
+            original_value=d_line,
+            cleaned_value="Consolidated / Deduplicated",
+            issue_description="Repetitive or duplicate text line removed during OCR text cleanup",
+            severity="info"
+        )
+        for d_line in dup_lines[:20]
+    ]
+
+    dup_count = len(dup_lines)
     dimensions.append(QualityDimension(
         id="duplicates",
         title="Duplicates",
-        count=max(0, dup_lines_count),
-        status=f"{max(0, dup_lines_count)} Consolidated" if dup_lines_count > 0 else "Clean",
-        summary=f"Consolidated {max(0, dup_lines_count)} redundant duplicate line(s) in source text.",
-        items=[]
+        count=dup_count,
+        status=f"{dup_count} Consolidated" if dup_count > 0 else "Clean",
+        summary=f"Consolidated {dup_count} redundant duplicate text line(s)." if dup_count > 0 else "No duplicate lines found in source document.",
+        items=dup_items
     ))
 
     # 3. Wrong Data Types
@@ -428,8 +448,8 @@ def audit_unstructured_data(raw_text: str, fields: List[ProcessedField]) -> Qual
         id="format_differences",
         title="Format Differences",
         count=len(normalized),
-        status=f"{len(normalized)} Standardized",
-        summary=f"Converted {len(normalized)} field(s) into ISO dates, Title Case, or international phone formats.",
+        status=f"{len(normalized)} Standardized" if normalized else "Standard",
+        summary=f"Converted {len(normalized)} field(s) into ISO dates, Title Case, or international phone formats." if normalized else "All extracted fields follow uniform standardized format.",
         affected_columns=[f.label for f in normalized],
         items=[AuditDetailItem(
             column=f.label,
@@ -440,7 +460,9 @@ def audit_unstructured_data(raw_text: str, fields: List[ProcessedField]) -> Qual
         ) for f in normalized]
     ))
 
+    total_issues = sum(dim.count for dim in dimensions)
+
     return QualityAuditReport(
         dimensions=dimensions,
-        total_issues_handled=len(missing) + len(normalized) + len(invalid)
+        total_issues_handled=total_issues
     )
