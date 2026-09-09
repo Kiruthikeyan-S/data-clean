@@ -3,7 +3,6 @@ import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { ProcessResponse } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
-import { UploadAnalyticsOverview } from '../components/UploadAnalyticsOverview';
 import { DataQualityInspector } from '../components/DataQualityInspector';
 import { DataChartsSection } from '../components/DataChartsSection';
 import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible';
@@ -30,9 +29,6 @@ export const ResultPage: React.FC<ResultPageProps> = ({ result, onReset }) => {
 
         <ExportButtons taskId={result.id} />
       </div>
-
-      {/* Upload Date, Time, File Size & Executive Data Profiling Overview (Placed First) */}
-      <UploadAnalyticsOverview result={result} />
 
       {/* Validation Warnings if any */}
       {result.errors && result.errors.length > 0 && (

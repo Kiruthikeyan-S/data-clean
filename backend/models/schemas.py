@@ -100,9 +100,6 @@ class ProcessSummary(BaseModel):
     processing_time_ms: float = 0.0
     file_type: str
     classification: str
-    file_size_bytes: int = 0
-    processed_at: Optional[str] = None
-    quality_score: float = 100.0
 
 class ProcessResponse(BaseModel):
     id: str
@@ -111,8 +108,6 @@ class ProcessResponse(BaseModel):
     mime_type: str
     classification: str  # "structured" | "unstructured"
     status: str          # "completed" | "validation_error" | "failed"
-    processed_at: Optional[str] = None
-    file_size_bytes: int = 0
     steps: List[StepStatus]
     summary: ProcessSummary
     cleansing_report: Optional[CleansingReport] = None
