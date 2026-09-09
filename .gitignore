@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment & local files
+.env
+.env.local
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# Logs & caches
+*.log
+.pytest_cache/
+.DS_Store
+Thumbs.db

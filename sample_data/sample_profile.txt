@@ -1,0 +1,11 @@
+CUSTOMER ONBOARDING FORM
+
+Name: Ravi Kumar
+Date of Birth: 12/05/2001
+Email: ravi@gmail.com
+Phone: +91-98765 43210
+Address: 42 Marina Bay Road, Chennai
+Postal Code: 600001
+ID Number: IND-8823-9011
+Total Amount: INR 10,000
+Organization: DataFlow Technologies Inc.
