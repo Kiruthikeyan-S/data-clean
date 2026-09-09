@@ -1,6 +1,7 @@
 import io
 import cv2
 import numpy as np
+from PIL import Image
 from typing import Dict, Any, List, Optional
 
 # Lazy load OCR engine
@@ -27,25 +28,39 @@ def get_ocr_engine():
 
 def preprocess_image(image_bytes: bytes) -> np.ndarray:
     """
-    Applies OpenCV preprocessing:
-    - Decodes image
-    - Converts to grayscale
+    Applies robust image decoding (OpenCV with PIL fallback) and preprocessing:
+    - Decodes image via cv2.imdecode or PIL.Image.open
+    - Converts to RGB/Grayscale
     - Noise reduction (bilateral filter)
-    - Contrast enhancement / thresholding when appropriate
     """
-    np_arr = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    img = None
+    
+    # 1. Try OpenCV decode
+    try:
+        np_arr = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    except Exception:
+        img = None
+
+    # 2. Fallback to PIL decode (handles CMYK, RGBA, WebP, progressive, etc.)
     if img is None:
-        raise ValueError("Could not decode image.")
+        try:
+            pil_img = Image.open(io.BytesIO(image_bytes))
+            if pil_img.mode != "RGB":
+                pil_img = pil_img.convert("RGB")
+            img_np = np.array(pil_img)
+            img = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+        except Exception as e:
+            raise ValueError(f"Could not decode image format: {str(e)}")
+
+    if img is None:
+        raise ValueError("Could not decode image. Supported formats include PNG, JPG, JPEG, WEBP, BMP, TIFF.")
     
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     # Noise reduction
     denoised = cv2.bilateralFilter(gray, 9, 75, 75)
-    
-    # Adaptive thresholding / contrast adjustment if needed
-    # We return the denoised image as standard high-quality OCR input
     return denoised
 
 
@@ -64,7 +79,6 @@ def extract_image(image_bytes: bytes) -> Dict[str, Any]:
         result, elapse_list = engine(processed_img)
         if result:
             for item in result:
-                # item format: [box, text, score]
                 box = item[0]
                 text = item[1].strip()
                 score = float(item[2])
@@ -102,16 +116,16 @@ def extract_image(image_bytes: bytes) -> Dict[str, Any]:
         for lnum in sorted(line_dict.keys()):
             lines.append(" ".join(line_dict[lnum]))
     else:
-        # Fallback if no OCR is available
-        lines = ["[OCR Engine not configured]"]
+        lines = []
         confidences = [0.0]
 
-    full_text = "\n".join(lines)
+    full_text = "\n".join(lines).strip()
     avg_conf = float(np.mean(confidences)) if confidences else 0.0
 
     return {
         "text": full_text,
         "lines": lines,
         "confidence": round(avg_conf, 3),
-        "details": raw_results
+        "details": raw_results,
+        "extraction_method": f"image_ocr ({engine_type})"
     }
