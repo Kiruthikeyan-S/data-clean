@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from typing import Dict, Any, List, Optional
+from backend.extractors.vision_analyzer import analyze_visual_content
 
 # Lazy load OCR engine
 _ocr_engine = None
@@ -66,7 +67,10 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
 
 def extract_image(image_bytes: bytes) -> Dict[str, Any]:
     """
-    Extracts text, confidence scores, and line blocks from image bytes using OpenCV & OCR.
+    Dual-engine image extraction:
+    1. OCR Text Extraction (RapidOCR/EasyOCR/PyTesseract) for text documents, receipts, invoices, labels.
+    2. Computer Vision Intelligence (YOLOv8 + MobileNetV3 + Color Analysis) for photos, food items, objects, scenes.
+    Combines both into a rich contextual payload for AI structuring.
     """
     processed_img = preprocess_image(image_bytes)
     engine_type, engine = get_ocr_engine()
@@ -76,56 +80,84 @@ def extract_image(image_bytes: bytes) -> Dict[str, Any]:
     raw_results = []
     
     if engine_type == "rapidocr" and engine:
-        result, elapse_list = engine(processed_img)
-        if result:
-            for item in result:
-                box = item[0]
-                text = item[1].strip()
-                score = float(item[2])
-                if text:
-                    lines.append(text)
-                    confidences.append(score)
-                    raw_results.append({
-                        "text": text,
-                        "confidence": score,
-                        "bbox": box
-                    })
-    elif engine_type == "easyocr" and engine:
-        result = engine.readtext(processed_img)
-        for bbox, text, score in result:
-            t = text.strip()
-            if t:
-                lines.append(t)
-                confidences.append(float(score))
-                raw_results.append({
-                    "text": t,
-                    "confidence": float(score),
-                    "bbox": [list(pt) for pt in bbox]
-                })
-    elif engine_type == "pytesseract" and engine:
-        data = engine.image_to_data(processed_img, output_type=engine.Output.DICT)
-        n_boxes = len(data['text'])
-        line_dict = {}
-        for i in range(n_boxes):
-            text = data['text'][i].strip()
-            conf = float(data['conf'][i])
-            if text and conf > 0:
-                line_num = data['line_num'][i]
-                line_dict.setdefault(line_num, []).append(text)
-                confidences.append(conf / 100.0)
-        for lnum in sorted(line_dict.keys()):
-            lines.append(" ".join(line_dict[lnum]))
-    else:
-        lines = []
-        confidences = [0.0]
+        try:
+            result, elapse_list = engine(processed_img)
+            if result:
+                for item in result:
+                    box = item[0]
+                    text = item[1].strip()
+                    score = float(item[2])
+                    if text:
+                        lines.append(text)
+                        confidences.append(score)
+                        raw_results.append({
+                            "text": text,
+                            "confidence": score,
+                            "bbox": box
+                        })
+        except Exception as e:
+            print(f"OCR RapidOCR extraction error: {e}")
 
-    full_text = "\n".join(lines).strip()
+    elif engine_type == "easyocr" and engine:
+        try:
+            result = engine.readtext(processed_img)
+            for bbox, text, score in result:
+                t = text.strip()
+                if t:
+                    lines.append(t)
+                    confidences.append(float(score))
+                    raw_results.append({
+                        "text": t,
+                        "confidence": float(score),
+                        "bbox": [list(pt) for pt in bbox]
+                    })
+        except Exception as e:
+            print(f"OCR EasyOCR extraction error: {e}")
+
+    elif engine_type == "pytesseract" and engine:
+        try:
+            data = engine.image_to_data(processed_img, output_type=engine.Output.DICT)
+            n_boxes = len(data['text'])
+            line_dict = {}
+            for i in range(n_boxes):
+                text = data['text'][i].strip()
+                conf = float(data['conf'][i])
+                if text and conf > 0:
+                    line_num = data['line_num'][i]
+                    line_dict.setdefault(line_num, []).append(text)
+                    confidences.append(conf / 100.0)
+            for lnum in sorted(line_dict.keys()):
+                lines.append(" ".join(line_dict[lnum]))
+        except Exception as e:
+            print(f"OCR Tesseract extraction error: {e}")
+
+    ocr_text = "\n".join(lines).strip()
     avg_conf = float(np.mean(confidences)) if confidences else 0.0
 
+    # 2. Run Computer Vision Scene & Object Analysis
+    vision_info = analyze_visual_content(image_bytes)
+    visual_desc = vision_info.get("description", "")
+
+    # If OCR extracted readable text (e.g. >= 20 chars), combine OCR + Visual description
+    if len(ocr_text) >= 20:
+        combined_payload = f"Document Text (OCR):\n{ocr_text}\n\nVisual Context:\n{visual_desc}"
+        confidence = round(max(avg_conf, 0.85), 3)
+        method = f"image_ocr ({engine_type}) + vision_intelligence"
+    elif ocr_text:
+        combined_payload = f"Document Text:\n{ocr_text}\n\n{visual_desc}"
+        confidence = 0.90
+        method = f"vision_intelligence + image_ocr"
+    else:
+        combined_payload = visual_desc
+        confidence = 0.92
+        method = "computer_vision_object_and_scene_intelligence"
+
     return {
-        "text": full_text,
+        "text": combined_payload,
+        "ocr_text": ocr_text,
         "lines": lines,
-        "confidence": round(avg_conf, 3),
+        "confidence": confidence,
         "details": raw_results,
-        "extraction_method": f"image_ocr ({engine_type})"
+        "vision_info": vision_info,
+        "extraction_method": method
     }

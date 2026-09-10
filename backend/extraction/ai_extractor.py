@@ -36,8 +36,8 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
         client = Groq(api_key=key_to_use, http_client=http_client)
 
         system_instruction = (
-            "You are an expert Data Extraction and Schema Intelligence AI engine.\n"
-            "Analyze the unstructured document text and determine its structural category:\n\n"
+            "You are an expert Data Extraction, Computer Vision Synthesis, and Schema Intelligence AI engine.\n"
+            "Analyze the unstructured document text or computer vision scene analysis and determine its structural category:\n\n"
             "CATEGORY A: Multi-Record Dataset\n"
             "(Use this if the text contains multiple people, employees, transactions, line items, products, student records, logs, or tabular entries)\n"
             "Extract a list of records with clean standardized column headers and normalized cell values.\n"
@@ -54,19 +54,25 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
             '    {"name": "Marcus Vance", "job_role": "Senior Backend Architect", "location": "Austin", "joining_date": "2021-03-14", "manager": "Clara Oswald", "salary": 145000, "currency": "USD", "period": "Year"}\n'
             "  ]\n"
             "}\n\n"
-            "CATEGORY B: Single-Record Document\n"
-            "(Use this if the text is a single individual invoice, single receipt, personal bio, certificate, or letter)\n"
-            "Extract key-value fields with label, value, raw_value, and field_type.\n"
+            "CATEGORY B: Single-Record Document or Visual Photo Analysis\n"
+            "(Use this if the input is a single invoice, receipt, personal profile, certificate, OR visual photo analysis of food, objects, products, vehicles, scenes)\n"
+            "Extract all relevant domain fields and properties into clean, informative key-values:\n"
+            "- For Food/Dining images: main_item, side_items, category, sauce, container, visible_contents, food_counts, dominant_colors\n"
+            "- For Products/Objects: product_name, category, detected_objects, colors, features\n"
+            "- For Documents: name, date, email, amount, organization, etc.\n"
+            "CRITICAL: Only extract fields with actual information. Do NOT include empty/null placeholder fields.\n"
             "Return JSON:\n"
             "{\n"
             '  "data_type": "key_value",\n'
             '  "fields": [\n'
-            '    {"key": "name", "label": "Full Name", "value": "John Doe", "raw_value": "JOHN DOE", "field_type": "text"}\n'
+            '    {"key": "main_item", "label": "Main Item", "value": "Burger", "raw_value": "Cheeseburger", "field_type": "text"},\n'
+            '    {"key": "side_items", "label": "Side Items", "value": "French Fries", "raw_value": "French Fries", "field_type": "text"},\n'
+            '    {"key": "category", "label": "Category", "value": "Fast Food", "raw_value": "Fast Food", "field_type": "text"}\n'
             "  ]\n"
             "}"
         )
 
-        user_content = f"Extract and structure this document data:\n\n{raw_text[:12000]}"
+        user_content = f"Extract and structure this document or visual image data. Return valid JSON:\n\n{raw_text[:12000]}"
 
         for model_name in GROQ_MODELS:
             try:
