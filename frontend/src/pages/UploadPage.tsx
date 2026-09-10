@@ -2,7 +2,7 @@ import React from 'react';
 import { FileUpload } from '../components/FileUpload';
 
 interface UploadPageProps {
-  onProcess: (file: File) => void;
+  onProcess: (files: File[]) => void;
   isProcessing?: boolean;
 }
 

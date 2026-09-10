@@ -1,4 +1,4 @@
-import { ProcessResponse } from '../types';
+import { ProcessResponse, BatchProcessResponse } from '../types';
 
 const API_BASE = '/api';
 
@@ -13,6 +13,31 @@ export async function processFile(file: File): Promise<ProcessResponse> {
 
   if (!response.ok) {
     let errorDetail = 'File processing failed.';
+    try {
+      const errorJson = await response.json();
+      errorDetail = errorJson.detail || errorDetail;
+    } catch {
+      errorDetail = `Server returned status ${response.status}: ${response.statusText}`;
+    }
+    throw new Error(errorDetail);
+  }
+
+  return response.json();
+}
+
+export async function processBatchFiles(files: File[]): Promise<BatchProcessResponse> {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
+  const response = await fetch(`${API_BASE}/process-batch`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let errorDetail = 'Batch processing failed.';
     try {
       const errorJson = await response.json();
       errorDetail = errorJson.detail || errorDetail;

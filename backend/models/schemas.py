@@ -149,3 +149,9 @@ class ProcessResponse(BaseModel):
     columns: Optional[List[str]] = None
     raw_text: Optional[str] = None
     errors: Optional[List[ValidationErrorItem]] = None
+
+class BatchProcessResponse(BaseModel):
+    batch_id: str
+    total_files: int
+    results: List[ProcessResponse]
+    processing_time_ms: float

@@ -1,9 +1,12 @@
 import io
 import json
+import time
+import uuid
+from typing import List
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException, Response
 from fastapi.responses import StreamingResponse
-from backend.models.schemas import ProcessResponse
+from backend.models.schemas import ProcessResponse, BatchProcessResponse
 from backend.pipeline import process_file_pipeline, RESULTS_STORE
 
 router = APIRouter(prefix="/api", tags=["Processing"])
@@ -34,6 +37,48 @@ async def process_file(file: UploadFile = File(...)):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+
+
+@router.post("/process-batch", response_model=BatchProcessResponse)
+async def process_batch_files(files: List[UploadFile] = File(...)):
+    """
+    Accepts multiple uploaded files simultaneously (e.g. Store, Item, Customer files or multiple receipts),
+    cleans all files in parallel, and returns an array of structured clean datasets.
+    """
+    if not files or len(files) == 0:
+        raise HTTPException(status_code=400, detail="No files uploaded.")
+        
+    start_time = time.time()
+    batch_id = str(uuid.uuid4())
+    results: List[ProcessResponse] = []
+    
+    for file in files:
+        if not file.filename:
+            continue
+        file_bytes = await file.read()
+        if len(file_bytes) == 0:
+            continue
+            
+        try:
+            res = process_file_pipeline(
+                filename=file.filename,
+                content_type=file.content_type,
+                file_bytes=file_bytes
+            )
+            results.append(res)
+        except Exception as e:
+            print(f"Error processing batch file {file.filename}: {e}")
+            
+    if not results:
+        raise HTTPException(status_code=400, detail="None of the uploaded batch files could be processed.")
+        
+    total_time = round((time.time() - start_time) * 1000, 2)
+    return BatchProcessResponse(
+        batch_id=batch_id,
+        total_files=len(results),
+        results=results,
+        processing_time_ms=total_time
+    )
 
 
 @router.get("/result/{task_id}", response_model=ProcessResponse)

@@ -165,6 +165,13 @@ export interface ProcessResponse {
   errors?: ValidationErrorItem[];
 }
 
+export interface BatchProcessResponse {
+  batch_id: string;
+  total_files: number;
+  results: ProcessResponse[];
+  processing_time_ms: number;
+}
+
 export interface HistoryItem {
   id: string;
   filename: string;
