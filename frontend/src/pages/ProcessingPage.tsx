@@ -6,34 +6,19 @@ interface ProcessingPageProps {
   filename: string;
   steps: StepStatus[];
   currentStepIndex: number;
-  progressPercent?: number;
-  elapsedSeconds?: number;
 }
 
-export const ProcessingPage: React.FC<ProcessingPageProps> = ({
-  filename,
-  steps,
-  currentStepIndex,
-  progressPercent = 0,
-  elapsedSeconds = 0
-}) => {
+export const ProcessingPage: React.FC<ProcessingPageProps> = ({ filename, steps, currentStepIndex }) => {
   return (
-    <div className="py-10 sm:py-14 px-4">
-      <div className="max-w-xl mx-auto mb-6 text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-1">
-          Automated Pipeline
-        </p>
-        <h1 className="text-lg font-bold text-slate-900 truncate">
+    <div className="py-12 sm:py-16 px-4">
+      <div className="max-w-lg mx-auto mb-6 text-center">
+        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-1">Processing Pipeline</p>
+        <h1 className="text-xl font-bold text-slate-900 truncate">
           {filename}
         </h1>
       </div>
 
-      <ProcessingSteps
-        steps={steps}
-        currentStepIndex={currentStepIndex}
-        progressPercent={progressPercent}
-        elapsedSeconds={elapsedSeconds}
-      />
+      <ProcessingSteps steps={steps} currentStepIndex={currentStepIndex} />
     </div>
   );
 };
