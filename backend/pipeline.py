@@ -8,8 +8,7 @@ from backend.models.schemas import (
     ProcessedField,
     ValidationErrorItem,
     CleansingReport,
-    CleansingCategory,
-    RetailIntelligence
+    CleansingCategory
 )
 from backend.utils.file_detector import detect_file_type, classify_data_type
 from backend.extractors import extract_data
@@ -18,8 +17,6 @@ from backend.cleaning.structured_cleaner import read_and_clean_structured_file
 from backend.extraction.field_extractor import identify_fields, map_to_schema
 from backend.extraction.ai_extractor import extract_fields_with_llm
 from backend.validation.validator import validate_unstructured_fields, validate_structured_records
-from backend.analytics.chart_generator import generate_visualizations
-from backend.analytics.retail_analytics import analyze_retail_intelligence
 
 # In-memory storage for results and exports
 RESULTS_STORE: Dict[str, ProcessResponse] = {}
@@ -496,24 +493,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         classification=classification
     )
 
-    # Generate smart chart visualizations if applicable
-    visualizations = generate_visualizations(structured_data, columns)
-
-    # Generate retail data intelligence (Store / Item / Customer entity classification & analytics)
-    retail_intelligence = None
-    try:
-        import pandas as pd
-        if isinstance(structured_data, list) and len(structured_data) > 0:
-            df_for_retail = pd.DataFrame(structured_data)
-            retail_data = analyze_retail_intelligence(df_for_retail)
-            retail_intelligence = RetailIntelligence(**retail_data)
-        elif isinstance(structured_data, dict) and len(structured_data) > 0:
-            df_for_retail = pd.DataFrame([structured_data])
-            retail_data = analyze_retail_intelligence(df_for_retail)
-            retail_intelligence = RetailIntelligence(**retail_data)
-    except Exception as e:
-        print(f"Retail intelligence generation error: {e}")
-
     response = ProcessResponse(
         id=task_id,
         filename=filename,
@@ -524,8 +503,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         steps=steps,
         summary=summary,
         cleansing_report=cleansing_report,
-        visualizations=visualizations if visualizations and visualizations.has_charts else None,
-        retail_intelligence=retail_intelligence,
         fields=fields_list,
         structured_data=structured_data,
         columns=columns,
