@@ -13,6 +13,8 @@ export const App: React.FC = () => {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [steps, setSteps] = useState<StepStatus[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const [progressPercent, setProgressPercent] = useState<number>(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [result, setResult] = useState<ProcessResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -22,32 +24,50 @@ export const App: React.FC = () => {
     setCurrentPage('processing');
     setSteps([]);
     setCurrentStepIndex(0);
+    setProgressPercent(0);
+    setElapsedSeconds(0);
 
-    // Initial stage updates for smooth real-time visual feedback
-    const stageTimer1 = setTimeout(() => setCurrentStepIndex(1), 250);
-    const stageTimer2 = setTimeout(() => setCurrentStepIndex(2), 500);
-    const stageTimer3 = setTimeout(() => setCurrentStepIndex(3), 800);
+    const TOTAL_DURATION_MS = 10000; // 10 seconds comprehensive analysis
+    const TOTAL_STAGES = 9;
+    const INTERVAL_MS = 100;
+    let elapsedMs = 0;
+
+    // Start API request in parallel
+    const apiPromise = processFile(file);
+
+    // Run smooth 10-second inspection progress animation
+    const progressTimer = setInterval(() => {
+      elapsedMs += INTERVAL_MS;
+      const currentElapsed = Math.min(elapsedMs, TOTAL_DURATION_MS);
+      const pct = (currentElapsed / TOTAL_DURATION_MS) * 100;
+      const stepIdx = Math.min(TOTAL_STAGES - 1, Math.floor((currentElapsed / TOTAL_DURATION_MS) * TOTAL_STAGES));
+
+      setProgressPercent(pct);
+      setElapsedSeconds(currentElapsed / 1000);
+      setCurrentStepIndex(stepIdx);
+    }, INTERVAL_MS);
 
     try {
-      const response = await processFile(file);
-      clearTimeout(stageTimer1);
-      clearTimeout(stageTimer2);
-      clearTimeout(stageTimer3);
+      // Await both the backend processing and the 10-second inspection duration
+      const [response] = await Promise.all([
+        apiPromise,
+        new Promise((resolve) => setTimeout(resolve, TOTAL_DURATION_MS))
+      ]);
 
+      clearInterval(progressTimer);
+      setProgressPercent(100);
+      setElapsedSeconds(10.0);
+      setCurrentStepIndex(TOTAL_STAGES);
       setSteps(response.steps);
-      setCurrentStepIndex(response.steps.length);
       setResult(response);
 
-      // Small delay so user sees final completed step
+      // Brief transition delay so user sees final completed verification
       setTimeout(() => {
         setCurrentPage('result');
-      }, 400);
+      }, 500);
 
     } catch (err: any) {
-      clearTimeout(stageTimer1);
-      clearTimeout(stageTimer2);
-      clearTimeout(stageTimer3);
-
+      clearInterval(progressTimer);
       setErrorMessage(err.message || 'An unexpected error occurred during processing.');
       setCurrentPage('upload');
     }
@@ -57,6 +77,8 @@ export const App: React.FC = () => {
     setCurrentFile(null);
     setResult(null);
     setErrorMessage(null);
+    setProgressPercent(0);
+    setElapsedSeconds(0);
     setCurrentPage('upload');
   };
 
@@ -83,6 +105,8 @@ export const App: React.FC = () => {
             filename={currentFile?.name || 'File'}
             steps={steps}
             currentStepIndex={currentStepIndex}
+            progressPercent={progressPercent}
+            elapsedSeconds={elapsedSeconds}
           />
         )}
 
