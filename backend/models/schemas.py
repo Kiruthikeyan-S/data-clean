@@ -101,6 +101,37 @@ class ProcessSummary(BaseModel):
     file_type: str
     classification: str
 
+class EntityFieldBreakdown(BaseModel):
+    store_fields: List[str] = []
+    item_fields: List[str] = []
+    customer_fields: List[str] = []
+    transaction_fields: List[str] = []
+
+class RetailMetricItem(BaseModel):
+    label: str
+    value: Union[str, float, int]
+    subtext: Optional[str] = None
+    trend: Optional[str] = None
+
+class RetailRankingItem(BaseModel):
+    name: str
+    category: Optional[str] = None
+    metric_value: Union[float, int]
+    metric_label: str
+    rank: int
+
+class RetailIntelligence(BaseModel):
+    entity_type: str  # "STORE" | "ITEM" | "CUSTOMER" | "COMBINED_TRANSACTION" | "GENERAL_RETAIL"
+    entity_label: str
+    entity_breakdown: Optional[EntityFieldBreakdown] = None
+    best_selling_items: List[RetailRankingItem] = []
+    least_selling_items: List[RetailRankingItem] = []
+    store_sales: List[Dict[str, Any]] = []
+    customer_patterns: List[Dict[str, Any]] = []
+    sales_forecast: List[Dict[str, Any]] = []
+    inventory_recommendations: List[Dict[str, Any]] = []
+    summary_metrics: List[RetailMetricItem] = []
+
 class ProcessResponse(BaseModel):
     id: str
     filename: str
@@ -112,6 +143,7 @@ class ProcessResponse(BaseModel):
     summary: ProcessSummary
     cleansing_report: Optional[CleansingReport] = None
     visualizations: Optional[DataVisualizations] = None
+    retail_intelligence: Optional[RetailIntelligence] = None
     fields: Optional[List[ProcessedField]] = None
     structured_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None
     columns: Optional[List[str]] = None

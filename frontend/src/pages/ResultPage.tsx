@@ -5,6 +5,7 @@ import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
 import { DataQualityInspector } from '../components/DataQualityInspector';
 import { DataChartsSection } from '../components/DataChartsSection';
+import { RetailIntelligenceSection } from '../components/RetailIntelligenceSection';
 import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible';
 import { ProcessDetailsCollapsible } from '../components/ProcessDetailsCollapsible';
 
@@ -50,6 +51,11 @@ export const ResultPage: React.FC<ResultPageProps> = ({ result, onReset }) => {
       {/* 6-Dimension Interactive Data Quality Inspector (Missing Values, Duplicates, Wrong Data Types, Invalid Values, Outliers, Format Differences) */}
       {result.cleansing_report?.quality_audit && (
         <DataQualityInspector audit={result.cleansing_report.quality_audit} />
+      )}
+
+      {/* Retail Data Intelligence: Store, Item, Customer Classification & Sales Analytics */}
+      {result.retail_intelligence && (
+        <RetailIntelligenceSection retailIntelligence={result.retail_intelligence} />
       )}
 
       {/* Dataset Distribution & Analytics Charts (Pie, Donut, Bar - only when applicable) */}

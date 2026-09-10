@@ -111,6 +111,41 @@ export interface DataVisualizations {
   matplotlib_plots?: MatplotlibPlot[];
 }
 
+export interface EntityFieldBreakdown {
+  store_fields: string[];
+  item_fields: string[];
+  customer_fields: string[];
+  transaction_fields: string[];
+}
+
+export interface RetailMetricItem {
+  label: string;
+  value: string | number;
+  subtext?: string;
+  trend?: 'up' | 'down' | 'neutral';
+}
+
+export interface RetailRankingItem {
+  name: string;
+  category?: string;
+  metric_value: number;
+  metric_label: string;
+  rank: number;
+}
+
+export interface RetailIntelligence {
+  entity_type: 'STORE' | 'ITEM' | 'CUSTOMER' | 'COMBINED_TRANSACTION' | 'GENERAL_RETAIL';
+  entity_label: string;
+  entity_breakdown?: EntityFieldBreakdown;
+  best_selling_items: RetailRankingItem[];
+  least_selling_items: RetailRankingItem[];
+  store_sales: Array<{ store: string; sales: number; unit: string }>;
+  customer_patterns: Array<{ segment: string; count: number; share: string }>;
+  sales_forecast: Array<{ period: string; value: number; type: string }>;
+  inventory_recommendations: Array<{ action: string; item: string; badge: string; type: string; reason: string }>;
+  summary_metrics: RetailMetricItem[];
+}
+
 export interface ProcessResponse {
   id: string;
   filename: string;
@@ -122,6 +157,7 @@ export interface ProcessResponse {
   summary: ProcessSummary;
   cleansing_report?: CleansingReport;
   visualizations?: DataVisualizations;
+  retail_intelligence?: RetailIntelligence;
   fields?: ProcessedField[];
   structured_data?: Record<string, any> | Array<Record<string, any>>;
   columns?: string[];
