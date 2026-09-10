@@ -281,8 +281,13 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
     format_cols_set = set()
     format_count = 0
 
+    TEXT_COL_KEYWORDS = {"address", "street", "city", "country", "name", "desc", "description", "title", "notes", "specs", "location", "manager"}
+
     for col in original_df.columns:
         col_str = str(col)
+        col_lower = col_str.lower()
+        is_text_col = any(k in col_lower for k in TEXT_COL_KEYWORDS)
+
         for row_idx, val in enumerate(original_df[col]):
             if val is not None and not pd.isna(val):
                 val_str = str(val)
@@ -299,21 +304,22 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
                             issue_description="Leading/trailing whitespace stripped",
                             severity="info"
                         ))
-                # Currency formatting in numeric
-                elif re.search(r"[₹\$€£¥,]", val_str):
+                # Currency formatting in numeric fields (ONLY for actual currency strings or numeric thousands separators)
+                elif not is_text_col and (re.match(r"^[₹\$€£¥]\s*[\d,.]+$", val_str.strip()) or re.match(r"^\d{1,3}(,\d{3})+(\.\d+)?$", val_str.strip())):
                     format_count += 1
                     format_cols_set.add(col_str)
                     if len(format_items) < 25:
+                        cleaned_num = re.sub(r"[₹\$€£¥,\s]", "", val_str)
                         format_items.append(AuditDetailItem(
                             row_index=row_idx + 1,
                             column=col_str,
                             original_value=val_str,
-                            cleaned_value=re.sub(r"[₹\$€£¥,\s]", "", val_str),
+                            cleaned_value=cleaned_num,
                             issue_description="Currency symbol/thousands separator harmonized to standard number",
                             severity="info"
                         ))
                 # Date format differences (slash vs dash)
-                elif re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", val_str):
+                elif re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", val_str.strip()):
                     format_count += 1
                     format_cols_set.add(col_str)
                     if len(format_items) < 25:
