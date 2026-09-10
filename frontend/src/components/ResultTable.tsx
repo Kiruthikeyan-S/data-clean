@@ -199,8 +199,23 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {result.fields && result.fields.length > 0 ? (
-                result.fields.map(field => {
+              {(() => {
+                const validFields = (result.fields || []).filter(
+                  f => (f.value !== null && f.value !== undefined && String(f.value).trim() !== '' && String(f.value).toLowerCase() !== 'null') ||
+                       (f.raw_value !== null && f.raw_value !== undefined && String(f.raw_value).trim() !== '' && String(f.raw_value).toLowerCase() !== 'null')
+                );
+
+                if (validFields.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-8 text-center text-slate-400 text-xs">
+                        No specific structured fields detected in document. View raw extracted text below.
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return validFields.map(field => {
                   const hasValue = field.value !== null && field.value !== undefined;
                   const hasRaw = field.raw_value !== null && field.raw_value !== undefined;
 
@@ -232,14 +247,8 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
                       </td>
                     </tr>
                   );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-slate-400 text-xs">
-                    No entities identified in document.
-                  </td>
-                </tr>
-              )}
+                });
+              })()}
             </tbody>
           </table>
         </div>

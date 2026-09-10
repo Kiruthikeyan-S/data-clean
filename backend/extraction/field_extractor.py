@@ -156,6 +156,7 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
 def map_to_schema(extracted_raw: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Normalizes and maps extracted raw entities into standardized field items.
+    ONLY includes fields that actually have extracted data in the document.
     """
     field_configs = [
         ("name", "Name", "text", normalize_name),
@@ -174,17 +175,17 @@ def map_to_schema(extracted_raw: Dict[str, Any]) -> List[Dict[str, Any]]:
     mapped_fields = []
     for key, label, ftype, norm_func in field_configs:
         raw_val = extracted_raw.get(key)
-        norm_val = norm_func(raw_val) if raw_val is not None else None
-        
-        mapped_fields.append({
-            "key": key,
-            "label": label,
-            "field_type": ftype,
-            "raw_value": raw_val,
-            "value": norm_val,
-            "confidence": 0.95 if norm_val is not None else None,
-            "is_valid": True,
-            "error_message": None
-        })
+        if raw_val is not None and str(raw_val).strip():
+            norm_val = norm_func(raw_val)
+            mapped_fields.append({
+                "key": key,
+                "label": label,
+                "field_type": ftype,
+                "raw_value": str(raw_val).strip(),
+                "value": norm_val if norm_val is not None else str(raw_val).strip(),
+                "confidence": 0.95,
+                "is_valid": True,
+                "error_message": None
+            })
 
     return mapped_fields

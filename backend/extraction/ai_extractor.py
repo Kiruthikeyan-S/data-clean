@@ -109,16 +109,20 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                     sanitized_fields = []
                     for f in fields:
                         if isinstance(f, dict) and "key" in f:
-                            sanitized_fields.append({
-                                "key": str(f.get("key")),
-                                "label": str(f.get("label", f.get("key").replace("_", " ").title())),
-                                "value": f.get("value"),
-                                "raw_value": f.get("raw_value", f.get("value")),
-                                "field_type": str(f.get("field_type", "text")),
-                                "confidence": 0.98,
-                                "is_valid": True,
-                                "error_message": None
-                            })
+                            val = f.get("value")
+                            raw_val = f.get("raw_value", val)
+                            # Only include if actual non-null, non-empty data exists
+                            if val is not None and str(val).strip() and str(val).strip().lower() not in ["null", "none", "n/a", "", "-"]:
+                                sanitized_fields.append({
+                                    "key": str(f.get("key")),
+                                    "label": str(f.get("label", f.get("key").replace("_", " ").title())),
+                                    "value": val,
+                                    "raw_value": raw_val if raw_val is not None else val,
+                                    "field_type": str(f.get("field_type", "text")),
+                                    "confidence": 0.98,
+                                    "is_valid": True,
+                                    "error_message": None
+                                })
                     if sanitized_fields:
                         return {
                             "data_type": "key_value",
