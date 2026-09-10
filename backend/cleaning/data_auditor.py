@@ -102,33 +102,48 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
     type_cols_set = set()
     type_issues_count = 0
 
+    NUMERIC_TOKENS = {
+        "salary", "price", "amount", "cgpa", "score", "attendance", "stock",
+        "quantity", "qty", "pct", "percent", "percentage", "cost", "turnover",
+        "revenue", "sq_ft", "footfall", "rate", "units", "total_amount", "unit_price"
+    }
+    TEXT_EXCLUSION_TOKENS = {
+        "country", "name", "manager", "manager_name", "address", "city", "state",
+        "email", "phone", "status", "category", "type", "description", "title",
+        "code", "id", "record_type", "branch"
+    }
+
     for col in original_df.columns:
         col_str = str(col)
-        col_lower = col_str.lower()
-        # Check if numeric column has text/words or boolean/mixed
-        is_expected_numeric = any(k in col_lower for k in ["age", "salary", "price", "amount", "cgpa", "score", "attendance", "stock", "quantity", "id_num", "pct", "percent", "count", "cost"])
+        col_lower = col_str.lower().strip()
+        tokens = set(re.split(r"[_\s\-]+", col_lower))
+
+        # Check if column is genuinely expected to be numeric (not a text/name/country column)
+        is_text_column = bool(tokens.intersection(TEXT_EXCLUSION_TOKENS)) or col_lower in TEXT_EXCLUSION_TOKENS
+        is_expected_numeric = bool(tokens.intersection(NUMERIC_TOKENS)) and not is_text_column
         
-        for row_idx, val in enumerate(original_df[col]):
-            if val is not None and not pd.isna(val):
-                val_str = str(val).strip()
-                if is_expected_numeric and val_str and val_str.lower() not in NULL_REPRESENTATIONS:
-                    # Clean currency/commas to see if numeric
-                    num_candidate = re.sub(r"[₹\$€£¥,\s]", "", val_str)
-                    try:
-                        float(num_candidate)
-                    except ValueError:
-                        # Non-numeric text in numeric column
-                        type_issues_count += 1
-                        type_cols_set.add(col_str)
-                        if len(type_items) < 30:
-                            type_items.append(AuditDetailItem(
-                                row_index=row_idx + 1,
-                                column=col_str,
-                                original_value=val_str,
-                                cleaned_value=None,
-                                issue_description=f"Expected numeric value in '{col_str}', but encountered string type '{val_str}'",
-                                severity="error"
-                            ))
+        if is_expected_numeric:
+            for row_idx, val in enumerate(original_df[col]):
+                if val is not None and not pd.isna(val):
+                    val_str = str(val).strip()
+                    if val_str and val_str.lower() not in NULL_REPRESENTATIONS:
+                        # Clean currency/commas to see if numeric
+                        num_candidate = re.sub(r"[₹\$€£¥,\s]", "", val_str)
+                        try:
+                            float(num_candidate)
+                        except ValueError:
+                            # Non-numeric text in numeric column
+                            type_issues_count += 1
+                            type_cols_set.add(col_str)
+                            if len(type_items) < 30:
+                                type_items.append(AuditDetailItem(
+                                    row_index=row_idx + 1,
+                                    column=col_str,
+                                    original_value=val_str,
+                                    cleaned_value=None,
+                                    issue_description=f"Expected numeric value in '{col_str}', but encountered string type '{val_str}'",
+                                    severity="error"
+                                ))
 
     total_issues += type_issues_count
     dimensions.append(QualityDimension(
