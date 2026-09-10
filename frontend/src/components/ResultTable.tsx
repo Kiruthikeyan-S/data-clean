@@ -24,7 +24,17 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
 
   const columns: string[] = useMemo(() => {
     if (isTabular) {
-      return result.columns || (rawRows.length > 0 ? Object.keys(rawRows[0]) : []);
+      const candidateCols = result.columns || (rawRows.length > 0 ? Object.keys(rawRows[0]) : []);
+      // Filter out columns where ALL rows have null, empty, or missing values
+      const populatedCols = candidateCols.filter(col => {
+        return rawRows.some(row => {
+          const val = row[col];
+          if (val === null || val === undefined) return false;
+          const str = String(val).trim().toLowerCase();
+          return str !== '' && str !== 'null' && str !== 'none' && str !== 'n/a' && str !== '-' && str !== 'nan';
+        });
+      });
+      return populatedCols.length > 0 ? populatedCols : candidateCols;
     }
     return ['Field', 'Standardized Value', 'Raw Extracted Value'];
   }, [result, isTabular, rawRows]);

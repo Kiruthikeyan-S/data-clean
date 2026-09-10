@@ -100,6 +100,12 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
     if nulls_normalized_count > 0:
         change_highlights.append(f"Standardized {nulls_normalized_count} inconsistent missing/null values (e.g. 'N/A', 'null', empty strings)")
 
+    # 6. Drop completely empty columns (where all cells are None / NaN)
+    empty_cols = [c for c in df.columns if df[c].isna().all()]
+    if empty_cols and len(empty_cols) < len(df.columns):
+        df = df.drop(columns=empty_cols)
+        change_highlights.append(f"Removed {len(empty_cols)} completely empty column(s) with no data")
+
     final_rows, final_cols = df.shape
 
     metrics = {

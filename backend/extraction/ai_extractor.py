@@ -103,10 +103,38 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                             sanitized_records.append(r)
 
                     if sanitized_records:
+                        # Only keep columns that have genuine non-null data in at least one record
+                        valid_columns = []
+                        for col in columns:
+                            has_data = any(
+                                r.get(col) is not None
+                                and str(r.get(col)).strip() != ""
+                                and str(r.get(col)).strip().lower() not in ["null", "none", "n/a", "-", "nil", "nan", "undefined"]
+                                for r in sanitized_records
+                            )
+                            if has_data:
+                                valid_columns.append(col)
+
+                        if not valid_columns:
+                            all_keys = list({k for r in sanitized_records for k in r.keys()})
+                            valid_columns = [
+                                k for k in all_keys if any(
+                                    r.get(k) is not None
+                                    and str(r.get(k)).strip() != ""
+                                    and str(r.get(k)).strip().lower() not in ["null", "none", "n/a", "-", "nil", "nan", "undefined"]
+                                    for r in sanitized_records
+                                )
+                            ]
+
+                        # Prune unwanted null keys from record dicts
+                        final_records = []
+                        for r in sanitized_records:
+                            final_records.append({k: r.get(k) for k in valid_columns})
+
                         return {
                             "data_type": "records",
-                            "columns": columns,
-                            "records": sanitized_records
+                            "columns": valid_columns,
+                            "records": final_records
                         }
 
                 # Check for Single-Record Document output

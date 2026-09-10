@@ -250,6 +250,20 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 ))
 
                 records, errors = validate_structured_records(raw_records, cols)
+
+                # Filter out columns that are 100% empty across all records
+                valid_cols = [
+                    c for c in cols if any(
+                        r.get(c) is not None
+                        and str(r.get(c)).strip() != ""
+                        and str(r.get(c)).strip().lower() not in ["null", "none", "n/a", "-", "nil", "nan", "undefined"]
+                        for r in records
+                    )
+                ]
+                if valid_cols:
+                    cols = valid_cols
+                    records = [{c: r.get(c) for c in valid_cols} for r in records]
+
                 steps.append(StepStatus(
                     step_id="data_normalized",
                     name="Data normalized",
