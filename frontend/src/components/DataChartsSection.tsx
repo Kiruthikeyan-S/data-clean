@@ -3,7 +3,6 @@ import {
   BarChart3,
   ChevronDown,
   ChevronUp,
-  Sparkles,
   LayoutGrid,
   Filter,
   Download,
@@ -313,23 +312,6 @@ export const DataChartsSection: React.FC<DataChartsSectionProps> = ({ visualizat
             </div>
           </div>
 
-          {/* AI Automated Insights */}
-          {visualizations.summary_insights && visualizations.summary_insights.length > 0 && (
-            <div className="p-3.5 bg-blue-50/40 border border-blue-100 rounded-lg">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-900 mb-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                <span>Automated Data Insights</span>
-              </div>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-                {visualizations.summary_insights.map((insight, idx) => (
-                  <li key={idx} className="text-xs text-slate-700 flex items-start gap-2">
-                    <span className="text-blue-500 font-bold">•</span>
-                    <span>{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
 
           {/* 1. Interactive SVG Charts Section */}
           {(activeTab === 'all' || activeTab === 'interactive') && charts.length > 0 && (
