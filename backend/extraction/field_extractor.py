@@ -65,6 +65,80 @@ HEADER_STOPWORDS = {
 }
 
 
+def extract_unstructured_records(raw_text: str) -> Optional[Dict[str, Any]]:
+    """
+    Identifies if unstructured text contains a multi-record catalog, numbered items list,
+    or bulleted inventory/transactions, and extracts clean structured tabular records.
+    """
+    if not raw_text or len(raw_text.strip()) < 20:
+        return None
+
+    # 1. Numbered items format: 1. Item ..., 2. Item ..., 3. Item ...
+    item_matches = re.findall(r"(?:^|\n)\s*(\d+)[\.\)]\s+([^\n]+(?:\n(?!\s*\d+[\.\)]\s+)[^\n]+)*)", raw_text.strip())
+    
+    if len(item_matches) >= 2:
+        records = []
+        for num, item_body in item_matches:
+            item_text = " ".join([line.strip() for line in item_body.split("\n") if line.strip()])
+            
+            # Extract product name (text before first parentheses or pricing keywords)
+            name_match = re.match(r"^([^\(\,\.]+?)(?:\s*[\(\,]\s*(?:SKU|UPC|Item|Model|Item code|\d+|\$)|sells for|Selling at|Retailing at|Priced at|Retails|Sold for)", item_text, re.IGNORECASE)
+            if name_match:
+                product_name = name_match.group(1).strip()
+            else:
+                parts = item_text.split("(")
+                product_name = parts[0].strip().rstrip(",") if len(parts) > 1 else item_text.split(".")[0].strip()
+
+            # SKU / Code / Model / UPC
+            sku_m = re.search(r"(?:SKU|UPC|Item code|Item|Model|Code)\s*[:=\-]?\s*([A-Za-z0-9\-\_]+)", item_text, re.IGNORECASE)
+            sku = sku_m.group(1).strip() if sku_m else ""
+
+            # Price
+            price_m = re.search(r"(?:sells for|Selling at|Retailing at|Retail is|Priced at|Retails for|Retails|Sold for|Price)\s*[:=]?\s*\$?\s*([0-9]+(?:\.[0-9]{1,2})?)", item_text, re.IGNORECASE)
+            if not price_m:
+                price_m = re.search(r"\$\s*([0-9]+(?:\.[0-9]{1,2})?)", item_text)
+            price = float(price_m.group(1)) if price_m else None
+
+            # Stock quantity
+            stock_m = re.search(r"(\d+)\s*(?:pairs|units|items|bottles|pieces|in stock)", item_text, re.IGNORECASE)
+            stock = int(stock_m.group(1)) if stock_m else None
+
+            # Category inference
+            lower_t = item_text.lower()
+            if any(k in lower_t for k in ["mouse", "monitor", "charger", "smartwatch", "headphones", "usb", "led", "display", "wifi", "bluetooth", "electronics"]):
+                category = "Electronics"
+            elif any(k in lower_t for k in ["boots", "hiking", "apparel", "clothing", "shoes", "size", "jacket", "shirt"]):
+                category = "Footwear & Apparel"
+            elif any(k in lower_t for k in ["spray", "clean", "disinfectant", "household", "detergent", "soap"]):
+                category = "Household"
+            elif any(k in lower_t for k in ["tumbler", "mug", "bottle", "kitchen", "cookware", "pan", "cup"]):
+                category = "Kitchenware"
+            elif any(k in lower_t for k in ["sourdough", "bread", "bakery", "flour", "food", "grocery", "snack"]):
+                category = "Bakery & Food"
+            else:
+                category = "General"
+
+            records.append({
+                "item_number": int(num),
+                "product_name": product_name,
+                "sku": sku,
+                "category": category,
+                "unit_price": price,
+                "stock_quantity": stock,
+                "description": item_text[:140] + ("..." if len(item_text) > 140 else "")
+            })
+
+        if len(records) >= 2:
+            cols = ["item_number", "product_name", "sku", "category", "unit_price", "stock_quantity", "description"]
+            return {
+                "data_type": "records",
+                "columns": cols,
+                "records": records
+            }
+
+    return None
+
+
 def identify_fields(raw_text: str) -> Dict[str, Any]:
     """
     Identifies common structured entities from unstructured raw text using regex,
@@ -134,11 +208,11 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
                         extracted_raw[field] = val
                         break
 
-        # Phone matching per line if explicit Phone: header
+        # Phone matching per line if explicit Phone: header (exclude barcodes/UPC)
         if extracted_raw["phone"] is None:
             if re.search(r"(?:Phone|Mobile|Tel|Cell|Contact)\s*[:=\-]?\s*(.+)", line, re.IGNORECASE):
                 pm = re.search(PATTERNS["phone"], line)
-                if pm:
+                if pm and not re.search(r"\b(?:UPC|SKU|Barcode|Item|Code)\b", line, re.IGNORECASE):
                     extracted_raw["phone"] = pm.group(0).strip()
 
         # Postal code in address lines
@@ -154,11 +228,13 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
                 extracted_raw["amount"] = amt_m.group(1)
 
     # 3. Second pass: Fallbacks only if explicit labels didn't find the entity
-    # Fallback Phone
+    # Fallback Phone (only with international prefix, parentheses, or dashes - not raw barcodes)
     if extracted_raw["phone"] is None:
         for line in lines:
-            pm = re.search(PATTERNS["phone"], line)
-            if pm and len(re.sub(r"\D", "", pm.group(0))) >= 10:
+            if any(k in line.upper() for k in ["UPC", "BARCODE", "SKU", "ITEM CODE", "ISBN"]):
+                continue
+            pm = re.search(r"(?:\+?\d{1,3}[-.\s])?\(?\d{2,5}\)?[-.\s]\d{3,5}[-.\s]\d{3,5}", line)
+            if pm:
                 extracted_raw["phone"] = pm.group(0).strip()
                 break
 
@@ -167,7 +243,7 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
         for line in lines[:3]:
             if line.upper() in HEADER_STOPWORDS:
                 continue
-            if any(sw in line.upper() for sw in ["PROFILE", "INVOICE", "RECEIPT", "STATEMENT", "REPORT", "SUMMARY"]):
+            if any(sw in line.upper() for sw in ["PROFILE", "INVOICE", "RECEIPT", "STATEMENT", "REPORT", "SUMMARY", "ITEM", "PRODUCT"]):
                 continue
             if re.match(r"^[A-Z][a-zA-Z\.\']+(\s+[A-Z][a-zA-Z\.\']+){1,3}$", line) and len(line) < 35:
                 extracted_raw["name"] = line
@@ -180,35 +256,37 @@ def evaluate_heuristic_confidence(extracted_raw: Dict[str, Any], raw_text: str) 
     """
     Evaluates whether the Rule-Based Heuristic extraction is complete and high-confidence,
     allowing the system to safely BYPASS the LLM.
-    
-    Returns:
-        {
-            "confidence_score": float (0.0 to 1.0),
-            "can_bypass_llm": bool,
-            "matched_fields_count": int,
-            "reasons": List[str]
-        }
     """
     if not raw_text or not extracted_raw:
-        return {"confidence_score": 0.0, "can_bypass_llm": False, "matched_fields_count": 0, "reasons": ["Empty input"]}
+        return {"confidence_score": 0.0, "can_bypass_llm": False, "matched_fields_count": 0, "is_multi_record": False, "reasons": ["Empty input"]}
+
+    # Check multi-record catalog first
+    catalog_res = extract_unstructured_records(raw_text)
+    if catalog_res and len(catalog_res.get("records", [])) >= 2:
+        return {
+            "confidence_score": 0.98,
+            "can_bypass_llm": True,
+            "is_multi_record": True,
+            "catalog_data": catalog_res,
+            "matched_fields_count": len(catalog_res["records"]),
+            "reasons": [f"Extracted {len(catalog_res['records'])} structured catalog records using rule-based item parser"]
+        }
 
     lines = [l.strip() for l in raw_text.split("\n") if l.strip()]
     num_lines = len(lines)
 
-    # Count non-null extracted fields
     matched_fields = [k for k, v in extracted_raw.items() if v is not None and str(v).strip()]
     matched_count = len(matched_fields)
 
-    # Check for multi-row tabular signals (e.g. repeated commas, pipes, or tab-delimited records)
+    # Multi-row signals
     has_table_headers = any(re.search(r"\b(id|sku|item|product|price|qty|total|tax)\b.*\b(id|sku|item|product|price|qty|total|tax)\b", l, re.IGNORECASE) for l in lines)
-    is_multi_row_table = (num_lines > 5 and has_table_headers and any("," in l or "|" in l or "\t" in l for l in lines[1:6]))
+    has_numbered_list = len(re.findall(r"(?:^|\n)\s*\d+[\.\)]\s+", raw_text)) >= 2
+    is_multi_row_table = (num_lines > 5 and (has_table_headers or has_numbered_list))
 
-    # Key entity anchors
     has_identity = bool(extracted_raw.get("name") or extracted_raw.get("id_number") or extracted_raw.get("email") or extracted_raw.get("store_name"))
     has_contact = bool(extracted_raw.get("email") or extracted_raw.get("phone") or extracted_raw.get("address"))
     has_transaction = bool(extracted_raw.get("amount") or extracted_raw.get("date") or extracted_raw.get("id_number"))
 
-    # Confidence calculation
     reasons = []
     confidence = 0.50
 
@@ -226,21 +304,17 @@ def evaluate_heuristic_confidence(extracted_raw: Dict[str, Any], raw_text: str) 
         confidence += 0.05
         reasons.append("Identified transaction/financial indicators")
 
-    # If document has high ratio of matched lines
     if num_lines > 0 and (matched_count / max(num_lines, 1)) >= 0.4:
         confidence += 0.05
 
     confidence = min(1.0, round(confidence, 2))
 
-    # LLM Bypass condition:
-    # 1. Confidence >= 0.85
-    # 2. Contains identity & either contact or transaction
-    # 3. Not a multi-row structured table requiring complex row decomposition
     can_bypass = (confidence >= 0.85 and (has_identity and (has_contact or has_transaction)) and not is_multi_row_table)
 
     return {
         "confidence_score": confidence,
         "can_bypass_llm": can_bypass,
+        "is_multi_record": False,
         "matched_fields_count": matched_count,
         "matched_fields": matched_fields,
         "reasons": reasons

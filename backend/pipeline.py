@@ -253,8 +253,17 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
             ai_extracted = None
             used_heuristic_fast_path = False
 
-            if heuristic_eval.get("can_bypass_llm", False):
-                # High-confidence heuristic extraction: bypass LLM
+            if heuristic_eval.get("is_multi_record", False) and heuristic_eval.get("catalog_data"):
+                # Fast-path multi-record item catalog parsed via rules
+                ai_extracted = heuristic_eval["catalog_data"]
+                steps.append(StepStatus(
+                    step_id="fields_identified",
+                    name="Rule-Based Catalog & Multi-Record Extraction",
+                    status="completed",
+                    message=f"Extracted {len(ai_extracted.get('records', []))} structured items/records across {len(ai_extracted.get('columns', []))} columns using Rule-Based Parser. LLM bypassed."
+                ))
+            elif heuristic_eval.get("can_bypass_llm", False):
+                # High-confidence single-record heuristic extraction: bypass LLM
                 used_heuristic_fast_path = True
                 steps.append(StepStatus(
                     step_id="fields_identified",
