@@ -67,21 +67,101 @@ HEADER_STOPWORDS = {
 
 def extract_unstructured_records(raw_text: str) -> Optional[Dict[str, Any]]:
     """
-    Identifies if unstructured text contains a multi-record catalog, numbered items list,
-    or bulleted inventory/transactions, and extracts clean structured tabular records.
+    Identifies if unstructured text contains a multi-record dataset (Customers, Products, Stores, Orders)
+    and extracts clean structured tabular records dynamically categorized into the correct domain schema.
     """
     if not raw_text or len(raw_text.strip()) < 20:
         return None
 
-    # 1. Numbered items format: 1. Item ..., 2. Item ..., 3. Item ...
+    # Numbered items format: 1. Item ..., 2. Item ..., 3. Item ...
     item_matches = re.findall(r"(?:^|\n)\s*(\d+)[\.\)]\s+([^\n]+(?:\n(?!\s*\d+[\.\)]\s+)[^\n]+)*)", raw_text.strip())
     
-    if len(item_matches) >= 2:
+    if len(item_matches) < 2:
+        return None
+
+    full_sample = " ".join([m[1] for m in item_matches[:6]]).lower()
+
+    # 1. Domain Detection
+    cust_keywords = ["customer", "account", "profile", "loyalty", "lives in", "resides in", "registered", "member", "shopper", "tier", "@", "shopper", "client"]
+    prod_keywords = ["sku", "upc", "item code", "sells for", "retailing at", "retail is", "priced at", "wholesale", "warranty", "specs", "stock available", "oz", "fl oz", "bottle", "loaf"]
+    store_keywords = ["store", "branch", "outlet", "square feet", "manager", "store location", "supermarket"]
+    order_keywords = ["order id", "invoice no", "total paid", "payment method", "ordered on"]
+
+    cust_score = sum(1 for k in cust_keywords if k in full_sample)
+    prod_score = sum(1 for k in prod_keywords if k in full_sample)
+    store_score = sum(1 for k in store_keywords if k in full_sample)
+    order_score = sum(1 for k in order_keywords if k in full_sample)
+
+    # ------------------ CASE 1: CUSTOMER DATASET ------------------
+    if cust_score > prod_score and cust_score >= 3:
+        records = []
+        for num, item_body in item_matches:
+            line = " ".join([l.strip() for l in item_body.split("\n") if l.strip()])
+            
+            # Email
+            em = re.search(r"[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}", line)
+            email = em.group(0) if em else None
+            
+            # Phone
+            ph = re.search(r"(?:\+?\d{1,3}[-.\s])?\(?\d{2,5}\)?[-.\s]\d{3,5}[-.\s]?\d{3,5}", line)
+            phone = ph.group(0) if ph else None
+            
+            # Customer ID / Account
+            id_m = re.search(r"#([A-Za-z0-9\-_]{3,20})|(?:\b(?:Profile ID|Account No|Account ID|Loyalty|Member|Customer ID|User ID)\s*[:=\-#]?\s*([A-Za-z0-9\-_]{3,20}))", line, re.IGNORECASE)
+            if id_m:
+                cust_id = (id_m.group(1) or id_m.group(2)).strip()
+            else:
+                cust_id = f"CUST-{int(num):03d}"
+            
+            # Name
+            name = None
+            name_m1 = re.search(r"belongs to ([A-Z][a-zA-Z\.\']+(?:\s+[A-Z][a-zA-Z\.\']+){1,2})", line)
+            if name_m1:
+                name = name_m1.group(1).strip()
+            if not name:
+                name_m2 = re.search(r"(?:^|:\s*|for\s+|Customer\s*#[A-Za-z0-9\-]+:\s*|Account\s*#[A-Za-z0-9\-]+:\s*|Member\s*#[A-Za-z0-9\-]+:\s*)([A-Z][a-zA-Z\.\']+(?:\s+[A-Z][a-zA-Z\.\']+){1,2})(?:\s*[\(\,]|\s+is|\s+from|\s+registered|\s+resides|\s+lives)", line)
+                if name_m2:
+                    name = name_m2.group(1).strip()
+            if not name:
+                words = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)\b", line)
+                name = words[0] if words else f"Customer {num}"
+
+            # Location / City
+            loc_m = re.search(r"(?:lives in|located in|resides in|from|based in)\s+([A-Za-z\s,\.]+?)(?:\.|\(|\;|$|who|she|he)", line, re.IGNORECASE)
+            location = loc_m.group(1).strip().rstrip(",.") if loc_m else None
+            if not location:
+                city_cand = re.search(r"\b(Chicago|New York|Dublin|Bengaluru|Bangalore|Seattle|Frankfurt|Toronto|Dubai|London|Atlanta|San Francisco|Austin|Boston|Paris|Berlin|Tokyo|Sydney)(?:,\s*[A-Za-z\s]+)?\b", line, re.IGNORECASE)
+                if city_cand:
+                    location = city_cand.group(0).strip()
+            
+            # Loyalty Tier
+            tier_m = re.search(r"(Platinum|Gold|Silver|Bronze|VIP|Diamond)", line, re.IGNORECASE)
+            tier = tier_m.group(1).capitalize() if tier_m else "Standard"
+
+            records.append({
+                "customer_id": cust_id,
+                "customer_name": name,
+                "email": email,
+                "phone": phone,
+                "city_location": location,
+                "loyalty_tier": tier,
+                "profile_summary": line[:120] + ("..." if len(line) > 120 else "")
+            })
+
+        return {
+            "data_type": "records",
+            "entity_domain": "CUSTOMER",
+            "columns": ["customer_id", "customer_name", "email", "phone", "city_location", "loyalty_tier", "profile_summary"],
+            "records": records
+        }
+
+    # ------------------ CASE 2: PRODUCT DATASET ------------------
+    elif prod_score >= 2 or ("sku" in full_sample or "price" in full_sample or "$" in full_sample or "sells for" in full_sample):
         records = []
         for num, item_body in item_matches:
             item_text = " ".join([line.strip() for line in item_body.split("\n") if line.strip()])
             
-            # Extract product name (text before first parentheses or pricing keywords)
+            # Extract product name
             name_match = re.match(r"^([^\(\,\.]+?)(?:\s*[\(\,]\s*(?:SKU|UPC|Item|Model|Item code|\d+|\$)|sells for|Selling at|Retailing at|Priced at|Retails|Sold for)", item_text, re.IGNORECASE)
             if name_match:
                 product_name = name_match.group(1).strip()
@@ -128,13 +208,13 @@ def extract_unstructured_records(raw_text: str) -> Optional[Dict[str, Any]]:
                 "description": item_text[:140] + ("..." if len(item_text) > 140 else "")
             })
 
-        if len(records) >= 2:
-            cols = ["item_number", "product_name", "sku", "category", "unit_price", "stock_quantity", "description"]
-            return {
-                "data_type": "records",
-                "columns": cols,
-                "records": records
-            }
+        cols = ["item_number", "product_name", "sku", "category", "unit_price", "stock_quantity", "description"]
+        return {
+            "data_type": "records",
+            "entity_domain": "ITEM",
+            "columns": cols,
+            "records": records
+        }
 
     return None
 
@@ -142,7 +222,7 @@ def extract_unstructured_records(raw_text: str) -> Optional[Dict[str, Any]]:
 def identify_fields(raw_text: str) -> Dict[str, Any]:
     """
     Identifies common structured entities from unstructured raw text using regex,
-    rules, and keyword heuristics.
+    rules, and keyword heuristics for single-document records.
     """
     if not raw_text:
         return {}
@@ -228,7 +308,6 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
                 extracted_raw["amount"] = amt_m.group(1)
 
     # 3. Second pass: Fallbacks only if explicit labels didn't find the entity
-    # Fallback Phone (only with international prefix, parentheses, or dashes - not raw barcodes)
     if extracted_raw["phone"] is None:
         for line in lines:
             if any(k in line.upper() for k in ["UPC", "BARCODE", "SKU", "ITEM CODE", "ISBN"]):
@@ -238,12 +317,12 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
                 extracted_raw["phone"] = pm.group(0).strip()
                 break
 
-    # Fallback Name heuristics: first line if looks like a person's name (2-4 capitalized words, no punctuation/numbers)
+    # Fallback Name heuristics
     if extracted_raw["name"] is None and len(lines) > 0:
         for line in lines[:3]:
             if line.upper() in HEADER_STOPWORDS:
                 continue
-            if any(sw in line.upper() for sw in ["PROFILE", "INVOICE", "RECEIPT", "STATEMENT", "REPORT", "SUMMARY", "ITEM", "PRODUCT"]):
+            if any(sw in line.upper() for sw in ["PROFILE", "INVOICE", "RECEIPT", "STATEMENT", "REPORT", "SUMMARY", "ITEM", "PRODUCT", "CUSTOMER"]):
                 continue
             if re.match(r"^[A-Z][a-zA-Z\.\']+(\s+[A-Z][a-zA-Z\.\']+){1,3}$", line) and len(line) < 35:
                 extracted_raw["name"] = line
@@ -260,7 +339,7 @@ def evaluate_heuristic_confidence(extracted_raw: Dict[str, Any], raw_text: str) 
     if not raw_text or not extracted_raw:
         return {"confidence_score": 0.0, "can_bypass_llm": False, "matched_fields_count": 0, "is_multi_record": False, "reasons": ["Empty input"]}
 
-    # Check multi-record catalog first
+    # Check multi-record catalog/customer records first
     catalog_res = extract_unstructured_records(raw_text)
     if catalog_res and len(catalog_res.get("records", [])) >= 2:
         return {
@@ -269,7 +348,7 @@ def evaluate_heuristic_confidence(extracted_raw: Dict[str, Any], raw_text: str) 
             "is_multi_record": True,
             "catalog_data": catalog_res,
             "matched_fields_count": len(catalog_res["records"]),
-            "reasons": [f"Extracted {len(catalog_res['records'])} structured catalog records using rule-based item parser"]
+            "reasons": [f"Extracted {len(catalog_res['records'])} structured {catalog_res.get('entity_domain', 'dataset')} records using rule-based parser"]
         }
 
     lines = [l.strip() for l in raw_text.split("\n") if l.strip()]
