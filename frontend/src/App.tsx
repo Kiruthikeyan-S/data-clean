@@ -4,7 +4,7 @@ import { UploadPage } from './pages/UploadPage';
 import { ProcessingPage } from './pages/ProcessingPage';
 import { ResultPage } from './pages/ResultPage';
 import { ErrorMessage } from './components/ErrorMessage';
-import { ProcessResponse, StepStatus, UnifiedWarehouseView, RetailIntelligenceReport } from './types';
+import { ProcessResponse, StepStatus } from './types';
 import { processFile, processBatchFiles } from './services/api';
 
 export const App: React.FC = () => {
@@ -14,8 +14,6 @@ export const App: React.FC = () => {
   const [steps, setSteps] = useState<StepStatus[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [results, setResults] = useState<ProcessResponse[]>([]);
-  const [unifiedWarehouse, setUnifiedWarehouse] = useState<UnifiedWarehouseView | undefined>(undefined);
-  const [batchIntelligence, setBatchIntelligence] = useState<RetailIntelligenceReport | undefined>(undefined);
   const [activeResultIndex, setActiveResultIndex] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -28,8 +26,6 @@ export const App: React.FC = () => {
     setSteps([]);
     setCurrentStepIndex(0);
     setActiveResultIndex(0);
-    setUnifiedWarehouse(undefined);
-    setBatchIntelligence(undefined);
 
     const stageTimer1 = setTimeout(() => setCurrentStepIndex(1), 250);
     const stageTimer2 = setTimeout(() => setCurrentStepIndex(2), 500);
@@ -55,12 +51,6 @@ export const App: React.FC = () => {
           setSteps(batchResponse.results[0].steps);
           setCurrentStepIndex(batchResponse.results[0].steps.length);
           setResults(batchResponse.results);
-          if (batchResponse.unified_warehouse) {
-            setUnifiedWarehouse(batchResponse.unified_warehouse);
-          }
-          if (batchResponse.batch_intelligence) {
-            setBatchIntelligence(batchResponse.batch_intelligence);
-          }
         }
       }
 
@@ -81,8 +71,6 @@ export const App: React.FC = () => {
   const handleReset = () => {
     setResults([]);
     setActiveResultIndex(0);
-    setUnifiedWarehouse(undefined);
-    setBatchIntelligence(undefined);
     setErrorMessage(null);
     setCurrentPage('upload');
   };
@@ -117,8 +105,6 @@ export const App: React.FC = () => {
           <ResultPage
             results={results}
             activeIndex={activeResultIndex}
-            unifiedWarehouse={unifiedWarehouse}
-            batchIntelligence={batchIntelligence}
             onSelectIndex={(idx) => setActiveResultIndex(idx)}
             onReset={handleReset}
           />
