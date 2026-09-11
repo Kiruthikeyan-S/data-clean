@@ -80,6 +80,125 @@ export interface ProcessSummary {
   classification: string;
 }
 
+// ----------------- Retail Intelligence Types ----------------- //
+
+export interface ExecutiveKPIs {
+  total_revenue: number;
+  total_units_sold: number;
+  total_transactions: number;
+  avg_order_value: number;
+  unique_customers?: number;
+  unique_products?: number;
+}
+
+export interface ProductMetric {
+  product_name: string;
+  units_sold: number;
+  revenue: number;
+  category?: string;
+  stock_level?: number;
+  revenue_share_pct?: number;
+}
+
+export interface DeadStockItem {
+  product_name: string;
+  stock_quantity: number;
+  days_inactive: string;
+  recommendation: string;
+}
+
+export interface TrendingProductItem {
+  product_name: string;
+  velocity: string;
+  growth_rate_pct: number;
+  revenue: number;
+  recommendation: string;
+}
+
+export interface CategoryBreakdownItem {
+  category: string;
+  revenue: number;
+  units_sold: number;
+}
+
+export interface ProductAnalytics {
+  top_selling: ProductMetric[];
+  least_selling: ProductMetric[];
+  dead_stock: DeadStockItem[];
+  trending_products: TrendingProductItem[];
+  category_breakdown: CategoryBreakdownItem[];
+}
+
+export interface CustomerSegmentSummary {
+  segment_name: string;
+  customer_count: number;
+  percentage: number;
+  avg_spend: number;
+  actionable_strategy: string;
+  badge_color: string;
+}
+
+export interface CustomerRFMItem {
+  customer_id: string;
+  segment: string;
+  orders_count: number;
+  total_spend: number;
+  last_active_days_ago: number;
+}
+
+export interface CustomerIntelligence {
+  segments_summary: CustomerSegmentSummary[];
+  top_customers: CustomerRFMItem[];
+  total_profiled_customers: number;
+}
+
+export interface MarketBasketPair {
+  item_a: string;
+  item_b: string;
+  co_occurrence_count: number;
+  confidence_pct: number;
+  recommendation: string;
+}
+
+export interface MarketBasketAnalysis {
+  pairs: MarketBasketPair[];
+  total_basket_transactions: number;
+}
+
+export interface DemandForecastItem {
+  product_name: string;
+  historical_units_sold: number;
+  current_stock?: number;
+  projected_demand_7d: number;
+  projected_demand_30d: number;
+  daily_run_rate: number;
+  inventory_status: string;
+  actionable_advice: string;
+  badge_color: string;
+}
+
+export interface DemandForecasting {
+  forecasts: DemandForecastItem[];
+  model_used: string;
+}
+
+export interface RetailIntelligenceReport {
+  kpis: ExecutiveKPIs;
+  product_analytics: ProductAnalytics;
+  customer_intelligence: CustomerIntelligence;
+  basket_analysis: MarketBasketAnalysis;
+  demand_forecasting: DemandForecasting;
+  entity_classification?: Record<string, any>;
+}
+
+export interface UnifiedWarehouseView {
+  title: string;
+  source_tables: string[];
+  total_records: number;
+  columns: string[];
+  records: Array<Record<string, any>>;
+}
+
 export interface ProcessResponse {
   id: string;
   filename: string;
@@ -95,6 +214,8 @@ export interface ProcessResponse {
   columns?: string[];
   raw_text?: string;
   errors?: ValidationErrorItem[];
+  entity_classification?: Record<string, any>;
+  retail_intelligence?: RetailIntelligenceReport;
 }
 
 export interface BatchProcessResponse {
@@ -102,6 +223,8 @@ export interface BatchProcessResponse {
   total_files: number;
   results: ProcessResponse[];
   processing_time_ms: number;
+  unified_warehouse?: UnifiedWarehouseView;
+  batch_intelligence?: RetailIntelligenceReport;
 }
 
 export interface HistoryItem {

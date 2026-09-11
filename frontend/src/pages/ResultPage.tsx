@@ -1,15 +1,18 @@
 import React from 'react';
-import { ArrowLeft, AlertTriangle, Files, CheckCircle2 } from 'lucide-react';
-import { ProcessResponse } from '../types';
+import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Sparkles } from 'lucide-react';
+import { ProcessResponse, UnifiedWarehouseView, RetailIntelligenceReport } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
 import { DataQualityInspector } from '../components/DataQualityInspector';
 import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible';
 import { ProcessDetailsCollapsible } from '../components/ProcessDetailsCollapsible';
+import { RetailIntelligenceDashboard } from '../components/RetailIntelligenceDashboard';
 
 interface ResultPageProps {
   results: ProcessResponse[];
   activeIndex: number;
+  unifiedWarehouse?: UnifiedWarehouseView;
+  batchIntelligence?: RetailIntelligenceReport;
   onSelectIndex: (index: number) => void;
   onReset: () => void;
 }
@@ -17,11 +20,16 @@ interface ResultPageProps {
 export const ResultPage: React.FC<ResultPageProps> = ({
   results,
   activeIndex,
+  unifiedWarehouse,
+  batchIntelligence,
   onSelectIndex,
   onReset
 }) => {
   const currentResult = results[activeIndex] || results[0];
   if (!currentResult) return null;
+
+  // Use batch intelligence if available or current file intelligence
+  const effectiveIntelligence = currentResult.retail_intelligence || batchIntelligence;
 
   return (
     <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-[1700px] mx-auto space-y-6 w-full">
@@ -49,10 +57,18 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                 Batch Processed Datasets ({results.length} Files Cleaned)
               </span>
             </div>
-            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" />
-              All Files Ready
-            </span>
+            <div className="flex items-center gap-2">
+              {unifiedWarehouse && (
+                <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Warehouse Unified
+                </span>
+              )}
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                All Ready
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
@@ -100,6 +116,14 @@ export const ResultPage: React.FC<ResultPageProps> = ({
             ))}
           </ul>
         </div>
+      )}
+
+      {/* Retail Business Intelligence & Demand Forecasting Dashboard */}
+      {(effectiveIntelligence || unifiedWarehouse) && (
+        <RetailIntelligenceDashboard
+          intelligence={effectiveIntelligence}
+          unifiedWarehouse={unifiedWarehouse}
+        />
       )}
 
       {/* 6-Dimension Interactive Data Quality Inspector */}
