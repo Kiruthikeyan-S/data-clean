@@ -58,7 +58,7 @@ export const RetailIntelligenceDashboard: React.FC<RetailIntelligenceDashboardPr
               )}
             </div>
             <p className="text-xs text-slate-300 mt-0.5">
-              Automated heuristics + AI extracted business insights, RFM customer tiers, and inventory demand predictions
+              Rule-based heuristics, entity classification, customer RFM tiers, and inventory demand forecasts
             </p>
           </div>
         </div>

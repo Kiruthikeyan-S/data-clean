@@ -266,9 +266,9 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 # Fallback to LLM / Vision Analyzer
                 steps.append(StepStatus(
                     step_id="fields_identified",
-                    name="AI & LLM Semantic Extraction",
+                    name="Semantic Document Extraction",
                     status="completed",
-                    message="Evaluating complex document layout and entity structure with AI engine"
+                    message="Analyzing document structure and extracting entity fields"
                 ))
                 ai_extracted = extract_fields_with_llm(cleaned_text)
 
@@ -371,7 +371,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     final_rows=len(records),
                     modifications_count=len(records) * len(cols),
                     change_highlights=[
-                        f"AI identified and extracted {len(records)} structured records across {len(cols)} columns",
+                        f"Extracted and structured {len(records)} records across {len(cols)} columns",
                         "Standardized dates to ISO 8601 and numbers to clean numeric values"
                     ],
                     categories=structured_categories,
@@ -410,9 +410,9 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                             step_id="data_normalized",
                             name="Data normalized",
                             status="completed",
-                            message="Standardized values, dates to ISO 8601, names and amounts via AI engine"
+                            message="Standardized values, dates to ISO 8601, names and amounts"
                         ))
-                        highlights.append(f"AI extracted and standardized {len(p_fields)} structured entity fields")
+                        highlights.append(f"Extracted and standardized {len(p_fields)} structured entity fields")
                     else:
                         # Fallback to heuristic
                         mapped = map_to_schema(heuristic_raw)

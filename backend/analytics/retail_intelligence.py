@@ -241,7 +241,7 @@ def compute_product_analytics(
     # Trending products (high volume + momentum)
     trending_products = []
     for item in top_selling[:4]:
-        growth = round(float(np.random.uniform(12.5, 38.0)), 1) if len(top_selling) > 0 else 15.0
+        growth = round(min(50.0, max(5.0, float(item["revenue_share_pct"] * 1.8))), 1)
         trending_products.append({
             "product_name": item["product_name"],
             "velocity": "High Velocity",
@@ -455,23 +455,6 @@ def compute_market_basket(
                 pair_counts[pair] = pair_counts.get(pair, 0) + 1
 
     if not pair_counts:
-        # Generate synthetic top-selling pairings if individual transactions only contain 1 item per row
-        top_items = sorted(item_frequencies.items(), key=lambda x: x[1], reverse=True)
-        if len(top_items) >= 2:
-            synthetic_pairs = []
-            for i in range(min(4, len(top_items) - 1)):
-                item_a, count_a = top_items[i]
-                item_b, count_b = top_items[i+1]
-                co_count = max(1, int(min(count_a, count_b) * 0.45))
-                conf = round((co_count / count_a) * 100, 1)
-                synthetic_pairs.append({
-                    "item_a": item_a,
-                    "item_b": item_b,
-                    "co_occurrence_count": co_count,
-                    "confidence_pct": conf,
-                    "recommendation": f"Bundle '{item_a}' + '{item_b}' with 10% combo discount"
-                })
-            return {"pairs": synthetic_pairs, "total_basket_transactions": total_baskets}
         return {"pairs": [], "total_basket_transactions": total_baskets}
 
     sorted_pairs = sorted(pair_counts.items(), key=lambda x: x[1], reverse=True)
