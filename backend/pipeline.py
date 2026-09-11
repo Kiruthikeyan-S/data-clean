@@ -1,8 +1,6 @@
 import uuid
 import time
 from typing import Dict, Any, List, Optional
-import pandas as pd
-
 from backend.models.schemas import (
     ProcessResponse,
     StepStatus,
@@ -10,18 +8,15 @@ from backend.models.schemas import (
     ProcessedField, 
     ValidationErrorItem,
     CleansingReport,
-    CleansingCategory,
-    RetailIntelligenceReport
+    CleansingCategory
 )
 from backend.utils.file_detector import detect_file_type, classify_data_type
 from backend.extractors import extract_data
 from backend.cleaning.text_cleaner import clean_text_data
 from backend.cleaning.structured_cleaner import read_and_clean_structured_file
-from backend.extraction.field_extractor import identify_fields, map_to_schema, evaluate_heuristic_confidence
+from backend.extraction.field_extractor import identify_fields, map_to_schema
 from backend.extraction.ai_extractor import extract_fields_with_llm
 from backend.validation.validator import validate_unstructured_fields, validate_structured_records
-from backend.analytics.entity_classifier import classify_dataset_entities
-from backend.analytics.retail_intelligence import generate_retail_intelligence
 
 # In-memory storage for results and exports
 RESULTS_STORE: Dict[str, ProcessResponse] = {}
@@ -31,14 +26,10 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     Full DataFlow Processing Pipeline:
     1. Detect File Type
     2. Classify Data Type (Structured vs Unstructured)
-    3. Branch into appropriate extraction & cleaning pipelines:
-       - Structured: Pandas / NLP Deduplication, Missing Value Imputation, Normalization
-       - Unstructured: Heuristic-First Confidence Gate (Regex + Rule Engine) -> LLM fallback
-    4. Categorize Retail Entity Schema (Store, Item, Customer, Transaction)
-    5. Generate Retail Business Intelligence & Demand Forecast
-    6. Normalize & Map to Schema
-    7. Validate using Pydantic
-    8. Return ProcessResponse
+    3. Branch into appropriate extraction & cleaning pipelines
+    4. Normalize & Map to Schema
+    5. Validate using Pydantic
+    6. Return ProcessResponse
     """
     start_time = time.time()
     task_id = str(uuid.uuid4())
@@ -78,8 +69,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     columns: Optional[List[str]] = None
     errors: List[ValidationErrorItem] = []
     cleansing_report: Optional[CleansingReport] = None
-    entity_classification: Optional[Dict[str, Any]] = None
-    retail_intelligence: Optional[RetailIntelligenceReport] = None
     status = "completed"
 
     if classification == "structured":
@@ -184,13 +173,12 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 message="Standardized column names and cell formats"
             ))
 
-            # Step 6: Entity domain classification
-            entity_classification = classify_dataset_entities(cols)
+            # Step 6: Fields identified (schema headers)
             steps.append(StepStatus(
                 step_id="fields_identified",
-                name="Entity & Schema identified",
+                name="Fields identified",
                 status="completed",
-                message=f"Identified {entity_classification['primary_entity']} schema across {len(cols)} columns"
+                message=f"Verified {len(cols)} columns in dataset"
             ))
 
             # Step 7: Validation
@@ -205,13 +193,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
 
             structured_data = records
             columns = cols
-
-            # Step 8: Retail Business Intelligence & Demand Forecasting
-            if len(records) > 0:
-                df_structured = pd.DataFrame(records)
-                intel_raw = generate_retail_intelligence(df_structured, entity_classification)
-                if intel_raw:
-                    retail_intelligence = RetailIntelligenceReport(**intel_raw)
 
         except Exception as e:
             status = "failed"
@@ -246,50 +227,24 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 message="Normalized unicode, stripped control characters, whitespace and OCR artifacts"
             ))
 
-            # Step 6: Heuristic-First Extraction & LLM Confidence Gate
-            heuristic_raw = identify_fields(cleaned_text)
-            heuristic_eval = evaluate_heuristic_confidence(heuristic_raw, cleaned_text)
-            
-            ai_extracted = None
-            used_heuristic_fast_path = False
-
-            if heuristic_eval.get("is_multi_record", False) and heuristic_eval.get("catalog_data"):
-                # Fast-path multi-record item catalog parsed via rules
-                ai_extracted = heuristic_eval["catalog_data"]
-                steps.append(StepStatus(
-                    step_id="fields_identified",
-                    name="Rule-Based Catalog & Multi-Record Extraction",
-                    status="completed",
-                    message=f"Extracted {len(ai_extracted.get('records', []))} structured items/records across {len(ai_extracted.get('columns', []))} columns using Rule-Based Parser. LLM bypassed."
-                ))
-            elif heuristic_eval.get("can_bypass_llm", False):
-                # High-confidence single-record heuristic extraction: bypass LLM
-                used_heuristic_fast_path = True
-                steps.append(StepStatus(
-                    step_id="fields_identified",
-                    name="Rule-Based Heuristic Extraction (Pre-LLM Gate)",
-                    status="completed",
-                    message=f"Extracted {heuristic_eval['matched_fields_count']} fields with {int(heuristic_eval['confidence_score']*100)}% confidence using Rule-Based Regex. LLM bypassed to minimize latency."
-                ))
-            else:
-                # Fallback to LLM / Vision Analyzer
-                steps.append(StepStatus(
-                    step_id="fields_identified",
-                    name="Semantic Document Extraction",
-                    status="completed",
-                    message="Analyzing document structure and extracting entity fields"
-                ))
-                ai_extracted = extract_fields_with_llm(cleaned_text)
-
+            # Step 6: Identify Fields & Normalize (AI LLM with Rule-based fallback)
+            ai_extracted = extract_fields_with_llm(cleaned_text)
             highlights = [
                 "Normalized Unicode NFKC encoding and line endings",
                 "Removed invisible control characters & extra whitespace"
             ]
-
-            # Case A: Multi-Record Tabular Dataset extracted from text
+            
+            # Case A: Multi-Record Tabular Dataset extracted from text (e.g. employee list, transactions, logs)
             if ai_extracted and isinstance(ai_extracted, dict) and ai_extracted.get("data_type") == "records" and len(ai_extracted.get("records", [])) > 0:
                 raw_records = ai_extracted.get("records", [])
                 cols = ai_extracted.get("columns") or list(raw_records[0].keys())
+
+                steps.append(StepStatus(
+                    step_id="fields_identified",
+                    name="Fields & Schema identified",
+                    status="completed",
+                    message=f"Identified multi-record tabular dataset with {len(cols)} columns ({', '.join(cols[:4])}...)"
+                ))
 
                 records, errors = validate_structured_records(raw_records, cols)
 
@@ -323,6 +278,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 structured_data = records
                 columns = cols
 
+                import pandas as pd
                 from backend.cleaning.data_auditor import audit_structured_data
                 df_audit = pd.DataFrame(records)
                 struct_audit = audit_structured_data(df_audit, df_audit)
@@ -380,59 +336,54 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     final_rows=len(records),
                     modifications_count=len(records) * len(cols),
                     change_highlights=[
-                        f"Extracted and structured {len(records)} records across {len(cols)} columns",
+                        f"AI identified and extracted {len(records)} structured records across {len(cols)} columns",
                         "Standardized dates to ISO 8601 and numbers to clean numeric values"
                     ],
                     categories=structured_categories,
                     quality_audit=struct_audit
                 )
 
-                # Retail Intelligence on extracted multi-record dataset
-                entity_classification = classify_dataset_entities(cols)
-                intel_raw = generate_retail_intelligence(df_audit, entity_classification)
-                if intel_raw:
-                    retail_intelligence = RetailIntelligenceReport(**intel_raw)
-
             # Case B: Single-Record Document or Key-Value Fields
             else:
-                p_fields = []
-                if used_heuristic_fast_path:
-                    mapped = map_to_schema(heuristic_raw)
+                raw_fields = None
+                if ai_extracted and isinstance(ai_extracted, dict) and "fields" in ai_extracted:
+                    raw_fields = ai_extracted.get("fields")
+                elif ai_extracted and isinstance(ai_extracted, list):
+                    raw_fields = ai_extracted
+
+                if raw_fields and len(raw_fields) > 0:
+                    steps.append(StepStatus(
+                        step_id="fields_identified",
+                        name="Fields identified",
+                        status="completed",
+                        message="Identified entities and understood document content using AI/LLM"
+                    ))
+                    p_fields = [ProcessedField(**f) for f in raw_fields]
+                    steps.append(StepStatus(
+                        step_id="data_normalized",
+                        name="Data normalized",
+                        status="completed",
+                        message="Standardized values, dates to ISO 8601, names and amounts via AI engine"
+                    ))
+                    highlights.append(f"AI extracted and standardized {len(p_fields)} structured entity fields")
+                else:
+                    # Rule-based fallback
+                    extracted_raw = identify_fields(cleaned_text)
+                    steps.append(StepStatus(
+                        step_id="fields_identified",
+                        name="Fields identified",
+                        status="completed",
+                        message="Extracted entity candidates using rule and regex engine"
+                    ))
+                    mapped = map_to_schema(extracted_raw)
                     p_fields = [ProcessedField(**f) for f in mapped]
                     steps.append(StepStatus(
                         step_id="data_normalized",
                         name="Data normalized",
                         status="completed",
-                        message="Standardized dates to ISO 8601, names to Title Case, phone numbers, and amounts"
+                        message="Standardized dates to ISO 8601, names to Title Case, phone numbers and emails"
                     ))
-                    highlights.append(f"Heuristically extracted and standardized {len(p_fields)} entity fields")
-                else:
-                    raw_fields = None
-                    if ai_extracted and isinstance(ai_extracted, dict) and "fields" in ai_extracted:
-                        raw_fields = ai_extracted.get("fields")
-                    elif ai_extracted and isinstance(ai_extracted, list):
-                        raw_fields = ai_extracted
-
-                    if raw_fields and len(raw_fields) > 0:
-                        p_fields = [ProcessedField(**f) for f in raw_fields]
-                        steps.append(StepStatus(
-                            step_id="data_normalized",
-                            name="Data normalized",
-                            status="completed",
-                            message="Standardized values, dates to ISO 8601, names and amounts"
-                        ))
-                        highlights.append(f"Extracted and standardized {len(p_fields)} structured entity fields")
-                    else:
-                        # Fallback to heuristic
-                        mapped = map_to_schema(heuristic_raw)
-                        p_fields = [ProcessedField(**f) for f in mapped]
-                        steps.append(StepStatus(
-                            step_id="data_normalized",
-                            name="Data normalized",
-                            status="completed",
-                            message="Standardized dates to ISO 8601, names to Title Case, phone numbers, and amounts"
-                        ))
-                        highlights.append(f"Extracted and mapped {len([f for f in p_fields if f.value is not None])} entity fields")
+                    highlights.append(f"Extracted and mapped {len([f for f in p_fields if f.value is not None])} entity fields")
 
                 # Validate Data
                 validated_fields, validation_errors = validate_unstructured_fields(p_fields)
@@ -519,10 +470,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     message=f"Validation completed ({len(errors)} warnings)" if errors else "All extracted fields conform to target schema"
                 ))
 
-                # Single-document entity classification
-                entity_keys = [f.key for f in validated_fields if f.value is not None]
-                entity_classification = classify_dataset_entities(entity_keys)
-
         except Exception as e:
             status = "failed"
             steps.append(StepStatus(
@@ -560,9 +507,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         structured_data=structured_data,
         columns=columns,
         raw_text=raw_text,
-        errors=errors if errors else None,
-        entity_classification=entity_classification,
-        retail_intelligence=retail_intelligence
+        errors=errors if errors else None
     )
 
     # Store in memory for export retrieval
