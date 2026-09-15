@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import httpx
 from typing import Dict, Any, List, Optional
 from groq import Groq
@@ -18,12 +19,64 @@ GROQ_MODELS = [
     "qwen/qwen3.8-27b"
 ]
 
+
+def extract_batch_records(
+    client: Groq,
+    batch_text: str,
+    expected_count: int,
+    models: List[str]
+) -> Optional[List[Dict[str, Any]]]:
+    """Helper to extract tabular records for a specific chunk/batch of items."""
+    system_instruction = (
+        "You are an expert Data Extraction and Schema Normalization engine.\n"
+        "Extract every single item/record from the provided text into structured tabular records JSON.\n"
+        "Standardization rules:\n"
+        "- Dates: Format as ISO 8601 (YYYY-MM-DD or YYYY-MM)\n"
+        "- Names & Roles: Format in Title Case\n"
+        "- Numbers & Salaries: Clean numeric values without currency symbols ($/₹/€/£/INR/USD) or commas\n"
+        "- Currencies & Periods: Normalized into separate standardized columns (e.g. currency: 'USD', period: 'Year' or 'Hour')\n\n"
+        "Return JSON format:\n"
+        "{\n"
+        '  "data_type": "records",\n'
+        '  "columns": ["name", "job_role", "location", "joining_date", "manager", "salary", "currency", "period"],\n'
+        '  "records": [\n'
+        '    {"name": "...", "job_role": "...", "location": "...", "joining_date": "YYYY-MM-DD", "manager": "...", "salary": 145000, "currency": "USD", "period": "Year"}\n'
+        "  ]\n"
+        "}\n\n"
+        f"CRITICAL: You MUST extract ALL {expected_count} individual items present in the text into 'records'. "
+        f"Return exactly {expected_count} records without skipping, omitting, or truncating any."
+    )
+
+    for model_name in models:
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": f"Extract all {expected_count} records from this batch:\n\n{batch_text}"}
+                ],
+                response_format={"type": "json_object"},
+                max_tokens=8192,
+                temperature=0.1
+            )
+            content = response.choices[0].message.content
+            parsed = json.loads(content)
+            records = parsed.get("records")
+            if records and isinstance(records, list) and len(records) > 0:
+                return [r for r in records if isinstance(r, dict)]
+        except Exception as err:
+            print(f"Batch extraction attempt with {model_name} failed: {err}")
+            continue
+
+    return None
+
+
 def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """
     Uses Groq LLM to understand document semantics and schema structure.
     Intelligently determines if the input is:
     1. Multi-Record Dataset (e.g. employee list, transactions, catalog items, tabular text, rosters)
-       -> Extracts clean tabular records with dynamic standardized column headers.
+       -> Chunks large datasets into batches of ~10 items to extract 100% of all records without truncation.
     2. Single-Entity Document (e.g. individual invoice, certificate, single receipt, letter)
        -> Extracts standardized key-value fields.
     """
@@ -32,9 +85,64 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
         return None
 
     try:
-        http_client = httpx.Client(verify=False, timeout=25.0)
+        http_client = httpx.Client(verify=False, timeout=35.0)
         client = Groq(api_key=key_to_use, http_client=http_client)
 
+        # ─── CASE 1: Detect Multi-Record List / Paragraph Dataset ───
+        # Check for numbered items (e.g., "1. ", "2. ", "[1] "), bulleted lists ("- ", "* "), or double newline paragraphs
+        entries = [e.strip() for e in re.split(r'\n(?=\s*(?:\d+[\.\)]|\-|\*|\[\d+\]|\#\d+)\s+)', raw_text) if e.strip()]
+        if len(entries) < 6:
+            para_entries = [p.strip() for p in re.split(r'\n\s*\n+', raw_text) if p.strip()]
+            if len(para_entries) >= 6:
+                entries = para_entries
+
+        # If 6 or more distinct items/paragraphs detected -> Run batch chunk extraction to process ALL items
+        if len(entries) >= 6:
+            batch_size = 10
+            all_records: List[Dict[str, Any]] = []
+
+            for i in range(0, len(entries), batch_size):
+                batch = entries[i:i + batch_size]
+                batch_text = "\n".join(batch)
+                batch_recs = extract_batch_records(client, batch_text, len(batch), GROQ_MODELS)
+                if batch_recs:
+                    all_records.extend(batch_recs)
+
+            if all_records:
+                # Find all unique column keys in order of appearance
+                all_columns: List[str] = []
+                for r in all_records:
+                    for k in r.keys():
+                        if k not in all_columns:
+                            all_columns.append(k)
+
+                # Filter out columns that are 100% empty across all records
+                valid_columns = []
+                for col in all_columns:
+                    has_data = any(
+                        r.get(col) is not None
+                        and str(r.get(col)).strip() != ""
+                        and str(r.get(col)).strip().lower() not in ["null", "none", "n/a", "-", "nil", "nan", "undefined"]
+                        for r in all_records
+                    )
+                    if has_data:
+                        valid_columns.append(col)
+
+                if not valid_columns:
+                    valid_columns = all_columns
+
+                # Normalize each record to have uniform columns
+                final_records = []
+                for r in all_records:
+                    final_records.append({k: r.get(k) for k in valid_columns})
+
+                return {
+                    "data_type": "records",
+                    "columns": valid_columns,
+                    "records": final_records
+                }
+
+        # ─── CASE 2: Single-Record or Short Multi-Record Document ───
         system_instruction = (
             "You are an expert Data Extraction, Computer Vision Synthesis, and Schema Intelligence AI engine.\n"
             "Analyze the unstructured document text or computer vision scene analysis and determine its structural category:\n\n"
@@ -46,6 +154,7 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
             "- Names & Roles: Format in Title Case\n"
             "- Numbers & Salaries: Clean numbers without currency symbols ($/₹/€/£/INR/USD) or commas\n"
             "- Currencies & Periods: Normalized into separate standardized columns (e.g. currency: 'USD', period: 'Year')\n"
+            "CRITICAL: You MUST extract ALL individual items/records described in the text into 'records'. Never truncate or sample.\n"
             "Return JSON:\n"
             "{\n"
             '  "data_type": "records",\n'
@@ -68,11 +177,11 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
             '    {"key": "main_item", "label": "Main Item", "value": "Burger", "raw_value": "Cheeseburger", "field_type": "text"},\n'
             '    {"key": "side_items", "label": "Side Items", "value": "French Fries", "raw_value": "French Fries", "field_type": "text"},\n'
             '    {"key": "category", "label": "Category", "value": "Fast Food", "raw_value": "Fast Food", "field_type": "text"}\n'
-            "  ]\n"
+            '  ]\n'
             "}"
         )
 
-        user_content = f"Extract and structure this document or visual image data. Return valid JSON:\n\n{raw_text[:12000]}"
+        user_content = f"Extract and structure this document or visual image data. Return valid JSON:\n\n{raw_text[:20000]}"
 
         for model_name in GROQ_MODELS:
             try:
@@ -83,27 +192,22 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                         {"role": "user", "content": user_content}
                     ],
                     response_format={"type": "json_object"},
+                    max_tokens=8192,
                     temperature=0.1
                 )
                 content = response.choices[0].message.content
                 parsed = json.loads(content)
-                
+
                 # Check for Multi-Record Dataset output
                 records = parsed.get("records")
                 if records and isinstance(records, list) and len(records) > 0:
-                    # Clean up column headers and records
                     columns = parsed.get("columns")
                     if not columns or not isinstance(columns, list):
                         columns = list(records[0].keys())
-                    
-                    # Ensure all records have dict structure
-                    sanitized_records = []
-                    for r in records:
-                        if isinstance(r, dict):
-                            sanitized_records.append(r)
+
+                    sanitized_records = [r for r in records if isinstance(r, dict)]
 
                     if sanitized_records:
-                        # Only keep columns that have genuine non-null data in at least one record
                         valid_columns = []
                         for col in columns:
                             has_data = any(
@@ -116,20 +220,9 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                                 valid_columns.append(col)
 
                         if not valid_columns:
-                            all_keys = list({k for r in sanitized_records for k in r.keys()})
-                            valid_columns = [
-                                k for k in all_keys if any(
-                                    r.get(k) is not None
-                                    and str(r.get(k)).strip() != ""
-                                    and str(r.get(k)).strip().lower() not in ["null", "none", "n/a", "-", "nil", "nan", "undefined"]
-                                    for r in sanitized_records
-                                )
-                            ]
+                            valid_columns = columns
 
-                        # Prune unwanted null keys from record dicts
-                        final_records = []
-                        for r in sanitized_records:
-                            final_records.append({k: r.get(k) for k in valid_columns})
+                        final_records = [{k: r.get(k) for k in valid_columns} for r in sanitized_records]
 
                         return {
                             "data_type": "records",
@@ -145,7 +238,6 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                         if isinstance(f, dict) and "key" in f:
                             val = f.get("value")
                             raw_val = f.get("raw_value", val)
-                            # Only include if actual non-null, non-empty data exists
                             if val is not None and str(val).strip() and str(val).strip().lower() not in ["null", "none", "n/a", "", "-"]:
                                 sanitized_fields.append({
                                     "key": str(f.get("key")),
