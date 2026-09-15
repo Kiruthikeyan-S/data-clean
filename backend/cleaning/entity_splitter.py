@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 from dataclasses import dataclass
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
-from backend.models import entity_schemas
 from backend.extraction.entity_classifier import EntityClassificationResult
 
 
