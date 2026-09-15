@@ -22,6 +22,7 @@ class EntityTable:
     deduplicated_rows: int  # rows after dedup
     duplicates_removed: int
     confidence: float  # from classifier
+    schema_mapping_report: Optional[List[Dict[str, Any]]] = None
 
 
 def deduplicate_entity(df: pd.DataFrame, entity_type: str) -> Tuple[pd.DataFrame, int]:
@@ -139,7 +140,7 @@ def split_mixed_dataframe(df: pd.DataFrame, classification: EntityClassification
         from backend.normalization.schema_mapper import map_dataframe_to_canonical_schema
         from backend.normalization.value_standardizer import standardize_canonical_values
         
-        mapped_df, _, _ = map_dataframe_to_canonical_schema(entity_df, entity_lower)
+        mapped_df, schema_report, _ = map_dataframe_to_canonical_schema(entity_df, entity_lower)
         
         # 2. Apply Canonical Value Standardization (Dates to ISO, Booleans, Cities, IDs, Numbers)
         std_df, _, _ = standardize_canonical_values(mapped_df, entity_lower)
@@ -169,7 +170,8 @@ def split_mixed_dataframe(df: pd.DataFrame, classification: EntityClassification
             total_rows=total_rows,
             deduplicated_rows=len(deduped_df),
             duplicates_removed=duplicates_removed,
-            confidence=confidence
+            confidence=confidence,
+            schema_mapping_report=schema_report
         )
         entity_tables.append(table)
         

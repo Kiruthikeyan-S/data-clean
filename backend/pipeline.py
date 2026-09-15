@@ -11,17 +11,22 @@ from backend.models.schemas import (
     ValidationErrorItem,
     CleansingReport,
     CleansingCategory,
-    EntityClassificationInfo
+    EntityClassificationInfo,
+    EntityTableInfo,
+    SchemaMappingItem
 )
 from backend.utils.file_detector import detect_file_type, classify_data_type
 from backend.extractors import extract_data
 from backend.cleaning.text_cleaner import clean_text_data
 from backend.cleaning.structured_cleaner import read_and_clean_structured_file
+from backend.cleaning.data_auditor import audit_structured_data, audit_unstructured_data
 from backend.extraction.field_extractor import identify_fields, map_to_schema
 from backend.extraction.ai_extractor import extract_fields_with_llm, classify_columns_with_llm
 from backend.validation.validator import validate_unstructured_fields, validate_structured_records
 from backend.extraction.entity_classifier import classify_columns, classify_with_llm_fallback
 from backend.cleaning.entity_splitter import split_mixed_dataframe
+from backend.normalization.schema_mapper import map_dataframe_to_canonical_schema
+from backend.normalization.value_standardizer import standardize_canonical_values
 from backend.models.entity_schemas import CONFIDENCE_THRESHOLD
 
 # In-memory storage for results and exports
@@ -284,8 +289,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 structured_data = records
                 columns = cols
 
-                import pandas as pd
-                from backend.cleaning.data_auditor import audit_structured_data
                 df_audit = pd.DataFrame(records)
                 struct_audit = audit_structured_data(df_audit, df_audit)
 
@@ -457,7 +460,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     ),
                 ]
 
-                from backend.cleaning.data_auditor import audit_unstructured_data
                 unstructured_audit = audit_unstructured_data(cleaned_text, validated_fields)
 
                 cleansing_report = CleansingReport(
@@ -492,9 +494,13 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
 
     # ─── Business Entity Classification Step ───────────────────────────
     entity_info = None
+    raw_structured_data = structured_data if isinstance(structured_data, list) else None
+    raw_columns = list(columns) if columns else None
+    schema_mapping_report = None
+    schema_mapping_coverage = 0.0
+    
     if status != "failed" and structured_data and isinstance(structured_data, list) and columns:
         try:
-            import pandas as pd
             df_for_classify = pd.DataFrame(structured_data)
 
             # Run 3-layer rule-based classification
@@ -520,7 +526,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 try:
                     tables = split_mixed_dataframe(df_for_classify, entity_result)
                     if tables:
-                        from backend.models.schemas import EntityTableInfo
                         split_tables_info = [
                             EntityTableInfo(
                                 entity_type=t.entity_type,
@@ -531,7 +536,18 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                                 total_rows=t.total_rows,
                                 deduplicated_rows=t.deduplicated_rows,
                                 duplicates_removed=t.duplicates_removed,
-                                confidence=t.confidence
+                                confidence=t.confidence,
+                                schema_mapping_report=[
+                                    SchemaMappingItem(
+                                        canonical_field=sm["canonical_field"],
+                                        field_type=sm.get("field_type", "text"),
+                                        description=sm.get("description", ""),
+                                        source_aliases=sm.get("source_aliases", []),
+                                        is_mapped=sm.get("is_mapped", False),
+                                        rows_populated=sm.get("rows_populated", 0)
+                                    )
+                                    for sm in (t.schema_mapping_report or [])
+                                ] if t.schema_mapping_report else None
                             )
                             for t in tables
                         ]
@@ -552,11 +568,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
             # ─── Schema Mapping & Canonical Value Standardization ───────
             if not entity_result.is_mixed and entity_result.file_type in ("store", "item", "customer", "transaction"):
                 try:
-                    from backend.normalization.schema_mapper import map_dataframe_to_canonical_schema
-                    from backend.normalization.value_standardizer import standardize_canonical_values
-                    
                     # 1. Map raw headers to canonical schema target names & merge duplicate aliases
-                    mapped_df, header_map, map_highlights = map_dataframe_to_canonical_schema(
+                    mapped_df, raw_schema_report, map_highlights = map_dataframe_to_canonical_schema(
                         df_for_classify, entity_result.file_type
                     )
 
@@ -569,6 +582,21 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     structured_data = std_df.replace({np.nan: None}).to_dict(orient="records")
                     columns = list(std_df.columns)
 
+                    if raw_schema_report:
+                        schema_mapping_report = [
+                            SchemaMappingItem(
+                                canonical_field=item["canonical_field"],
+                                field_type=item.get("field_type", "text"),
+                                description=item.get("description", ""),
+                                source_aliases=item.get("source_aliases", []),
+                                is_mapped=item.get("is_mapped", False),
+                                rows_populated=item.get("rows_populated", 0)
+                            )
+                            for item in raw_schema_report
+                        ]
+                        mapped_count = sum(1 for it in schema_mapping_report if it.is_mapped and it.rows_populated > 0)
+                        schema_mapping_coverage = round(mapped_count / max(len(schema_mapping_report), 1), 4)
+
                     total_schema_mods = len(map_highlights) + len(val_highlights)
                     if cleansing_report:
                         cleansing_report.change_highlights.extend(map_highlights)
@@ -579,7 +607,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                         step_id="schema_standardized",
                         name="Canonical schema mapped & values standardized",
                         status="completed",
-                        message=f"Mapped {len(header_map)} headers to canonical {entity_result.file_type} schema; standardized dates, booleans, and values"
+                        message=f"Mapped {mapped_count if 'mapped_count' in locals() else len(raw_schema_report)} fields to canonical {entity_result.file_type} schema; merged duplicate aliases & standardized values"
                     ))
                 except Exception as std_err:
                     print(f"Schema mapping standardization error: {std_err}")
@@ -606,6 +634,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 message=f"Entity classification skipped: {str(e)}"
             ))
     
+    data_quality_score = round(max(0.0, (total_records - len(errors)) / max(total_records, 1)), 4) if total_records > 0 else 1.0
+
     summary = ProcessSummary(
         total_records=total_records,
         valid_records=total_records - (1 if errors and classification == "unstructured" else len(errors)),
@@ -628,6 +658,11 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         fields=fields_list,
         structured_data=structured_data,
         columns=columns,
+        raw_structured_data=raw_structured_data,
+        raw_columns=raw_columns,
+        schema_mapping_report=schema_mapping_report,
+        schema_mapping_coverage=schema_mapping_coverage,
+        data_quality_score=data_quality_score,
         raw_text=raw_text,
         errors=errors if errors else None,
         entity_info=entity_info

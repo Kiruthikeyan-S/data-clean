@@ -80,6 +80,15 @@ export interface ProcessSummary {
   classification: string;
 }
 
+export interface SchemaMappingItem {
+  canonical_field: string;
+  field_type: string;
+  description?: string;
+  source_aliases: string[];
+  is_mapped: boolean;
+  rows_populated: number;
+}
+
 export interface EntityTableInfo {
   entity_type: 'store' | 'item' | 'customer' | 'transaction' | string;
   display_name: string;
@@ -90,6 +99,7 @@ export interface EntityTableInfo {
   deduplicated_rows: number;
   duplicates_removed: number;
   confidence: number;
+  schema_mapping_report?: SchemaMappingItem[];
 }
 
 export interface EntityClassificationInfo {
@@ -116,6 +126,11 @@ export interface ProcessResponse {
   fields?: ProcessedField[];
   structured_data?: Record<string, any> | Array<Record<string, any>>;
   columns?: string[];
+  raw_structured_data?: Array<Record<string, any>>;
+  raw_columns?: string[];
+  schema_mapping_report?: SchemaMappingItem[];
+  schema_mapping_coverage?: number;
+  data_quality_score?: number;
   raw_text?: string;
   errors?: ValidationErrorItem[];
   entity_info?: EntityClassificationInfo;

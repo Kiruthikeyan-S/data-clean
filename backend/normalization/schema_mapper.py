@@ -1,9 +1,16 @@
 """
-Schema Mapper & Alias Merger Module
+Schema Mapper & Row-by-Row Alias Merger Module
 
 Maps raw column headers to standard canonical target field names
 based on identified Business Entity (Store, Item, Customer, Transaction).
-Handles merging when multiple input aliases resolve to the same canonical target.
+
+Core Capabilities:
+1. Row-by-Row Alias Value Merging (coalesces non-null values across duplicate alias keys)
+2. Field Combiner (e.g. first_name + last_name -> full_name)
+3. Location Extractor (parses "Miami, FL" or "704 Main St, Miami, FL" -> city, state)
+4. Selling Price vs Cost Price isolation (never merged)
+5. Unmapped/extra fields preservation
+6. Structured Schema Mapping Reporting
 """
 from __future__ import annotations
 
@@ -45,25 +52,61 @@ def find_canonical_field_for_header(
         if token in field_def.aliases:
             return canonical_name
             
-    # Fuzzy sub-token / prefix match if unequivocal
-    # e.g. "store_city_name" -> "city", "product_unit_price" -> "unit_price"
+    # Sub-token match (e.g. "store_city_name" -> "city")
+    # Exclude name parts (first_name, last_name) from accidentally matching full_name
+    name_parts = {"first_name", "firstname", "fname", "last_name", "lastname", "lname", "given_name", "surname"}
+    if token in name_parts:
+        return None
+
     for canonical_name, field_def in canonical_fields.items():
         for alias in field_def.aliases:
             if alias in token and len(alias) >= 4:
-                # Check if it's a strong specific match
                 if token.endswith(f"_{alias}") or token.startswith(f"{alias}_"):
                     return canonical_name
 
     return None
 
 
+def extract_city_state_from_location(val: Any) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Attempts to extract (city, state) from location strings like:
+    - '704 Main St, Miami, FL' -> ('Miami', 'FL')
+    - 'Miami, FL' -> ('Miami', 'FL')
+    - 'CO, Denver' -> ('Denver', 'CO')
+    - 'Chennai, Tamil Nadu' -> ('Chennai', 'Tamil Nadu')
+    """
+    if val is None or pd.isna(val) or not isinstance(val, str):
+        return None, None
+    s = val.strip()
+    if not s:
+        return None, None
+        
+    # Match: "CO, Denver" (State, City)
+    m_rev = re.match(r"^([A-Z]{2}),\s*([A-Za-z\s]+)$", s)
+    if m_rev:
+        return m_rev.group(2).strip(), m_rev.group(1).strip()
+
+    # Match: "..., City, State" or "City, State"
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    if len(parts) >= 2:
+        candidate_state = parts[-1]
+        candidate_city = parts[-2]
+        # Clean street number/name if mixed in city part
+        city_clean = re.sub(r"^\d+\s+[A-Za-z0-9\.\s]+(?:\s+(?:St|Street|Ave|Avenue|Rd|Road|Blvd))\s*", "", candidate_city, flags=re.IGNORECASE).strip()
+        if not city_clean:
+            city_clean = candidate_city
+        return city_clean, candidate_state
+
+    return None, None
+
+
 def map_dataframe_to_canonical_schema(
     df: pd.DataFrame,
     entity_type: str
-) -> Tuple[pd.DataFrame, Dict[str, str], List[str]]:
+) -> Tuple[pd.DataFrame, List[Dict[str, Any]], List[str]]:
     """
-    Maps and standardizes all column headers in a DataFrame to canonical names.
-    If multiple raw columns map to the same canonical field, merges them safely.
+    Maps and standardizes all column headers in a DataFrame to canonical schema fields.
+    Merges non-null values across duplicate alias columns row-by-row and deletes old alias columns.
 
     Args:
         df: The DataFrame to map.
@@ -71,60 +114,130 @@ def map_dataframe_to_canonical_schema(
 
     Returns:
         Tuple containing:
-          - pd.DataFrame with canonical column headers
-          - Dict[str, str]: Map of raw_column -> canonical_column
+          - pd.DataFrame with clean canonical column headers & merged values
+          - List[Dict[str, Any]]: Structured schema mapping report
           - List[str]: Human-readable change highlights
     """
     if df.empty or not entity_type or entity_type.lower() in ("unknown", "general"):
-        return df, {}, []
+        return df, [], []
 
     canonical_fields = get_canonical_fields(entity_type)
     if not canonical_fields:
-        return df, {}, []
+        return df, [], []
 
-    mapping: Dict[str, str] = {}
+    schema_report: List[Dict[str, Any]] = []
     highlights: List[str] = []
     
-    # Group original columns by canonical target
+    # 1. Group original columns by canonical target
     canonical_groups: Dict[str, List[str]] = {}
+    unmapped_cols: List[str] = []
     
     for raw_col in df.columns:
         canonical_target = find_canonical_field_for_header(raw_col, canonical_fields)
         if canonical_target:
-            mapping[raw_col] = canonical_target
             if canonical_target not in canonical_groups:
                 canonical_groups[canonical_target] = []
             canonical_groups[canonical_target].append(raw_col)
-            if str(raw_col) != canonical_target:
-                highlights.append(f"Mapped header '{raw_col}' → canonical '{canonical_target}'")
         else:
-            # Keep original column header if no standard canonical match
-            mapping[raw_col] = str(raw_col)
+            unmapped_cols.append(raw_col)
 
-    # Build new DataFrame with mapped and merged columns
-    new_df = pd.DataFrame(index=df.index)
-    processed_originals = set()
+    # 2. Build new canonical DataFrame with row-by-row alias merging
+    canonical_df = pd.DataFrame(index=df.index)
 
-    for canonical_name, orig_cols in canonical_groups.items():
-        if len(orig_cols) == 1:
-            # Single column mapping
-            new_df[canonical_name] = df[orig_cols[0]]
-            processed_originals.add(orig_cols[0])
-        else:
-            # Multiple input columns map to the SAME canonical field (e.g. 'zip' and 'postal_code')
-            # Merge by taking the first non-null, non-empty value across rows
+    # Define standard column order from canonical schema
+    ordered_canonical_keys = list(canonical_fields.keys())
+
+    for canonical_name in ordered_canonical_keys:
+        if canonical_name in canonical_groups:
+            orig_cols = canonical_groups[canonical_name]
+            
+            # Row-by-row non-null merge across all matched alias columns
             merged_series = df[orig_cols[0]].copy()
             for extra_col in orig_cols[1:]:
-                # Fill nulls in merged_series with values from extra_col
+                # Coalesce: take first non-null, non-empty value
                 merged_series = merged_series.combine_first(df[extra_col])
-                processed_originals.add(extra_col)
-            new_df[canonical_name] = merged_series
-            processed_originals.add(orig_cols[0])
-            highlights.append(f"Merged alias columns ({', '.join(orig_cols)}) into single canonical field '{canonical_name}'")
+                
+            canonical_df[canonical_name] = merged_series
+            populated_count = int(merged_series.notna().sum())
 
-    # Add any remaining unmapped columns
-    for orig_col in df.columns:
-        if orig_col not in processed_originals:
-            new_df[orig_col] = df[orig_col]
+            schema_report.append({
+                "canonical_field": canonical_name,
+                "field_type": canonical_fields[canonical_name].field_type,
+                "description": canonical_fields[canonical_name].description,
+                "source_aliases": orig_cols,
+                "is_mapped": True,
+                "rows_populated": populated_count
+            })
 
-    return new_df, mapping, highlights
+            if len(orig_cols) > 1:
+                highlights.append(f"Merged alias columns ({', '.join(orig_cols)}) into single canonical field '{canonical_name}'")
+            elif str(orig_cols[0]) != canonical_name:
+                highlights.append(f"Mapped header '{orig_cols[0]}' → canonical '{canonical_name}'")
+        else:
+            # Field was not present in input
+            schema_report.append({
+                "canonical_field": canonical_name,
+                "field_type": canonical_fields[canonical_name].field_type,
+                "description": canonical_fields[canonical_name].description,
+                "source_aliases": [],
+                "is_mapped": False,
+                "rows_populated": 0
+            })
+
+    # 3. Special field combination rules
+    # A. Customer full_name combination (first_name + last_name)
+    if entity_type == EntityType.CUSTOMER.value:
+        norm_unmapped = {normalize_header_token(c): c for c in unmapped_cols}
+        has_fn = "first_name" in norm_unmapped or "firstname" in norm_unmapped or "fname" in norm_unmapped
+        has_ln = "last_name" in norm_unmapped or "lastname" in norm_unmapped or "lname" in norm_unmapped
+        
+        if has_fn and has_ln:
+            fn_col = norm_unmapped.get("first_name") or norm_unmapped.get("firstname") or norm_unmapped.get("fname")
+            ln_col = norm_unmapped.get("last_name") or norm_unmapped.get("lastname") or norm_unmapped.get("lname")
+            
+            combined_name = (df[fn_col].fillna("").astype(str).str.strip() + " " + df[ln_col].fillna("").astype(str).str.strip()).str.strip()
+            if "full_name" in canonical_df and not canonical_df["full_name"].empty:
+                canonical_df["full_name"] = canonical_df["full_name"].combine_first(combined_name)
+            else:
+                canonical_df["full_name"] = combined_name
+                
+            highlights.append(f"Combined separate '{fn_col}' and '{ln_col}' columns into canonical 'full_name'")
+            if fn_col in unmapped_cols: unmapped_cols.remove(fn_col)
+            if ln_col in unmapped_cols: unmapped_cols.remove(ln_col)
+
+            # Update schema report for full_name
+            for rep in schema_report:
+                if rep["canonical_field"] == "full_name":
+                    rep["is_mapped"] = True
+                    rep["source_aliases"] = [fn_col, ln_col]
+                    rep["rows_populated"] = int(canonical_df["full_name"].notna().sum())
+
+    # B. Location splitting for Store / Customer (City / State from address or location)
+    if entity_type in (EntityType.STORE.value, EntityType.CUSTOMER.value):
+        # Check if city or state are missing/null in canonical_df
+        need_city = "city" in canonical_df and (canonical_df["city"].isna().all() or canonical_df["city"].empty)
+        need_state = "state" in canonical_df and (canonical_df["state"].isna().all() or canonical_df["state"].empty)
+        
+        if need_city or need_state:
+            loc_candidates = [c for c in df.columns if any(k in normalize_header_token(c) for k in ("location", "address", "addr"))]
+            for l_col in loc_candidates:
+                cities, states = [], []
+                for val in df[l_col]:
+                    c_extracted, s_extracted = extract_city_state_from_location(val)
+                    cities.append(c_extracted)
+                    states.append(s_extracted)
+                
+                if any(cities) and "city" in canonical_df:
+                    canonical_df["city"] = canonical_df["city"].combine_first(pd.Series(cities, index=df.index))
+                if any(states) and "state" in canonical_df:
+                    canonical_df["state"] = canonical_df["state"].combine_first(pd.Series(states, index=df.index))
+                
+                if any(cities) or any(states):
+                    highlights.append(f"Extracted city/state attributes from location string '{l_col}'")
+                    break
+
+    # 4. Retain any unmapped extra columns (do NOT delete unrecognized fields)
+    for u_col in unmapped_cols:
+        canonical_df[u_col] = df[u_col]
+
+    return canonical_df, schema_report, highlights

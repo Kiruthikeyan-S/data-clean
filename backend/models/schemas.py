@@ -74,6 +74,15 @@ class ProcessSummary(BaseModel):
     file_type: str
     classification: str
 
+class SchemaMappingItem(BaseModel):
+    """Details of a mapped canonical field and its source aliases."""
+    canonical_field: str
+    field_type: str
+    description: str = ""
+    source_aliases: List[str] = []
+    is_mapped: bool = False
+    rows_populated: int = 0
+
 class EntityTableInfo(BaseModel):
     """Represents a separated table for an identified business entity."""
     entity_type: str
@@ -85,6 +94,7 @@ class EntityTableInfo(BaseModel):
     deduplicated_rows: int
     duplicates_removed: int
     confidence: float
+    schema_mapping_report: Optional[List[SchemaMappingItem]] = None
 
 class EntityClassificationInfo(BaseModel):
     """Describes the business entity classification result for a processed file."""
@@ -110,6 +120,11 @@ class ProcessResponse(BaseModel):
     fields: Optional[List[ProcessedField]] = None
     structured_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None
     columns: Optional[List[str]] = None
+    raw_structured_data: Optional[List[Dict[str, Any]]] = None
+    raw_columns: Optional[List[str]] = None
+    schema_mapping_report: Optional[List[SchemaMappingItem]] = None
+    schema_mapping_coverage: float = 0.0
+    data_quality_score: float = 1.0
     raw_text: Optional[str] = None
     errors: Optional[List[ValidationErrorItem]] = None
     entity_info: Optional[EntityClassificationInfo] = None

@@ -33,8 +33,8 @@ def test_store_schema_mapping_and_standardization():
     assert "store_id" in mapped_df.columns
     assert "store_name" in mapped_df.columns
     assert "postal_code" in mapped_df.columns
-    assert "status" in mapped_df.columns
-    assert "opening_date" in mapped_df.columns
+    assert "active" in mapped_df.columns
+    assert "opened_on" in mapped_df.columns
     assert "city" in mapped_df.columns
     
     # 2. Value standardization
@@ -46,10 +46,10 @@ def test_store_schema_mapping_and_standardization():
     assert std_df["store_name"].iloc[0] == "Downtown Mall Branch"
     assert std_df["city"].iloc[0] == "Chennai"
     assert std_df["city"].iloc[1] == "Mumbai"
-    assert std_df["status"].iloc[0] == True
-    assert std_df["status"].iloc[1] == False
-    assert std_df["opening_date"].iloc[0] == "2024-01-15"
-    assert std_df["opening_date"].iloc[1] == "2024-02-20"
+    assert std_df["active"].iloc[0] == True
+    assert std_df["active"].iloc[1] == False
+    assert std_df["opened_on"].iloc[0] == "2024-01-15"
+    assert std_df["opened_on"].iloc[1] == "2024-02-20"
 
 
 def test_alias_merging():
@@ -77,7 +77,9 @@ def test_item_schema_mapping_and_standardization():
         "product_code": ["p101", "p102"],
         "item_title": ["nike running shoes", "adidas cotton t-shirt"],
         "mrp": ["$5,999.00", "₹2,499.50"],
-        "in_stock": ["1", "0"]
+        "cost": ["$3,500.00", "₹1,200.00"],
+        "in_stock": ["15", "0"],
+        "is_available": ["yes", "no"]
     }
     df = pd.DataFrame(raw_data)
     mapped_df, mapping, _ = map_dataframe_to_canonical_schema(df, "item")
@@ -86,26 +88,32 @@ def test_item_schema_mapping_and_standardization():
     print("\n--- Item Standardized Values ---")
     print(std_df)
     
-    assert "product_id" in std_df.columns
-    assert "product_name" in std_df.columns
-    assert "unit_price" in std_df.columns
-    assert "is_active" in std_df.columns
+    assert "item_id" in std_df.columns
+    assert "item_name" in std_df.columns
+    assert "selling_price" in std_df.columns
+    assert "cost_price" in std_df.columns
+    assert "stock_quantity" in std_df.columns
+    assert "available" in std_df.columns
     
-    assert std_df["product_id"].iloc[0] == "P101"
-    assert std_df["product_name"].iloc[0] == "Nike Running Shoes"
-    assert std_df["unit_price"].iloc[0] == 5999.0
-    assert std_df["unit_price"].iloc[1] == 2499.5
-    assert std_df["is_active"].iloc[0] == True
-    assert std_df["is_active"].iloc[1] == False
+    assert std_df["item_id"].iloc[0] == "P101"
+    assert std_df["item_name"].iloc[0] == "Nike Running Shoes"
+    assert std_df["selling_price"].iloc[0] == 5999.0
+    assert std_df["selling_price"].iloc[1] == 2499.5
+    assert std_df["cost_price"].iloc[0] == 3500.0
+    assert std_df["cost_price"].iloc[1] == 1200.0
+    assert std_df["stock_quantity"].iloc[0] == 15
+    assert std_df["available"].iloc[0] == True
+    assert std_df["available"].iloc[1] == False
 
 
 def test_customer_schema_mapping_and_standardization():
     raw_data = {
         "cust_id": ["c001", "c002"],
-        "full_name": ["ravi kumar", "priya sharma"],
+        "first_name": ["ravi", "priya"],
+        "last_name": ["kumar", "sharma"],
         "mail": ["RAVI@GMAIL.COM", "priya@yahoo.com"],
         "mobile": ["9876543210", "9876543211"],
-        "dob": ["25/12/1990", "10/05/1995"]
+        "signup_date": ["25/12/1990", "10/05/1995"]
     }
     df = pd.DataFrame(raw_data)
     mapped_df, _, _ = map_dataframe_to_canonical_schema(df, "customer")
@@ -115,15 +123,16 @@ def test_customer_schema_mapping_and_standardization():
     print(std_df)
     
     assert "customer_id" in std_df.columns
-    assert "customer_name" in std_df.columns
+    assert "full_name" in std_df.columns
     assert "email" in std_df.columns
     assert "phone" in std_df.columns
-    assert "date_of_birth" in std_df.columns
+    assert "registered_on" in std_df.columns
     
-    assert std_df["customer_name"].iloc[0] == "Ravi Kumar"
+    assert std_df["full_name"].iloc[0] == "Ravi Kumar"
+    assert std_df["full_name"].iloc[1] == "Priya Sharma"
     assert std_df["email"].iloc[0] == "ravi@gmail.com"
-    assert std_df["date_of_birth"].iloc[0] == "1990-12-25"
-    assert std_df["date_of_birth"].iloc[1] == "1995-05-10"
+    assert std_df["registered_on"].iloc[0] == "1990-12-25"
+    assert std_df["registered_on"].iloc[1] == "1995-05-10"
 
 
 def test_transaction_schema_mapping_and_standardization():
@@ -142,13 +151,13 @@ def test_transaction_schema_mapping_and_standardization():
     print(std_df)
     
     assert "transaction_id" in std_df.columns
-    assert "transaction_date" in std_df.columns
+    assert "purchase_date" in std_df.columns
     assert "quantity" in std_df.columns
     assert "total_amount" in std_df.columns
     assert "payment_method" in std_df.columns
     
     assert std_df["transaction_id"].iloc[0] == "ORD-101"
-    assert std_df["transaction_date"].iloc[0] == "2024-01-15"
+    assert std_df["purchase_date"].iloc[0] == "2024-01-15"
     assert std_df["quantity"].iloc[0] == 2
     assert std_df["total_amount"].iloc[0] == 11998.0
     assert std_df["payment_method"].iloc[0] == "Credit Card"
@@ -165,7 +174,7 @@ s002,city center outlet,mumbai,400001,no,2024.02.20
     assert response.entity_info.entity_type == "store"
     
     # Check that output columns are canonical
-    expected_canonical_cols = {"store_id", "store_name", "city", "postal_code", "status", "opening_date"}
+    expected_canonical_cols = {"store_id", "store_name", "city", "postal_code", "active", "opened_on"}
     output_cols = set(response.columns)
     print(f"\nPipeline Output Columns: {response.columns}")
     assert expected_canonical_cols.issubset(output_cols)
@@ -174,8 +183,8 @@ s002,city center outlet,mumbai,400001,no,2024.02.20
     assert records[0]["store_id"] == "S001"
     assert records[0]["store_name"] == "Downtown Mall Branch"
     assert records[0]["city"] == "Chennai"
-    assert records[0]["status"] is True
-    assert records[0]["opening_date"] == "2024-01-15"
+    assert records[0]["active"] is True
+    assert records[0]["opened_on"] == "2024-01-15"
     print("\n--- Pipeline Canonical Table Output ---")
     print(records)
 

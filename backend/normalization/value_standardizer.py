@@ -3,7 +3,7 @@ Canonical Value Standardizer Module
 
 Standardizes cell values based on canonical schema column types:
 - Dates -> ISO 8601 (YYYY-MM-DD)
-- Booleans -> True / False (or Active / Inactive)
+- Booleans -> True / False (Python boolean)
 - Cities / States / Names -> Consistent Title Case
 - IDs -> Consistent trimmed uppercase representation
 - Prices / Numbers -> Clean numeric floats/ints without currency symbols
@@ -60,6 +60,22 @@ def standardize_id(val: Any) -> Any:
     return s
 
 
+def standardize_date_iso(val: Any) -> Any:
+    """Standardizes dates (including ISO timestamps with T...Z) to YYYY-MM-DD."""
+    if val is None or pd.isna(val):
+        return None
+    s = str(val).strip()
+    if not s or s.lower() in ("null", "none", "nan", "n/a", "-"):
+        return None
+    
+    # Strip ISO timestamp time portion if present (e.g. "2020-11-01T00:00:00Z" -> "2020-11-01")
+    iso_time_match = re.match(r"^(\d{4}[-/]\d{1,2}[-/]\d{1,2})[T\s].*$", s)
+    if iso_time_match:
+        s = iso_time_match.group(1)
+
+    return normalize_date(s)
+
+
 def standardize_canonical_values(
     df: pd.DataFrame,
     entity_type: str
@@ -101,23 +117,23 @@ def standardize_canonical_values(
         col_lower = col_str.lower()
         field_def: Optional[CanonicalField] = canonical_fields.get(col_lower)
         
-        # Determine target type
+        # Determine target field type
         field_type = field_def.field_type if field_def else None
         if not field_type:
             # Fallback heuristic by column name
-            if "date" in col_lower or "dob" in col_lower:
+            if "date" in col_lower or "dob" in col_lower or "opened" in col_lower or "registered" in col_lower:
                 field_type = "date"
             elif "email" in col_lower:
                 field_type = "email"
             elif "phone" in col_lower or "mobile" in col_lower:
                 field_type = "phone"
-            elif "price" in col_lower or "amount" in col_lower or "cost" in col_lower or "qty" in col_lower or "quantity" in col_lower:
+            elif "price" in col_lower or "amount" in col_lower or "cost" in col_lower or "qty" in col_lower or "quantity" in col_lower or "points" in col_lower:
                 field_type = "numeric"
-            elif col_lower in ("status", "is_active", "active"):
+            elif col_lower in ("status", "is_active", "active", "available", "is_available"):
                 field_type = "boolean"
             elif col_lower.endswith("_id") or col_lower == "id" or col_lower.endswith("_code"):
                 field_type = "id"
-            elif col_lower in ("city", "state", "country", "name", "category", "brand", "manager_name"):
+            elif col_lower in ("city", "state", "country", "name", "category", "brand", "manager_name", "store_name", "item_name", "full_name", "payment_method", "loyalty_tier"):
                 field_type = "text_title"
             elif "zip" in col_lower or "pin" in col_lower or "postal" in col_lower:
                 field_type = "postal_code"
@@ -138,7 +154,7 @@ def standardize_canonical_values(
             std_val = val
 
             if field_type == "date":
-                std_val = normalize_date(val)
+                std_val = standardize_date_iso(val)
                 if std_val is not None and std_val != orig_val:
                     mod_counts["dates_standardized"] += 1
                     changed_in_col += 1
@@ -207,7 +223,7 @@ def standardize_canonical_values(
     if mod_counts["dates_standardized"] > 0:
         highlights.append(f"Standardized {mod_counts['dates_standardized']} date value(s) to ISO 8601 (YYYY-MM-DD)")
     if mod_counts["booleans_standardized"] > 0:
-        highlights.append(f"Standardized {mod_counts['booleans_standardized']} boolean value(s) to canonical True/False")
+        highlights.append(f"Standardized {mod_counts['booleans_standardized']} boolean value(s) to canonical true/false")
     if mod_counts["text_standardized"] > 0:
         highlights.append(f"Standardized {mod_counts['text_standardized']} text / city / name cell(s) to Title Case")
     if mod_counts["numbers_standardized"] > 0:
