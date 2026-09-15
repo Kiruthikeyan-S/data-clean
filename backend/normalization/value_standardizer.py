@@ -48,16 +48,31 @@ def standardize_boolean(val: Any) -> Any:
 
 
 def standardize_id(val: Any) -> Any:
-    """Normalizes identifier strings (trimmed, normalized format)."""
+    """Normalizes identifier strings (trimmed, normalized format, no trailing .0)."""
     if val is None or pd.isna(val):
         return None
     s = str(val).strip()
     if not s or s.lower() in ("null", "none", "nan", "n/a", "-"):
         return None
-    # If standard code format like s001 / str-01 / ord-123 -> uppercase prefix
+    # Strip trailing .0 from float IDs (e.g. 102.0 -> "102")
+    if re.match(r"^\d+\.0$", s):
+        s = s[:-2]
+    # If standard code format like s001 / str-01 / ord-123 / str_102 -> uppercase prefix
     if re.match(r"^[a-zA-Z]+[-\s_]?\d+$", s):
         return s.upper()
     return s
+
+
+def standardize_state(val: Any) -> Any:
+    """Standardizes state values (2-letter state codes to UPPERCASE, full names to Title Case)."""
+    if val is None or pd.isna(val):
+        return None
+    s = str(val).strip()
+    if not s or s.lower() in ("null", "none", "nan", "n/a", "-"):
+        return None
+    if len(s) == 2 and s.isalpha():
+        return s.upper()
+    return normalize_name(s)
 
 
 def standardize_date_iso(val: Any) -> Any:
@@ -133,10 +148,16 @@ def standardize_canonical_values(
                 field_type = "boolean"
             elif col_lower.endswith("_id") or col_lower == "id" or col_lower.endswith("_code"):
                 field_type = "id"
-            elif col_lower in ("city", "state", "country", "name", "category", "brand", "manager_name", "store_name", "item_name", "full_name", "payment_method", "loyalty_tier"):
+            elif col_lower in ("state", "store_state", "customer_state", "province"):
+                field_type = "state"
+            elif col_lower in ("city", "country", "name", "category", "brand", "manager_name", "store_name", "item_name", "full_name", "payment_method", "loyalty_tier"):
                 field_type = "text_title"
             elif "zip" in col_lower or "pin" in col_lower or "postal" in col_lower:
                 field_type = "postal_code"
+
+        # Special override for state column in canonical schemas
+        if col_lower in ("state", "store_state", "customer_state"):
+            field_type = "state"
 
         if not field_type:
             continue
@@ -166,6 +187,14 @@ def standardize_canonical_values(
                 if std_val is not None and std_val != orig_val:
                     mod_counts["booleans_standardized"] += 1
                     changed_in_col += 1
+
+            elif field_type == "state":
+                std_val = standardize_state(val)
+                if std_val is not None and std_val != orig_val:
+                    mod_counts["text_standardized"] += 1
+                    changed_in_col += 1
+                elif std_val is None:
+                    std_val = orig_val
 
             elif field_type == "text_title":
                 std_val = normalize_name(str(val))

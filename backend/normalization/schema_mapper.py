@@ -73,29 +73,41 @@ def extract_city_state_from_location(val: Any) -> Tuple[Optional[str], Optional[
     - '704 Main St, Miami, FL' -> ('Miami', 'FL')
     - 'Miami, FL' -> ('Miami', 'FL')
     - 'CO, Denver' -> ('Denver', 'CO')
+    - 'Denver, CO' -> ('Denver', 'CO')
+    - 'NY, New York' -> ('New York', 'NY')
     - 'Chennai, Tamil Nadu' -> ('Chennai', 'Tamil Nadu')
     """
     if val is None or pd.isna(val) or not isinstance(val, str):
         return None, None
     s = val.strip()
-    if not s:
+    if not s or s.lower() in ("null", "none", "nan", "n/a", "-"):
         return None, None
         
-    # Match: "CO, Denver" (State, City)
-    m_rev = re.match(r"^([A-Z]{2}),\s*([A-Za-z\s]+)$", s)
+    # Match: "CO, Denver" (State, City) or "Co, Denver"
+    m_rev = re.match(r"^([A-Za-z]{2}),\s*([A-Za-z\s\.\-]+)$", s)
     if m_rev:
-        return m_rev.group(2).strip(), m_rev.group(1).strip()
+        st = m_rev.group(1).strip().upper()
+        ct = m_rev.group(2).strip()
+        return ct, st
 
     # Match: "..., City, State" or "City, State"
     parts = [p.strip() for p in s.split(",") if p.strip()]
     if len(parts) >= 2:
-        candidate_state = parts[-1]
-        candidate_city = parts[-2]
+        candidate_state = parts[-1].strip()
+        candidate_city = parts[-2].strip()
+        # If candidate_state is 2 letters -> uppercase
+        if len(candidate_state) == 2 and candidate_state.isalpha():
+            candidate_state = candidate_state.upper()
         # Clean street number/name if mixed in city part
         city_clean = re.sub(r"^\d+\s+[A-Za-z0-9\.\s]+(?:\s+(?:St|Street|Ave|Avenue|Rd|Road|Blvd))\s*", "", candidate_city, flags=re.IGNORECASE).strip()
         if not city_clean:
             city_clean = candidate_city
         return city_clean, candidate_state
+
+    # Match: "City State" (e.g. "Miami FL", "Denver CO")
+    m_space = re.match(r"^([A-Za-z\s\.\-]+)\s+([A-Za-z]{2})$", s)
+    if m_space:
+        return m_space.group(1).strip(), m_space.group(2).strip().upper()
 
     return None, None
 
@@ -214,27 +226,35 @@ def map_dataframe_to_canonical_schema(
 
     # B. Location splitting for Store / Customer (City / State from address or location)
     if entity_type in (EntityType.STORE.value, EntityType.CUSTOMER.value):
-        # Check if city or state are missing/null in canonical_df
-        need_city = "city" in canonical_df and (canonical_df["city"].isna().all() or canonical_df["city"].empty)
-        need_state = "state" in canonical_df and (canonical_df["state"].isna().all() or canonical_df["state"].empty)
-        
-        if need_city or need_state:
-            loc_candidates = [c for c in df.columns if any(k in normalize_header_token(c) for k in ("location", "address", "addr"))]
-            for l_col in loc_candidates:
-                cities, states = [], []
-                for val in df[l_col]:
-                    c_extracted, s_extracted = extract_city_state_from_location(val)
-                    cities.append(c_extracted)
-                    states.append(s_extracted)
-                
-                if any(cities) and "city" in canonical_df:
-                    canonical_df["city"] = canonical_df["city"].combine_first(pd.Series(cities, index=df.index))
-                if any(states) and "state" in canonical_df:
-                    canonical_df["state"] = canonical_df["state"].combine_first(pd.Series(states, index=df.index))
-                
-                if any(cities) or any(states):
-                    highlights.append(f"Extracted city/state attributes from location string '{l_col}'")
-                    break
+        loc_candidates = [c for c in df.columns if any(k in normalize_header_token(c) for k in ("location", "address", "addr", "loc"))]
+        for l_col in loc_candidates:
+            cities, states = [], []
+            for val in df[l_col]:
+                c_extracted, s_extracted = extract_city_state_from_location(val)
+                cities.append(c_extracted)
+                states.append(s_extracted)
+            
+            if "city" in canonical_df and any(c is not None for c in cities):
+                canonical_df["city"] = canonical_df["city"].combine_first(pd.Series(cities, index=df.index))
+            if "state" in canonical_df and any(s is not None for s in states):
+                canonical_df["state"] = canonical_df["state"].combine_first(pd.Series(states, index=df.index))
+            
+            # Remove location/address from unmapped columns so it doesn't appear as a redundant duplicate column
+            if l_col in unmapped_cols:
+                unmapped_cols.remove(l_col)
+            
+            if any(c is not None for c in cities) or any(s is not None for s in states):
+                highlights.append(f"Extracted and merged city/state attributes from '{l_col}'")
+
+        # Update schema report for city and state
+        for rep in schema_report:
+            if rep["canonical_field"] in ("city", "state") and rep["canonical_field"] in canonical_df:
+                pop = int(canonical_df[rep["canonical_field"]].notna().sum())
+                if pop > 0:
+                    rep["is_mapped"] = True
+                    rep["rows_populated"] = pop
+                    if not rep["source_aliases"]:
+                        rep["source_aliases"] = loc_candidates
 
     # 4. Retain any unmapped extra columns (do NOT delete unrecognized fields)
     for u_col in unmapped_cols:
