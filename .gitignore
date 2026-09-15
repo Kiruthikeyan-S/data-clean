@@ -20,3 +20,4 @@ build/
 .pytest_cache/
 .DS_Store
 Thumbs.db
+*.pt
