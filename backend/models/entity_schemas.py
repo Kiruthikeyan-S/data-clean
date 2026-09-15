@@ -272,7 +272,7 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "opened_on": CanonicalField(
             name="opened_on",
             field_type="date",
-            aliases={"opened_on", "opened", "opening_date", "opened_date", "store_opening_date", "established_date", "launch_date", "open_date", "start_date"},
+            aliases={"opened_on", "opening_date", "opened_date", "store_opening_date", "established_date", "launch_date", "open_date"},
             description="Date when the store opened (YYYY-MM-DD)"
         ),
         "active": CanonicalField(

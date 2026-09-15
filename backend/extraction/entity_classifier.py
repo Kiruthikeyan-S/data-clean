@@ -382,23 +382,18 @@ def classify_columns(
     if qualifying:
         # Choose the entity with the highest strong keyword count, breaking ties by confidence
         primary = max(qualifying, key=lambda e: (strong_counts.get(e, 0), confidences[e]))
-        assigned_cols = sum(1 for c, e in column_assignments.items() if e == primary)
-        col_ratio = assigned_cols / max(len(columns), 1)
-        has_strong = strong_counts.get(primary, 0) >= 1
-        calc_conf = round(min(0.98, max(confidences[primary], 0.75 + (0.20 * col_ratio if has_strong else 0.10))), 4)
-
         return EntityClassificationResult(
             file_type=primary,
             entities_detected=confidences,
             column_assignments=column_assignments,
             primary_entity=primary,
             is_mixed=False,
-            confidence=calc_conf,
-            confidence_score=calc_conf,
+            confidence=confidences[primary],
+            confidence_score=confidences[primary],
             method="rule_based",
             details=(
                 f"Classified as {schemas[primary].display_name} "
-                f"({calc_conf:.0%} confidence)"
+                f"({confidences[primary]:.0%} confidence)"
             ),
             entity_confidence=confidences,
         )
