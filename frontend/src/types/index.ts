@@ -103,27 +103,6 @@ export interface EntityClassificationInfo {
   split_tables?: EntityTableInfo[];
 }
 
-export interface BusinessMetricCard {
-  label: string;
-  value: string;
-  subtext?: string;
-  icon: string;
-}
-
-export interface BusinessInsight {
-  title: string;
-  description: string;
-  badge?: string;
-  type: 'positive' | 'warning' | 'info' | string;
-}
-
-export interface BusinessAnalysisReport {
-  entity_type: string;
-  headline: string;
-  metrics: BusinessMetricCard[];
-  insights: BusinessInsight[];
-}
-
 export interface ProcessResponse {
   id: string;
   filename: string;
@@ -140,7 +119,6 @@ export interface ProcessResponse {
   raw_text?: string;
   errors?: ValidationErrorItem[];
   entity_info?: EntityClassificationInfo;
-  business_analysis?: BusinessAnalysisReport;
 }
 
 export interface BatchProcessResponse {

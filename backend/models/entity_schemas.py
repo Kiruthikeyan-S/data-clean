@@ -222,3 +222,275 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
         EntityType.CUSTOMER.value: customer_schema,
         EntityType.TRANSACTION.value: transaction_schema,
     }
+
+
+@dataclass
+class CanonicalField:
+    """
+    Specification for a canonical column in a standardized business schema.
+    """
+    name: str
+    field_type: str  # 'id', 'text_title', 'text', 'date', 'numeric', 'boolean', 'email', 'phone', 'postal_code'
+    aliases: Set[str] = field(default_factory=set)
+    description: str = ""
+    is_primary_key: bool = False
+
+
+CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
+    EntityType.STORE.value: {
+        "store_id": CanonicalField(
+            name="store_id",
+            field_type="id",
+            aliases={"store_id", "store_code", "store_num", "store_number", "branch_id", "branch_code", "outlet_id", "outlet_code", "warehouse_id", "warehouse_code", "id", "store_no"},
+            is_primary_key=True
+        ),
+        "store_name": CanonicalField(
+            name="store_name",
+            field_type="text_title",
+            aliases={"store_name", "store_title", "branch_name", "outlet_name", "warehouse_name", "location_name", "store", "name", "branch"}
+        ),
+        "city": CanonicalField(
+            name="city",
+            field_type="text_title",
+            aliases={"city", "store_city", "town", "district", "municipality"}
+        ),
+        "state": CanonicalField(
+            name="state",
+            field_type="text_title",
+            aliases={"state", "store_state", "province", "region"}
+        ),
+        "country": CanonicalField(
+            name="country",
+            field_type="text_title",
+            aliases={"country", "store_country", "nation"}
+        ),
+        "postal_code": CanonicalField(
+            name="postal_code",
+            field_type="postal_code",
+            aliases={"postal_code", "zipcode", "zip_code", "zip", "pin_code", "pincode", "pin", "postcode"}
+        ),
+        "address": CanonicalField(
+            name="address",
+            field_type="text",
+            aliases={"address", "store_address", "street", "street_address", "location", "address_line_1"}
+        ),
+        "manager_name": CanonicalField(
+            name="manager_name",
+            field_type="text_title",
+            aliases={"manager_name", "manager", "store_manager", "branch_manager", "lead"}
+        ),
+        "phone": CanonicalField(
+            name="phone",
+            field_type="phone",
+            aliases={"phone", "store_phone", "contact_number", "telephone", "mobile", "tel"}
+        ),
+        "email": CanonicalField(
+            name="email",
+            field_type="email",
+            aliases={"email", "store_email", "mail", "contact_email"}
+        ),
+        "status": CanonicalField(
+            name="status",
+            field_type="boolean",
+            aliases={"status", "store_status", "is_active", "active", "operational_status"}
+        ),
+        "opening_date": CanonicalField(
+            name="opening_date",
+            field_type="date",
+            aliases={"opening_date", "opened_date", "store_opening_date", "established_date", "launch_date"}
+        ),
+        "sq_ft": CanonicalField(
+            name="sq_ft",
+            field_type="numeric",
+            aliases={"sq_ft", "square_feet", "area_sqft", "size_sqft", "store_size"}
+        )
+    },
+
+    EntityType.ITEM.value: {
+        "product_id": CanonicalField(
+            name="product_id",
+            field_type="id",
+            aliases={"product_id", "product_code", "item_id", "item_code", "sku", "sku_id", "sku_code", "barcode", "upc", "ean", "asin", "id", "item_no"},
+            is_primary_key=True
+        ),
+        "product_name": CanonicalField(
+            name="product_name",
+            field_type="text_title",
+            aliases={"product_name", "item_name", "name", "title", "product_title", "item_title", "description", "item_description"}
+        ),
+        "category": CanonicalField(
+            name="category",
+            field_type="text_title",
+            aliases={"category", "product_category", "item_category", "dept", "department", "sub_category", "subcategory", "group"}
+        ),
+        "brand": CanonicalField(
+            name="brand",
+            field_type="text_title",
+            aliases={"brand", "product_brand", "manufacturer", "vendor", "make"}
+        ),
+        "unit_price": CanonicalField(
+            name="unit_price",
+            field_type="numeric",
+            aliases={"unit_price", "price", "product_price", "item_price", "selling_price", "mrp", "msrp", "list_price", "rate", "cost_per_unit"}
+        ),
+        "cost_price": CanonicalField(
+            name="cost_price",
+            field_type="numeric",
+            aliases={"cost_price", "cost", "purchase_price", "wholesale_price", "buying_price"}
+        ),
+        "stock_quantity": CanonicalField(
+            name="stock_quantity",
+            field_type="numeric",
+            aliases={"stock_quantity", "stock", "quantity", "qty", "units_in_stock", "inventory", "available_stock", "reorder_level"}
+        ),
+        "unit": CanonicalField(
+            name="unit",
+            field_type="text",
+            aliases={"unit", "uom", "unit_of_measure", "measurement_unit"}
+        ),
+        "is_active": CanonicalField(
+            name="is_active",
+            field_type="boolean",
+            aliases={"is_active", "active", "status", "in_stock", "available"}
+        )
+    },
+
+    EntityType.CUSTOMER.value: {
+        "customer_id": CanonicalField(
+            name="customer_id",
+            field_type="id",
+            aliases={"customer_id", "cust_id", "client_id", "member_id", "user_id", "customer_code", "shopper_id", "buyer_id", "patron_id", "id"},
+            is_primary_key=True
+        ),
+        "customer_name": CanonicalField(
+            name="customer_name",
+            field_type="text_title",
+            aliases={"customer_name", "cust_name", "client_name", "full_name", "name", "member_name", "first_name", "last_name"}
+        ),
+        "email": CanonicalField(
+            name="email",
+            field_type="email",
+            aliases={"email", "customer_email", "cust_email", "email_address", "mail"}
+        ),
+        "phone": CanonicalField(
+            name="phone",
+            field_type="phone",
+            aliases={"phone", "customer_phone", "cust_phone", "mobile", "contact", "cell", "phone_number", "contact_number"}
+        ),
+        "city": CanonicalField(
+            name="city",
+            field_type="text_title",
+            aliases={"city", "customer_city", "town", "district"}
+        ),
+        "state": CanonicalField(
+            name="state",
+            field_type="text_title",
+            aliases={"state", "customer_state", "province"}
+        ),
+        "country": CanonicalField(
+            name="country",
+            field_type="text_title",
+            aliases={"country", "customer_country", "nation"}
+        ),
+        "postal_code": CanonicalField(
+            name="postal_code",
+            field_type="postal_code",
+            aliases={"postal_code", "zipcode", "zip_code", "zip", "pin_code", "pincode", "pin"}
+        ),
+        "address": CanonicalField(
+            name="address",
+            field_type="text",
+            aliases={"address", "customer_address", "street", "street_address", "residence", "billing_address", "shipping_address"}
+        ),
+        "gender": CanonicalField(
+            name="gender",
+            field_type="text_title",
+            aliases={"gender", "sex"}
+        ),
+        "date_of_birth": CanonicalField(
+            name="date_of_birth",
+            field_type="date",
+            aliases={"date_of_birth", "dob", "birth_date", "customer_dob", "birthdate"}
+        ),
+        "membership_tier": CanonicalField(
+            name="membership_tier",
+            field_type="text_title",
+            aliases={"membership_tier", "tier", "segment", "loyalty_tier", "customer_type", "membership", "status"}
+        ),
+        "loyalty_points": CanonicalField(
+            name="loyalty_points",
+            field_type="numeric",
+            aliases={"loyalty_points", "reward_points", "points", "rewards"}
+        )
+    },
+
+    EntityType.TRANSACTION.value: {
+        "transaction_id": CanonicalField(
+            name="transaction_id",
+            field_type="id",
+            aliases={"transaction_id", "txn_id", "order_id", "invoice_id", "receipt_id", "bill_id", "sale_id", "purchase_id", "order_number", "invoice_number", "bill_number", "id"},
+            is_primary_key=True
+        ),
+        "store_id": CanonicalField(
+            name="store_id",
+            field_type="id",
+            aliases={"store_id", "branch_id", "outlet_id", "store_code", "branch_code"}
+        ),
+        "product_id": CanonicalField(
+            name="product_id",
+            field_type="id",
+            aliases={"product_id", "item_id", "sku", "product_code", "item_code"}
+        ),
+        "customer_id": CanonicalField(
+            name="customer_id",
+            field_type="id",
+            aliases={"customer_id", "cust_id", "client_id", "member_id"}
+        ),
+        "transaction_date": CanonicalField(
+            name="transaction_date",
+            field_type="date",
+            aliases={"transaction_date", "txn_date", "purchase_date", "order_date", "sale_date", "invoice_date", "billing_date", "date", "created_at", "timestamp"}
+        ),
+        "quantity": CanonicalField(
+            name="quantity",
+            field_type="numeric",
+            aliases={"quantity", "qty", "units", "units_sold", "items_purchased", "count"}
+        ),
+        "unit_price": CanonicalField(
+            name="unit_price",
+            field_type="numeric",
+            aliases={"unit_price", "price", "item_price", "rate", "cost_per_unit"}
+        ),
+        "total_amount": CanonicalField(
+            name="total_amount",
+            field_type="numeric",
+            aliases={"total_amount", "order_total", "grand_total", "subtotal", "net_amount", "gross_amount", "total", "amount", "final_amount"}
+        ),
+        "discount_amount": CanonicalField(
+            name="discount_amount",
+            field_type="numeric",
+            aliases={"discount_amount", "discount", "discount_value", "savings", "promo_discount"}
+        ),
+        "tax_amount": CanonicalField(
+            name="tax_amount",
+            field_type="numeric",
+            aliases={"tax_amount", "tax", "gst", "vat", "sales_tax"}
+        ),
+        "payment_method": CanonicalField(
+            name="payment_method",
+            field_type="text_title",
+            aliases={"payment_method", "payment_type", "payment_mode", "pay_type", "tender_type", "payment"}
+        ),
+        "payment_status": CanonicalField(
+            name="payment_status",
+            field_type="text_title",
+            aliases={"payment_status", "order_status", "status", "delivery_status"}
+        )
+    }
+}
+
+
+def get_canonical_fields(entity_type: str) -> Dict[str, CanonicalField]:
+    """Returns canonical field dictionary for given entity type."""
+    return CANONICAL_SCHEMAS.get(entity_type.lower(), {})
+

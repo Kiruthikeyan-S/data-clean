@@ -134,9 +134,18 @@ def split_mixed_dataframe(df: pd.DataFrame, classification: EntityClassification
             continue
             
         total_rows = len(entity_df)
+
+        # 1. Apply Canonical Schema Mapping (Aliases -> Canonical Target Headers)
+        from backend.normalization.schema_mapper import map_dataframe_to_canonical_schema
+        from backend.normalization.value_standardizer import standardize_canonical_values
         
-        # Deduplicate
-        deduped_df, duplicates_removed = deduplicate_entity(entity_df, entity_lower)
+        mapped_df, _, _ = map_dataframe_to_canonical_schema(entity_df, entity_lower)
+        
+        # 2. Apply Canonical Value Standardization (Dates to ISO, Booleans, Cities, IDs, Numbers)
+        std_df, _, _ = standardize_canonical_values(mapped_df, entity_lower)
+
+        # 3. Deduplicate per entity
+        deduped_df, duplicates_removed = deduplicate_entity(std_df, entity_lower)
         deduped_df.reset_index(drop=True, inplace=True)
         
         # Determine confidence score

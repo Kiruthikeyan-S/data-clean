@@ -1,6 +1,8 @@
 import uuid
 import time
 from typing import Dict, Any, List, Optional
+import numpy as np
+import pandas as pd
 from backend.models.schemas import (
     ProcessResponse,
     StepStatus,
@@ -547,6 +549,41 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 split_tables=split_tables_info
             )
 
+            # ─── Schema Mapping & Canonical Value Standardization ───────
+            if not entity_result.is_mixed and entity_result.file_type in ("store", "item", "customer", "transaction"):
+                try:
+                    from backend.normalization.schema_mapper import map_dataframe_to_canonical_schema
+                    from backend.normalization.value_standardizer import standardize_canonical_values
+                    
+                    # 1. Map raw headers to canonical schema target names & merge duplicate aliases
+                    mapped_df, header_map, map_highlights = map_dataframe_to_canonical_schema(
+                        df_for_classify, entity_result.file_type
+                    )
+
+                    # 2. Standardize cell values (dates -> ISO 8601, booleans, names/cities -> Title Case, clean numbers)
+                    std_df, mod_counts, val_highlights = standardize_canonical_values(
+                        mapped_df, entity_result.file_type
+                    )
+
+                    # Update master structured data and columns
+                    structured_data = std_df.replace({np.nan: None}).to_dict(orient="records")
+                    columns = list(std_df.columns)
+
+                    total_schema_mods = len(map_highlights) + len(val_highlights)
+                    if cleansing_report:
+                        cleansing_report.change_highlights.extend(map_highlights)
+                        cleansing_report.change_highlights.extend(val_highlights)
+                        cleansing_report.modifications_count += total_schema_mods
+
+                    steps.append(StepStatus(
+                        step_id="schema_standardized",
+                        name="Canonical schema mapped & values standardized",
+                        status="completed",
+                        message=f"Mapped {len(header_map)} headers to canonical {entity_result.file_type} schema; standardized dates, booleans, and values"
+                    ))
+                except Exception as std_err:
+                    print(f"Schema mapping standardization error: {std_err}")
+
             # Add entity classification step to pipeline
             entity_label = entity_result.file_type.capitalize()
             if entity_result.is_mixed:
@@ -569,26 +606,6 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 message=f"Entity classification skipped: {str(e)}"
             ))
     
-    # ─── Business Analysis & Intelligence Step ───────────────────────────
-    business_analysis = None
-    if status != "failed" and structured_data and isinstance(structured_data, list) and len(structured_data) > 0:
-        try:
-            import pandas as pd
-            from backend.analytics.business_analyst import generate_business_analysis
-            df_analysis = pd.DataFrame(structured_data)
-            etype = entity_info.entity_type if entity_info else "general"
-            split_tbls = entity_info.split_tables if entity_info else None
-            business_analysis = generate_business_analysis(df_analysis, entity_type=etype, split_tables=split_tbls)
-
-            steps.append(StepStatus(
-                step_id="business_analysis",
-                name="Business analysis & KPIs",
-                status="completed",
-                message=f"Generated {len(business_analysis.metrics)} KPI metrics and {len(business_analysis.insights)} retail insights"
-            ))
-        except Exception as e:
-            print(f"Business analysis calculation skipped: {e}")
-
     summary = ProcessSummary(
         total_records=total_records,
         valid_records=total_records - (1 if errors and classification == "unstructured" else len(errors)),
@@ -613,8 +630,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         columns=columns,
         raw_text=raw_text,
         errors=errors if errors else None,
-        entity_info=entity_info,
-        business_analysis=business_analysis
+        entity_info=entity_info
     )
 
     # Store in memory for export retrieval
