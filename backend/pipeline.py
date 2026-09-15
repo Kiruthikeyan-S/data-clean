@@ -569,6 +569,26 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 message=f"Entity classification skipped: {str(e)}"
             ))
     
+    # ─── Business Analysis & Intelligence Step ───────────────────────────
+    business_analysis = None
+    if status != "failed" and structured_data and isinstance(structured_data, list) and len(structured_data) > 0:
+        try:
+            import pandas as pd
+            from backend.analytics.business_analyst import generate_business_analysis
+            df_analysis = pd.DataFrame(structured_data)
+            etype = entity_info.entity_type if entity_info else "general"
+            split_tbls = entity_info.split_tables if entity_info else None
+            business_analysis = generate_business_analysis(df_analysis, entity_type=etype, split_tables=split_tbls)
+
+            steps.append(StepStatus(
+                step_id="business_analysis",
+                name="Business analysis & KPIs",
+                status="completed",
+                message=f"Generated {len(business_analysis.metrics)} KPI metrics and {len(business_analysis.insights)} retail insights"
+            ))
+        except Exception as e:
+            print(f"Business analysis calculation skipped: {e}")
+
     summary = ProcessSummary(
         total_records=total_records,
         valid_records=total_records - (1 if errors and classification == "unstructured" else len(errors)),
@@ -593,7 +613,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         columns=columns,
         raw_text=raw_text,
         errors=errors if errors else None,
-        entity_info=entity_info
+        entity_info=entity_info,
+        business_analysis=business_analysis
     )
 
     # Store in memory for export retrieval

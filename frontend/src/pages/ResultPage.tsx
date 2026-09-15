@@ -4,6 +4,7 @@ import { ProcessResponse } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
 import { DataQualityInspector } from '../components/DataQualityInspector';
+import { BusinessAnalysisInspector } from '../components/BusinessAnalysisInspector';
 import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible';
 import { ProcessDetailsCollapsible } from '../components/ProcessDetailsCollapsible';
 
@@ -120,6 +121,11 @@ export const ResultPage: React.FC<ResultPageProps> = ({
             ))}
           </ul>
         </div>
+      )}
+
+      {/* Business Analysis & Intelligence Panel */}
+      {currentResult.business_analysis && (
+        <BusinessAnalysisInspector analysis={currentResult.business_analysis} />
       )}
 
       {/* 6-Dimension Interactive Data Quality Inspector */}

@@ -97,6 +97,27 @@ class EntityClassificationInfo(BaseModel):
     column_assignments: Dict[str, str] = {}
     split_tables: Optional[List[EntityTableInfo]] = None
 
+class BusinessMetricCard(BaseModel):
+    """Key Performance Indicator (KPI) metric card."""
+    label: str
+    value: str
+    subtext: Optional[str] = None
+    icon: str = "trending_up"
+
+class BusinessInsight(BaseModel):
+    """Actionable narrative business insight."""
+    title: str
+    description: str
+    badge: Optional[str] = None
+    type: str = "info"  # "positive", "warning", "info"
+
+class BusinessAnalysisReport(BaseModel):
+    """Comprehensive business intelligence report computed for the dataset."""
+    entity_type: str  # "store", "item", "customer", "transaction", "mixed", "general"
+    headline: str
+    metrics: List[BusinessMetricCard] = []
+    insights: List[BusinessInsight] = []
+
 class ProcessResponse(BaseModel):
     id: str
     filename: str
@@ -113,6 +134,7 @@ class ProcessResponse(BaseModel):
     raw_text: Optional[str] = None
     errors: Optional[List[ValidationErrorItem]] = None
     entity_info: Optional[EntityClassificationInfo] = None
+    business_analysis: Optional[BusinessAnalysisReport] = None
 
 class BatchProcessResponse(BaseModel):
     batch_id: str
