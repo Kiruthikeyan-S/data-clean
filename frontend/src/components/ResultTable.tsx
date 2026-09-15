@@ -5,10 +5,7 @@ import {
   ChevronRight,
   CheckCircle2,
   AlertCircle,
-  Table,
-  Sparkles,
-  GitMerge,
-  ShieldCheck
+  Table
 } from 'lucide-react';
 import { ProcessResponse } from '../types';
 
@@ -100,13 +97,10 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
   };
 
   const entityBadge = getEntityBadge(result.entity_info?.entity_type);
-  const confidencePercent = Math.round((result.entity_info?.confidence ?? 0.95) * 100);
-  const coveragePercent = Math.round((result.schema_mapping_coverage ?? 1.0) * 100);
-  const qualityPercent = Math.round((result.data_quality_score ?? 0.98) * 100);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Table Top Header & Metrics Banner */}
+      {/* Table Top Header */}
       <div className="p-5 sm:p-6 border-b border-slate-200 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -135,39 +129,6 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
                   <CheckCircle2 className="w-3 h-3" />
                   Cleaned & Standardized
                 </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3 Metric Score Cards */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 shrink-0">
-            <div className="px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-center">
-              <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center justify-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-500" />
-                <span>Entity Match</span>
-              </div>
-              <div className="text-sm font-extrabold text-slate-800 mt-0.5">
-                {confidencePercent}%
-              </div>
-            </div>
-
-            <div className="px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-center">
-              <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center justify-center gap-1">
-                <GitMerge className="w-3 h-3 text-blue-500" />
-                <span>Schema Match</span>
-              </div>
-              <div className="text-sm font-extrabold text-blue-600 mt-0.5">
-                {coveragePercent}%
-              </div>
-            </div>
-
-            <div className="px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-center">
-              <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center justify-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                <span>Quality Score</span>
-              </div>
-              <div className="text-sm font-extrabold text-emerald-600 mt-0.5">
-                {qualityPercent}%
               </div>
             </div>
           </div>
