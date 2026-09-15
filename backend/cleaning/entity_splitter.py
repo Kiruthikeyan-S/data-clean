@@ -57,10 +57,20 @@ def deduplicate_entity(df: pd.DataFrame, entity_type: str) -> Tuple[pd.DataFrame
             id_col = col
             break
             
-    if id_col:
-        deduped_df = df.drop_duplicates(subset=[id_col], keep='first')
-    else:
-        deduped_df = df.drop_duplicates(keep='first')
+    try:
+        if id_col:
+            deduped_df = df.drop_duplicates(subset=[id_col], keep='first')
+        else:
+            deduped_df = df.drop_duplicates(keep='first')
+    except TypeError:
+        import json
+        if id_col:
+            str_series = df[id_col].astype(str)
+            dup_mask = str_series.duplicated(keep='first')
+        else:
+            str_df = df.map(lambda x: json.dumps(x, sort_keys=True, default=str) if isinstance(x, (dict, list, set)) else str(x))
+            dup_mask = str_df.duplicated(keep='first')
+        deduped_df = df[~dup_mask]
         
     duplicates_removed = initial_rows - len(deduped_df)
     

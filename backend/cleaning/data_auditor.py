@@ -1,4 +1,5 @@
 import re
+import json
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
@@ -8,6 +9,30 @@ NULL_REPRESENTATIONS = {
     "n/a", "na", "null", "none", "nil", "undefined", "unknown", 
     "-", "--", "nan", "nat", "#n/a", "#na", "null value", ""
 }
+
+def safe_duplicated(df: pd.DataFrame, subset=None, keep: str = "first") -> pd.Series:
+    """Computes duplicate mask safely even if cells contain unhashable types like dicts or lists."""
+    try:
+        if subset:
+            return df.duplicated(subset=subset, keep=keep)
+        return df.duplicated(keep=keep)
+    except TypeError:
+        target = df[subset] if subset else df
+        str_df = target.map(lambda x: json.dumps(x, sort_keys=True, default=str) if isinstance(x, (dict, list, set)) else str(x))
+        return str_df.duplicated(keep=keep)
+
+def is_valid_cell(val: Any) -> bool:
+    """Safely checks if a cell has valid non-null content without throwing array truth value errors."""
+    if val is None:
+        return False
+    if isinstance(val, (dict, list, tuple, set)):
+        return True
+    try:
+        if pd.isna(val):
+            return False
+    except Exception:
+        return True
+    return True
 
 def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -> QualityAuditReport:
     """
@@ -27,29 +52,24 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
     # =========================================================================
     missing_items: List[AuditDetailItem] = []
     missing_cols_set = set()
+    missing_count = 0
 
-    for col in original_df.columns:
-        col_str = str(col)
-        for row_idx, val in enumerate(original_df[col]):
-            val_clean = str(val).strip().lower() if val is not None and not pd.isna(val) else ""
-            if pd.isna(val) or val is None or val_clean in NULL_REPRESENTATIONS:
-                missing_cols_set.add(col_str)
-                if len(missing_items) < 50:  # Cap at 50 for display responsiveness
+    for col in cleaned_df.columns:
+        for idx, val in enumerate(cleaned_df[col]):
+            if not is_valid_cell(val):
+                missing_count += 1
+                missing_cols_set.add(col)
+                if len(missing_items) < 30:
                     missing_items.append(AuditDetailItem(
-                        row_index=row_idx + 1,
-                        column=col_str,
-                        original_value=str(val) if val is not None and not pd.isna(val) else "null",
+                        row_index=idx + 1,
+                        column=col,
+                        original_value="Missing / Null",
                         cleaned_value=None,
-                        issue_description=f"Missing or inconsistent null representation '{val}' normalized to null",
-                        severity="warning"
+                        issue_description=f"Missing value normalized in column '{col}'",
+                        severity="info"
                     ))
 
-    missing_count = sum(
-        original_df[col].apply(lambda v: pd.isna(v) or v is None or str(v).strip().lower() in NULL_REPRESENTATIONS).sum()
-        for col in original_df.columns
-    )
     total_issues += int(missing_count)
-
     dimensions.append(QualityDimension(
         id="missing_values",
         title="Missing Values",
@@ -63,7 +83,7 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
     # =========================================================================
     # 2. DUPLICATES
     # =========================================================================
-    dup_mask = original_df.duplicated(keep="first")
+    dup_mask = safe_duplicated(original_df, keep="first")
     dup_count = int(dup_mask.sum())
     dup_items: List[AuditDetailItem] = []
     raw_dup_samples: List[Dict[str, Any]] = []
@@ -124,7 +144,7 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         
         if is_expected_numeric:
             for row_idx, val in enumerate(original_df[col]):
-                if val is not None and not pd.isna(val):
+                if is_valid_cell(val):
                     val_str = str(val).strip()
                     if val_str and val_str.lower() not in NULL_REPRESENTATIONS:
                         # Clean currency/commas to see if numeric
@@ -168,7 +188,7 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         col_lower = col_str.lower()
         
         for row_idx, val in enumerate(original_df[col]):
-            if val is not None and not pd.isna(val):
+            if is_valid_cell(val):
                 val_str = str(val).strip()
                 if val_str and val_str.lower() not in NULL_REPRESENTATIONS:
                     # Check email validity
@@ -247,7 +267,7 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         numeric_vals = []
         val_indices = []
         for row_idx, v in enumerate(original_df[col]):
-            if v is not None and not pd.isna(v):
+            if is_valid_cell(v):
                 v_clean = re.sub(r"[₹\$€£¥,\s%]", "", str(v).strip())
                 try:
                     numeric_vals.append(float(v_clean))
@@ -304,7 +324,7 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         is_text_col = any(k in col_lower for k in TEXT_COL_KEYWORDS)
 
         for row_idx, val in enumerate(original_df[col]):
-            if val is not None and not pd.isna(val):
+            if is_valid_cell(val):
                 val_str = str(val)
                 # Whitespace formatting
                 if val_str != val_str.strip():

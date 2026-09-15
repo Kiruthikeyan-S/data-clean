@@ -16,6 +16,18 @@ def clean_column_name(col: Any) -> str:
     return s if s else "Column"
 
 
+def safe_duplicated(df: pd.DataFrame, subset=None, keep: str = "first") -> pd.Series:
+    """Computes duplicate mask safely even if cells contain unhashable types like dicts or lists."""
+    try:
+        if subset:
+            return df.duplicated(subset=subset, keep=keep)
+        return df.duplicated(keep=keep)
+    except TypeError:
+        target = df[subset] if subset else df
+        str_df = target.map(lambda x: json.dumps(x, sort_keys=True, default=str) if isinstance(x, (dict, list, set)) else str(x))
+        return str_df.duplicated(keep=keep)
+
+
 def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Cleans a pandas DataFrame and tracks comprehensive cleansing metrics:
@@ -50,17 +62,31 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
         change_highlights.append(f"Standardized {headers_changed} column header name(s)")
 
     # 2. Count & drop completely empty rows before cell cleaning
-    all_empty_mask = df.isna().all(axis=1) | (df.astype(str).replace(r'^\s*$', np.nan, regex=True).isna().all(axis=1))
-    empty_rows_count = int(all_empty_mask.sum())
-    if empty_rows_count > 0:
-        df = df[~all_empty_mask].reset_index(drop=True)
-        change_highlights.append(f"Removed {empty_rows_count} completely empty row(s)")
+    try:
+        all_empty_mask = df.isna().all(axis=1) | (df.astype(str).replace(r'^\s*$', np.nan, regex=True).isna().all(axis=1))
+        empty_rows_count = int(all_empty_mask.sum())
+        if empty_rows_count > 0:
+            df = df[~all_empty_mask].reset_index(drop=True)
+            change_highlights.append(f"Removed {empty_rows_count} completely empty row(s)")
+    except Exception:
+        pass
 
     # 3. Cell-by-cell cleaning and metric tracking
     def clean_cell_tracker(val: Any) -> Any:
         nonlocal nulls_normalized_count, whitespace_trimmed_count
-        if pd.isna(val) or val is None:
+        if val is None:
             return None
+        if isinstance(val, (dict, list, tuple, set)):
+            # Convert unhashable nested dict/list into clean JSON string
+            try:
+                return json.dumps(val, ensure_ascii=False)
+            except Exception:
+                return str(val)
+        try:
+            if pd.isna(val):
+                return None
+        except Exception:
+            pass
         if isinstance(val, str):
             v_strip = val.strip()
             if val != v_strip:
@@ -84,8 +110,8 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
         empty_rows_count += extra_empty
         df = df[~all_empty_after].reset_index(drop=True)
 
-    # 5. Deduplicate and capture duplicates count + sample
-    dup_mask = df.duplicated(keep="first")
+    # 5. Deduplicate safely and capture duplicates count + sample
+    dup_mask = safe_duplicated(df, keep="first")
     duplicates_count = int(dup_mask.sum())
     removed_samples = []
     if duplicates_count > 0:
@@ -146,12 +172,29 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
     elif file_type == "json":
         data = json.loads(file_bytes.decode("utf-8"))
         if isinstance(data, list):
-            df = pd.DataFrame(data)
-        elif isinstance(data, dict):
-            if any(isinstance(v, list) for v in data.values()):
+            # Flatten nested dicts if any
+            try:
+                df = pd.json_normalize(data, sep="_")
+            except Exception:
                 df = pd.DataFrame(data)
+        elif isinstance(data, dict):
+            # Check if dict wraps a list of records under a key like 'customers', 'records', 'items', 'data'
+            record_key = next((k for k, v in data.items() if isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict)), None)
+            if record_key:
+                try:
+                    df = pd.json_normalize(data[record_key], sep="_")
+                except Exception:
+                    df = pd.DataFrame(data[record_key])
+            elif any(isinstance(v, list) for v in data.values()):
+                try:
+                    df = pd.DataFrame(data)
+                except Exception:
+                    df = pd.json_normalize([data], sep="_")
             else:
-                df = pd.DataFrame([data])
+                try:
+                    df = pd.json_normalize([data], sep="_")
+                except Exception:
+                    df = pd.DataFrame([data])
         else:
             df = pd.DataFrame([{"data": data}])
     else:
