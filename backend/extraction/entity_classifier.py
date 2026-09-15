@@ -475,3 +475,21 @@ def classify_with_llm_fallback(
             method="llm_fallback",
             details=f"LLM fallback failed: {e}",
         )
+
+
+def infer_entity_from_collection_name(name: str) -> Optional[str]:
+    """
+    Infers entity type ('store', 'item', 'customer', 'transaction') from a collection key or sheet name.
+    """
+    if not name:
+        return None
+    s = re.sub(r"[^a-zA-Z0-9]+", "_", str(name).strip().lower())
+    if any(k in s for k in ("store", "branch", "outlet", "warehouse", "location")):
+        return EntityType.STORE.value
+    if any(k in s for k in ("product", "item", "inventory", "sku", "merchandise", "catalog", "article")):
+        return EntityType.ITEM.value
+    if any(k in s for k in ("customer", "cust", "client", "member", "user", "buyer", "shopper", "patron", "subscriber")):
+        return EntityType.CUSTOMER.value
+    if any(k in s for k in ("transaction", "order", "sale", "invoice", "receipt", "purchase", "billing", "bill", "payment")):
+        return EntityType.TRANSACTION.value
+    return None

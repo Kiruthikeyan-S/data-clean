@@ -30,6 +30,7 @@ def normalize_header_token(header: str) -> str:
     """Normalizes header string for alias matching."""
     s = str(header).strip().lower()
     s = re.sub(r"[\s\-\.]+", "_", s)
+    s = re.sub(r"_+", "_", s).strip("_")
     return s
 
 

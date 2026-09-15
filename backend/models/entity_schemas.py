@@ -241,7 +241,7 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "store_id": CanonicalField(
             name="store_id",
             field_type="id",
-            aliases={"store_id", "store_code", "store_num", "store_number", "branch_id", "branch_code", "outlet_id", "outlet_code", "warehouse_id", "warehouse_code", "id", "store_no"},
+            aliases={"store_id", "store_code", "store_num", "store_number", "branch_id", "branch_code", "outlet_id", "outlet_code", "warehouse_id", "warehouse_code", "id", "store_no", "s_id", "sid", "str_id"},
             description="Unique store or branch identifier",
             is_primary_key=True
         ),
@@ -287,7 +287,7 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "item_id": CanonicalField(
             name="item_id",
             field_type="id",
-            aliases={"item_id", "product_id", "sku", "sku_id", "sku_code", "prod_code", "product_code", "item_code", "barcode", "upc", "ean", "asin", "id", "item_no"},
+            aliases={"item_id", "product_id", "sku", "sku_id", "sku_code", "prod_code", "product_code", "item_code", "barcode", "upc", "ean", "asin", "id", "item_no", "p_id", "pid", "prod_id"},
             description="Unique product SKU or item identifier",
             is_primary_key=True
         ),
@@ -333,7 +333,7 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "customer_id": CanonicalField(
             name="customer_id",
             field_type="id",
-            aliases={"customer_id", "cust_id", "client_id", "member_id", "user_id", "customer_code", "shopper_id", "buyer_id", "patron_id", "id"},
+            aliases={"customer_id", "cust_id", "client_id", "member_id", "user_id", "customer_code", "shopper_id", "buyer_id", "patron_id", "id", "c_id", "cid"},
             description="Unique customer account identifier",
             is_primary_key=True
         ),
@@ -385,7 +385,7 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "transaction_id": CanonicalField(
             name="transaction_id",
             field_type="id",
-            aliases={"transaction_id", "txn_id", "order_id", "invoice_id", "receipt_id", "bill_id", "sale_id", "purchase_id", "order_number", "invoice_number", "bill_number", "id"},
+            aliases={"transaction_id", "txn_id", "order_id", "invoice_id", "receipt_id", "bill_id", "sale_id", "purchase_id", "order_number", "invoice_number", "bill_number", "id", "t_id", "tid", "tx_id"},
             description="Unique transaction or invoice number",
             is_primary_key=True
         ),

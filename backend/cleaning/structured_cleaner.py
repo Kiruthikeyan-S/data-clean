@@ -153,7 +153,11 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
 def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Any]]:
     """
     Reads CSV, Excel, or JSON bytes into DataFrame, cleans it, and returns records, columns, and metrics.
+    Supports multi-collection JSON files and multi-sheet Excel workbooks.
     """
+    is_multi_collection = False
+    collections_data: Dict[str, Dict[str, Any]] = {}
+
     if file_type == "csv":
         try:
             df = pd.read_csv(io.BytesIO(file_bytes), skipinitialspace=True, dtype=object)
@@ -167,8 +171,36 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
                 df = pd.read_csv(io.BytesIO(file_bytes), engine="python", on_bad_lines="skip", skipinitialspace=True, dtype=object)
             except Exception:
                 df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin-1", engine="python", on_bad_lines="skip", dtype=object)
+
     elif file_type == "excel":
-        df = pd.read_excel(io.BytesIO(file_bytes), dtype=object)
+        try:
+            xl = pd.ExcelFile(io.BytesIO(file_bytes))
+            sheet_names = xl.sheet_names
+            if len(sheet_names) >= 2:
+                # Multi-sheet Excel workbook
+                for sname in sheet_names:
+                    sheet_df = pd.read_excel(xl, sheet_name=sname, dtype=object)
+                    if not sheet_df.empty:
+                        raw_s_df = sheet_df.copy()
+                        clean_s_df, s_metrics = clean_structured_dataframe(sheet_df)
+                        if not clean_s_df.empty:
+                            collections_data[sname] = {
+                                "raw_df": raw_s_df,
+                                "cleaned_df": clean_s_df,
+                                "metrics": s_metrics
+                            }
+                if len(collections_data) >= 2:
+                    is_multi_collection = True
+                    df = pd.concat([c["cleaned_df"] for c in collections_data.values()], axis=0, ignore_index=True)
+                elif len(collections_data) == 1:
+                    df = list(collections_data.values())[0]["cleaned_df"]
+                else:
+                    df = pd.read_excel(xl, sheet_name=sheet_names[0], dtype=object)
+            else:
+                df = pd.read_excel(xl, sheet_name=sheet_names[0], dtype=object)
+        except Exception:
+            df = pd.read_excel(io.BytesIO(file_bytes), dtype=object)
+
     elif file_type == "json":
         data = json.loads(file_bytes.decode("utf-8"))
         if isinstance(data, list):
@@ -178,13 +210,49 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
             except Exception:
                 df = pd.DataFrame(data)
         elif isinstance(data, dict):
-            # Check if dict wraps a list of records under a key like 'customers', 'records', 'items', 'data'
-            record_key = next((k for k, v in data.items() if isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict)), None)
-            if record_key:
+            # Check for multiple entity collections (e.g. {"stores": [...], "items": [...], "customers": [...]})
+            coll_keys = [
+                k for k, v in data.items()
+                if (isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict)) or (isinstance(v, dict) and len(v) > 0)
+            ]
+            if len(coll_keys) >= 2:
+                # Multi-collection JSON dataset
+                for k in coll_keys:
+                    val = data[k]
+                    try:
+                        if isinstance(val, list):
+                            c_df = pd.json_normalize(val, sep="_")
+                        elif isinstance(val, dict):
+                            c_df = pd.json_normalize([val], sep="_")
+                        else:
+                            c_df = pd.DataFrame(val)
+                    except Exception:
+                        c_df = pd.DataFrame(val if isinstance(val, list) else [val])
+                    
+                    if not c_df.empty:
+                        raw_c_df = c_df.copy()
+                        clean_c_df, c_metrics = clean_structured_dataframe(c_df)
+                        if not clean_c_df.empty:
+                            collections_data[k] = {
+                                "raw_df": raw_c_df,
+                                "cleaned_df": clean_c_df,
+                                "metrics": c_metrics
+                            }
+                if len(collections_data) >= 2:
+                    is_multi_collection = True
+                    df = pd.concat([c["cleaned_df"] for c in collections_data.values()], axis=0, ignore_index=True)
+                elif len(collections_data) == 1:
+                    df = list(collections_data.values())[0]["cleaned_df"]
+                else:
+                    df = pd.DataFrame([data])
+            elif len(coll_keys) == 1:
+                # Single collection wrapped in top-level dict (e.g. {"customers": [...]})
+                k = coll_keys[0]
+                val = data[k]
                 try:
-                    df = pd.json_normalize(data[record_key], sep="_")
+                    df = pd.json_normalize(val, sep="_") if isinstance(val, list) else pd.json_normalize([val], sep="_")
                 except Exception:
-                    df = pd.DataFrame(data[record_key])
+                    df = pd.DataFrame(val if isinstance(val, list) else [val])
             elif any(isinstance(v, list) for v in data.values()):
                 try:
                     df = pd.DataFrame(data)
@@ -208,6 +276,11 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
     from backend.cleaning.data_auditor import audit_structured_data
     audit_report = audit_structured_data(original_raw_df, cleaned_df)
     metrics["quality_audit"] = audit_report
+    
+    if is_multi_collection:
+        metrics["is_multi_collection"] = True
+        metrics["collections"] = collections_data
+        metrics["change_highlights"].insert(0, f"Detected multi-entity dataset containing {len(collections_data)} collections: {', '.join(collections_data.keys())}")
     
     records = cleaned_df.replace({np.nan: None}).to_dict(orient="records")
     columns = list(cleaned_df.columns)

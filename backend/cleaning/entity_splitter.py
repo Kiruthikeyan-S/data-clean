@@ -176,3 +176,54 @@ def split_mixed_dataframe(df: pd.DataFrame, classification: EntityClassification
         entity_tables.append(table)
         
     return entity_tables
+
+
+def create_entity_table_from_dataframe(
+    df: pd.DataFrame,
+    entity_type: str,
+    confidence: float = 0.95,
+    custom_name: Optional[str] = None
+) -> EntityTable:
+    """
+    Cleans, maps to canonical schema, standardizes values, and deduplicates
+    a DataFrame for a single entity type, returning a structured EntityTable.
+    """
+    from backend.normalization.schema_mapper import map_dataframe_to_canonical_schema
+    from backend.normalization.value_standardizer import standardize_canonical_values
+
+    entity_lower = str(entity_type).lower().strip()
+    total_rows = len(df)
+    
+    # 1. Canonical Schema Mapping
+    mapped_df, schema_report, _ = map_dataframe_to_canonical_schema(df, entity_lower)
+    
+    # 2. Canonical Value Standardization
+    std_df, _, _ = standardize_canonical_values(mapped_df, entity_lower)
+    
+    # 3. Deduplicate per entity
+    deduped_df, duplicates_removed = deduplicate_entity(std_df, entity_lower)
+    deduped_df.reset_index(drop=True, inplace=True)
+    
+    entity_metadata = {
+        'store': {'display': 'Store Data', 'icon': '🏪'},
+        'item': {'display': 'Product/Item Data', 'icon': '📦'},
+        'customer': {'display': 'Customer Data', 'icon': '👤'},
+        'transaction': {'display': 'Transaction Data', 'icon': '🧾'}
+    }
+    meta = entity_metadata.get(entity_lower, {'display': f'{custom_name or entity_type.capitalize()} Data', 'icon': '📁'})
+    
+    records = deduped_df.where(pd.notnull(deduped_df), None).to_dict(orient='records')
+    
+    return EntityTable(
+        entity_type=entity_lower,
+        display_name=meta['display'],
+        icon=meta['icon'],
+        columns=list(deduped_df.columns),
+        records=records,
+        total_rows=total_rows,
+        deduplicated_rows=len(deduped_df),
+        duplicates_removed=duplicates_removed,
+        confidence=confidence,
+        schema_mapping_report=schema_report
+    )
+

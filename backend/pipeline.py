@@ -23,8 +23,12 @@ from backend.cleaning.data_auditor import audit_structured_data, audit_unstructu
 from backend.extraction.field_extractor import identify_fields, map_to_schema
 from backend.extraction.ai_extractor import extract_fields_with_llm, classify_columns_with_llm
 from backend.validation.validator import validate_unstructured_fields, validate_structured_records
-from backend.extraction.entity_classifier import classify_columns, classify_with_llm_fallback
-from backend.cleaning.entity_splitter import split_mixed_dataframe
+from backend.extraction.entity_classifier import (
+    classify_columns,
+    classify_with_llm_fallback,
+    infer_entity_from_collection_name
+)
+from backend.cleaning.entity_splitter import split_mixed_dataframe, create_entity_table_from_dataframe
 from backend.normalization.schema_mapper import map_dataframe_to_canonical_schema
 from backend.normalization.value_standardizer import standardize_canonical_values
 from backend.models.entity_schemas import CONFIDENCE_THRESHOLD
@@ -81,11 +85,15 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     errors: List[ValidationErrorItem] = []
     cleansing_report: Optional[CleansingReport] = None
     status = "completed"
+    is_multi_collection = False
+    multi_collections = {}
 
     if classification == "structured":
         try:
             # Step 4: Read & Clean Structured Data
             records, cols, metrics = read_and_clean_structured_file(file_type, file_bytes)
+            is_multi_collection = metrics.get("is_multi_collection", False)
+            multi_collections = metrics.get("collections", {})
             
             # Categories Breakdown for Structured Data
             structured_categories = [
@@ -493,6 +501,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     total_records = len(structured_data) if isinstance(structured_data, list) else (1 if structured_data else 0)
 
     # ─── Business Entity Classification Step ───────────────────────────
+    # ─── Business Entity Classification & Separation Step ───────────────
     entity_info = None
     raw_structured_data = structured_data if isinstance(structured_data, list) else None
     raw_columns = list(columns) if columns else None
@@ -501,130 +510,241 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     
     if status != "failed" and structured_data and isinstance(structured_data, list) and columns:
         try:
-            df_for_classify = pd.DataFrame(structured_data)
+            is_multi_coll = is_multi_collection if "is_multi_collection" in locals() else False
+            multi_colls = multi_collections if "multi_collections" in locals() else {}
 
-            # Run 3-layer rule-based classification
-            entity_result = classify_columns(list(columns), df_for_classify)
+            # ─── CASE 1: Multi-Collection Ingestion (JSON with multiple entity sections or Excel with multiple sheets) ───
+            if is_multi_coll and multi_colls:
+                split_tables_info: List[EntityTableInfo] = []
+                entity_confs: Dict[str, float] = {}
 
-            # LLM fallback if confidence is low
-            if entity_result.confidence < CONFIDENCE_THRESHOLD and entity_result.file_type == "unknown":
-                sample_vals = {}
-                for col in columns:
-                    try:
-                        sample_vals[col] = df_for_classify[col].dropna().astype(str).head(5).tolist()
-                    except Exception:
-                        sample_vals[col] = []
-                llm_result = classify_with_llm_fallback(
-                    list(columns), sample_vals, classify_columns_with_llm
+                for coll_name, coll_data in multi_colls.items():
+                    c_clean_df = coll_data["cleaned_df"]
+                    c_cols = list(c_clean_df.columns)
+
+                    # 1. Classify the collection
+                    c_entity_res = classify_columns(c_cols, c_clean_df)
+                    inferred_entity = infer_entity_from_collection_name(coll_name)
+
+                    # Choose the most accurate entity type
+                    target_entity = c_entity_res.file_type
+                    if target_entity in ("unknown", "general", "mixed") and inferred_entity:
+                        target_entity = inferred_entity
+                    elif inferred_entity and c_entity_res.confidence < 0.60:
+                        target_entity = inferred_entity
+                    elif target_entity == "unknown":
+                        target_entity = inferred_entity or "store"
+
+                    c_conf = max(c_entity_res.confidence, 0.90)
+                    entity_confs[target_entity] = c_conf
+
+                    # 2. Map canonical schema, standardize values, and deduplicate per entity
+                    e_table = create_entity_table_from_dataframe(
+                        c_clean_df, target_entity, confidence=c_conf, custom_name=coll_name
+                    )
+
+                    split_tables_info.append(
+                        EntityTableInfo(
+                            entity_type=e_table.entity_type,
+                            display_name=e_table.display_name,
+                            icon=e_table.icon,
+                            columns=e_table.columns,
+                            records=e_table.records,
+                            total_rows=e_table.total_rows,
+                            deduplicated_rows=e_table.deduplicated_rows,
+                            duplicates_removed=e_table.duplicates_removed,
+                            confidence=e_table.confidence,
+                            schema_mapping_report=[
+                                SchemaMappingItem(
+                                    canonical_field=sm["canonical_field"],
+                                    field_type=sm.get("field_type", "text"),
+                                    description=sm.get("description", ""),
+                                    source_aliases=sm.get("source_aliases", []),
+                                    is_mapped=sm.get("is_mapped", False),
+                                    rows_populated=sm.get("rows_populated", 0)
+                                )
+                                for sm in (e_table.schema_mapping_report or [])
+                            ] if e_table.schema_mapping_report else None
+                        )
+                    )
+
+                entity_info = EntityClassificationInfo(
+                    entity_type="mixed",
+                    is_mixed=True,
+                    confidence=0.98,
+                    method="multi_collection_extraction",
+                    details=f"Multi-entity dataset containing {len(split_tables_info)} separated business entity tables: {', '.join(t.display_name for t in split_tables_info)}",
+                    entities_detected=entity_confs,
+                    column_assignments={},
+                    split_tables=split_tables_info
                 )
-                if llm_result and llm_result.confidence > entity_result.confidence:
-                    entity_result = llm_result
 
-            # If mixed file, split into per-entity tables with deduplication
-            split_tables_info = None
-            if entity_result.is_mixed:
-                try:
-                    tables = split_mixed_dataframe(df_for_classify, entity_result)
-                    if tables:
-                        split_tables_info = [
-                            EntityTableInfo(
-                                entity_type=t.entity_type,
-                                display_name=t.display_name,
-                                icon=t.icon,
-                                columns=t.columns,
-                                records=t.records,
-                                total_rows=t.total_rows,
-                                deduplicated_rows=t.deduplicated_rows,
-                                duplicates_removed=t.duplicates_removed,
-                                confidence=t.confidence,
-                                schema_mapping_report=[
-                                    SchemaMappingItem(
-                                        canonical_field=sm["canonical_field"],
-                                        field_type=sm.get("field_type", "text"),
-                                        description=sm.get("description", ""),
-                                        source_aliases=sm.get("source_aliases", []),
-                                        is_mapped=sm.get("is_mapped", False),
-                                        rows_populated=sm.get("rows_populated", 0)
-                                    )
-                                    for sm in (t.schema_mapping_report or [])
-                                ] if t.schema_mapping_report else None
-                            )
-                            for t in tables
-                        ]
-                except Exception as split_err:
-                    print(f"Entity splitting error: {split_err}")
-
-            entity_info = EntityClassificationInfo(
-                entity_type=entity_result.file_type,
-                is_mixed=entity_result.is_mixed,
-                confidence=entity_result.confidence,
-                method=entity_result.method,
-                details=entity_result.details,
-                entities_detected=entity_result.entities_detected,
-                column_assignments=entity_result.column_assignments,
-                split_tables=split_tables_info
-            )
-
-            # ─── Schema Mapping & Canonical Value Standardization ───────
-            if not entity_result.is_mixed and entity_result.file_type in ("store", "item", "customer", "transaction"):
-                try:
-                    # 1. Map raw headers to canonical schema target names & merge duplicate aliases
-                    mapped_df, raw_schema_report, map_highlights = map_dataframe_to_canonical_schema(
-                        df_for_classify, entity_result.file_type
-                    )
-
-                    # 2. Standardize cell values (dates -> ISO 8601, booleans, names/cities -> Title Case, clean numbers)
-                    std_df, mod_counts, val_highlights = standardize_canonical_values(
-                        mapped_df, entity_result.file_type
-                    )
-
-                    # Update master structured data and columns
-                    structured_data = std_df.replace({np.nan: None}).to_dict(orient="records")
-                    columns = list(std_df.columns)
-
-                    if raw_schema_report:
-                        schema_mapping_report = [
-                            SchemaMappingItem(
-                                canonical_field=item["canonical_field"],
-                                field_type=item.get("field_type", "text"),
-                                description=item.get("description", ""),
-                                source_aliases=item.get("source_aliases", []),
-                                is_mapped=item.get("is_mapped", False),
-                                rows_populated=item.get("rows_populated", 0)
-                            )
-                            for item in raw_schema_report
-                        ]
+                # Primary structured data uses the first separated table
+                if split_tables_info:
+                    structured_data = split_tables_info[0].records
+                    columns = split_tables_info[0].columns
+                    schema_mapping_report = split_tables_info[0].schema_mapping_report
+                    if schema_mapping_report:
                         mapped_count = sum(1 for it in schema_mapping_report if it.is_mapped and it.rows_populated > 0)
                         schema_mapping_coverage = round(mapped_count / max(len(schema_mapping_report), 1), 4)
 
-                    total_schema_mods = len(map_highlights) + len(val_highlights)
-                    if cleansing_report:
-                        cleansing_report.change_highlights.extend(map_highlights)
-                        cleansing_report.change_highlights.extend(val_highlights)
-                        cleansing_report.modifications_count += total_schema_mods
+                steps.append(StepStatus(
+                    step_id="entity_classified",
+                    name="Business entities identified & separated",
+                    status="completed",
+                    message=f"Separated {len(split_tables_info)} business entity tables ({', '.join(t.display_name for t in split_tables_info)})"
+                ))
+
+            # ─── CASE 2: Flat / Denormalized Tabular Ingestion (CSV, single-sheet Excel, flat JSON array) ───
+            else:
+                df_for_classify = pd.DataFrame(structured_data)
+
+                # Run 3-layer rule-based classification
+                entity_result = classify_columns(list(columns), df_for_classify)
+
+                # LLM fallback if confidence is low
+                if entity_result.confidence < CONFIDENCE_THRESHOLD and entity_result.file_type == "unknown":
+                    sample_vals = {}
+                    for col in columns:
+                        try:
+                            sample_vals[col] = df_for_classify[col].dropna().astype(str).head(5).tolist()
+                        except Exception:
+                            sample_vals[col] = []
+                    llm_result = classify_with_llm_fallback(
+                        list(columns), sample_vals, classify_columns_with_llm
+                    )
+                    if llm_result and llm_result.confidence > entity_result.confidence:
+                        entity_result = llm_result
+
+                # Check if dataset is Mixed (Multi-Entity) or Single-Entity
+                if entity_result.is_mixed:
+                    # Multi-Entity Flat Table -> Split into separated Store, Item, Customer, Transaction tables
+                    split_tables_info = None
+                    try:
+                        tables = split_mixed_dataframe(df_for_classify, entity_result)
+                        if tables:
+                            split_tables_info = [
+                                EntityTableInfo(
+                                    entity_type=t.entity_type,
+                                    display_name=t.display_name,
+                                    icon=t.icon,
+                                    columns=t.columns,
+                                    records=t.records,
+                                    total_rows=t.total_rows,
+                                    deduplicated_rows=t.deduplicated_rows,
+                                    duplicates_removed=t.duplicates_removed,
+                                    confidence=t.confidence,
+                                    schema_mapping_report=[
+                                        SchemaMappingItem(
+                                            canonical_field=sm["canonical_field"],
+                                            field_type=sm.get("field_type", "text"),
+                                            description=sm.get("description", ""),
+                                            source_aliases=sm.get("source_aliases", []),
+                                            is_mapped=sm.get("is_mapped", False),
+                                            rows_populated=sm.get("rows_populated", 0)
+                                        )
+                                        for sm in (t.schema_mapping_report or [])
+                                    ] if t.schema_mapping_report else None
+                                )
+                                for t in tables
+                            ]
+                    except Exception as split_err:
+                        print(f"Entity splitting error: {split_err}")
+
+                    entity_info = EntityClassificationInfo(
+                        entity_type="mixed",
+                        is_mixed=True,
+                        confidence=entity_result.confidence,
+                        method=entity_result.method,
+                        details=entity_result.details,
+                        entities_detected=entity_result.entities_detected,
+                        column_assignments=entity_result.column_assignments,
+                        split_tables=split_tables_info
+                    )
+
+                    # Default to first split table or transaction table for primary view
+                    if split_tables_info:
+                        structured_data = split_tables_info[0].records
+                        columns = split_tables_info[0].columns
+                        schema_mapping_report = split_tables_info[0].schema_mapping_report
+                        if schema_mapping_report:
+                            mapped_count = sum(1 for it in schema_mapping_report if it.is_mapped and it.rows_populated > 0)
+                            schema_mapping_coverage = round(mapped_count / max(len(schema_mapping_report), 1), 4)
+
+                    detected_names = [e for e, c in entity_result.entities_detected.items() if c > 0.05]
+                    split_msg = f" (Split into {len(split_tables_info)} tables)" if split_tables_info else ""
+                    steps.append(StepStatus(
+                        step_id="entity_classified",
+                        name="Business entity identified & separated",
+                        status="completed",
+                        message=f"Identified as Mixed ({', '.join(n.capitalize() for n in detected_names)}) data{split_msg} ({entity_result.confidence:.0%} confidence)"
+                    ))
+
+                else:
+                    # Single-Entity Dataset -> Do NOT separate; directly apply canonical schema mapping & standardization
+                    entity_info = EntityClassificationInfo(
+                        entity_type=entity_result.file_type,
+                        is_mixed=False,
+                        confidence=entity_result.confidence,
+                        method=entity_result.method,
+                        details=entity_result.details,
+                        entities_detected=entity_result.entities_detected,
+                        column_assignments=entity_result.column_assignments,
+                        split_tables=None
+                    )
+
+                    if entity_result.file_type in ("store", "item", "customer", "transaction"):
+                        try:
+                            # 1. Map raw headers to canonical schema target names & merge duplicate aliases
+                            mapped_df, raw_schema_report, map_highlights = map_dataframe_to_canonical_schema(
+                                df_for_classify, entity_result.file_type
+                            )
+
+                            # 2. Standardize cell values (dates -> ISO 8601, booleans, names/cities -> Title Case, clean numbers)
+                            std_df, mod_counts, val_highlights = standardize_canonical_values(
+                                mapped_df, entity_result.file_type
+                            )
+
+                            # Update master structured data and columns
+                            structured_data = std_df.replace({np.nan: None}).to_dict(orient="records")
+                            columns = list(std_df.columns)
+
+                            if raw_schema_report:
+                                schema_mapping_report = [
+                                    SchemaMappingItem(
+                                        canonical_field=item["canonical_field"],
+                                        field_type=item.get("field_type", "text"),
+                                        description=item.get("description", ""),
+                                        source_aliases=item.get("source_aliases", []),
+                                        is_mapped=item.get("is_mapped", False),
+                                        rows_populated=item.get("rows_populated", 0)
+                                    )
+                                    for item in raw_schema_report
+                                ]
+                                mapped_count = sum(1 for it in schema_mapping_report if it.is_mapped and it.rows_populated > 0)
+                                schema_mapping_coverage = round(mapped_count / max(len(schema_mapping_report), 1), 4)
+
+                            total_schema_mods = len(map_highlights) + len(val_highlights)
+                            if cleansing_report:
+                                cleansing_report.change_highlights.extend(map_highlights)
+                                cleansing_report.change_highlights.extend(val_highlights)
+                                cleansing_report.modifications_count += total_schema_mods
+
+                            steps.append(StepStatus(
+                                step_id="schema_standardized",
+                                name="Canonical schema mapped & values standardized",
+                                status="completed",
+                                message=f"Mapped {mapped_count if 'mapped_count' in locals() else len(raw_schema_report)} fields to canonical {entity_result.file_type} schema; merged duplicate aliases & standardized values"
+                            ))
+                        except Exception as std_err:
+                            print(f"Schema mapping standardization error: {std_err}")
 
                     steps.append(StepStatus(
-                        step_id="schema_standardized",
-                        name="Canonical schema mapped & values standardized",
+                        step_id="entity_classified",
+                        name="Business entity identified",
                         status="completed",
-                        message=f"Mapped {mapped_count if 'mapped_count' in locals() else len(raw_schema_report)} fields to canonical {entity_result.file_type} schema; merged duplicate aliases & standardized values"
+                        message=f"Identified as Single-Entity {entity_result.file_type.capitalize()} data ({entity_result.confidence:.0%} confidence, {entity_result.method})"
                     ))
-                except Exception as std_err:
-                    print(f"Schema mapping standardization error: {std_err}")
-
-            # Add entity classification step to pipeline
-            entity_label = entity_result.file_type.capitalize()
-            if entity_result.is_mixed:
-                detected_names = [e for e, c in entity_result.entities_detected.items() if c > 0.05]
-                split_msg = f" (Split into {len(split_tables_info)} tables)" if split_tables_info else ""
-                entity_label = f"Mixed ({', '.join(n.capitalize() for n in detected_names)}){split_msg}"
-
-            steps.append(StepStatus(
-                step_id="entity_classified",
-                name="Business entity identified",
-                status="completed",
-                message=f"Identified as {entity_label} data ({entity_result.confidence:.0%} confidence, {entity_result.method})"
-            ))
 
         except Exception as e:
             steps.append(StepStatus(
