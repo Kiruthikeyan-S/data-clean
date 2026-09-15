@@ -80,6 +80,29 @@ export interface ProcessSummary {
   classification: string;
 }
 
+export interface EntityTableInfo {
+  entity_type: 'store' | 'item' | 'customer' | 'transaction' | string;
+  display_name: string;
+  icon: string;
+  columns: string[];
+  records: Array<Record<string, any>>;
+  total_rows: number;
+  deduplicated_rows: number;
+  duplicates_removed: number;
+  confidence: number;
+}
+
+export interface EntityClassificationInfo {
+  entity_type: 'store' | 'item' | 'customer' | 'transaction' | 'mixed' | 'unknown';
+  is_mixed: boolean;
+  confidence: number;
+  method: 'rule_based' | 'llm_fallback';
+  details: string;
+  entities_detected: Record<string, number>;
+  column_assignments: Record<string, string>;
+  split_tables?: EntityTableInfo[];
+}
+
 export interface ProcessResponse {
   id: string;
   filename: string;
@@ -95,6 +118,7 @@ export interface ProcessResponse {
   columns?: string[];
   raw_text?: string;
   errors?: ValidationErrorItem[];
+  entity_info?: EntityClassificationInfo;
 }
 
 export interface BatchProcessResponse {

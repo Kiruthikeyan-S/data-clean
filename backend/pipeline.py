@@ -8,15 +8,19 @@ from backend.models.schemas import (
     ProcessedField, 
     ValidationErrorItem,
     CleansingReport,
-    CleansingCategory
+    CleansingCategory,
+    EntityClassificationInfo
 )
 from backend.utils.file_detector import detect_file_type, classify_data_type
 from backend.extractors import extract_data
 from backend.cleaning.text_cleaner import clean_text_data
 from backend.cleaning.structured_cleaner import read_and_clean_structured_file
 from backend.extraction.field_extractor import identify_fields, map_to_schema
-from backend.extraction.ai_extractor import extract_fields_with_llm
+from backend.extraction.ai_extractor import extract_fields_with_llm, classify_columns_with_llm
 from backend.validation.validator import validate_unstructured_fields, validate_structured_records
+from backend.extraction.entity_classifier import classify_columns, classify_with_llm_fallback
+from backend.cleaning.entity_splitter import split_mixed_dataframe
+from backend.models.entity_schemas import CONFIDENCE_THRESHOLD
 
 # In-memory storage for results and exports
 RESULTS_STORE: Dict[str, ProcessResponse] = {}
@@ -483,6 +487,87 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     processing_time_ms = round((time.time() - start_time) * 1000, 2)
     
     total_records = len(structured_data) if isinstance(structured_data, list) else (1 if structured_data else 0)
+
+    # ─── Business Entity Classification Step ───────────────────────────
+    entity_info = None
+    if status != "failed" and structured_data and isinstance(structured_data, list) and columns:
+        try:
+            import pandas as pd
+            df_for_classify = pd.DataFrame(structured_data)
+
+            # Run 3-layer rule-based classification
+            entity_result = classify_columns(list(columns), df_for_classify)
+
+            # LLM fallback if confidence is low
+            if entity_result.confidence < CONFIDENCE_THRESHOLD and entity_result.file_type == "unknown":
+                sample_vals = {}
+                for col in columns:
+                    try:
+                        sample_vals[col] = df_for_classify[col].dropna().astype(str).head(5).tolist()
+                    except Exception:
+                        sample_vals[col] = []
+                llm_result = classify_with_llm_fallback(
+                    list(columns), sample_vals, classify_columns_with_llm
+                )
+                if llm_result and llm_result.confidence > entity_result.confidence:
+                    entity_result = llm_result
+
+            # If mixed file, split into per-entity tables with deduplication
+            split_tables_info = None
+            if entity_result.is_mixed:
+                try:
+                    tables = split_mixed_dataframe(df_for_classify, entity_result)
+                    if tables:
+                        from backend.models.schemas import EntityTableInfo
+                        split_tables_info = [
+                            EntityTableInfo(
+                                entity_type=t.entity_type,
+                                display_name=t.display_name,
+                                icon=t.icon,
+                                columns=t.columns,
+                                records=t.records,
+                                total_rows=t.total_rows,
+                                deduplicated_rows=t.deduplicated_rows,
+                                duplicates_removed=t.duplicates_removed,
+                                confidence=t.confidence
+                            )
+                            for t in tables
+                        ]
+                except Exception as split_err:
+                    print(f"Entity splitting error: {split_err}")
+
+            entity_info = EntityClassificationInfo(
+                entity_type=entity_result.file_type,
+                is_mixed=entity_result.is_mixed,
+                confidence=entity_result.confidence,
+                method=entity_result.method,
+                details=entity_result.details,
+                entities_detected=entity_result.entities_detected,
+                column_assignments=entity_result.column_assignments,
+                split_tables=split_tables_info
+            )
+
+            # Add entity classification step to pipeline
+            entity_label = entity_result.file_type.capitalize()
+            if entity_result.is_mixed:
+                detected_names = [e for e, c in entity_result.entities_detected.items() if c > 0.05]
+                split_msg = f" (Split into {len(split_tables_info)} tables)" if split_tables_info else ""
+                entity_label = f"Mixed ({', '.join(n.capitalize() for n in detected_names)}){split_msg}"
+
+            steps.append(StepStatus(
+                step_id="entity_classified",
+                name="Business entity identified",
+                status="completed",
+                message=f"Identified as {entity_label} data ({entity_result.confidence:.0%} confidence, {entity_result.method})"
+            ))
+
+        except Exception as e:
+            steps.append(StepStatus(
+                step_id="entity_classified",
+                name="Business entity identification",
+                status="completed",
+                message=f"Entity classification skipped: {str(e)}"
+            ))
     
     summary = ProcessSummary(
         total_records=total_records,
@@ -507,7 +592,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         structured_data=structured_data,
         columns=columns,
         raw_text=raw_text,
-        errors=errors if errors else None
+        errors=errors if errors else None,
+        entity_info=entity_info
     )
 
     # Store in memory for export retrieval

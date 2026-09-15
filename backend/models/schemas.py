@@ -74,6 +74,29 @@ class ProcessSummary(BaseModel):
     file_type: str
     classification: str
 
+class EntityTableInfo(BaseModel):
+    """Represents a separated table for an identified business entity."""
+    entity_type: str
+    display_name: str
+    icon: str
+    columns: List[str]
+    records: List[Dict[str, Any]]
+    total_rows: int
+    deduplicated_rows: int
+    duplicates_removed: int
+    confidence: float
+
+class EntityClassificationInfo(BaseModel):
+    """Describes the business entity classification result for a processed file."""
+    entity_type: str = "unknown"  # "store", "item", "customer", "transaction", "mixed", "unknown"
+    is_mixed: bool = False
+    confidence: float = 0.0
+    method: str = "rule_based"  # "rule_based" or "llm_fallback"
+    details: str = ""
+    entities_detected: Dict[str, float] = {}
+    column_assignments: Dict[str, str] = {}
+    split_tables: Optional[List[EntityTableInfo]] = None
+
 class ProcessResponse(BaseModel):
     id: str
     filename: str
@@ -89,6 +112,7 @@ class ProcessResponse(BaseModel):
     columns: Optional[List[str]] = None
     raw_text: Optional[str] = None
     errors: Optional[List[ValidationErrorItem]] = None
+    entity_info: Optional[EntityClassificationInfo] = None
 
 class BatchProcessResponse(BaseModel):
     batch_id: str

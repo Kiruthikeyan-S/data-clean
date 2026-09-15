@@ -171,3 +171,89 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
         print(f"Groq LLM extraction error: {e}")
 
     return None
+
+
+def classify_columns_with_llm(
+    columns: list,
+    sample_values: dict,
+    api_key: str = None,
+) -> dict:
+    """
+    Use Groq LLM to classify DataFrame columns into business entity types
+    (Store, Item, Customer, Transaction) when rule-based confidence is low.
+
+    Args:
+        columns: List of column names.
+        sample_values: Dict of {column_name: [sample cell values]}.
+        api_key: Optional Groq API key override.
+
+    Returns:
+        Dict with keys: file_type, column_assignments, entity_confidence, details.
+    """
+    key_to_use = api_key or os.environ.get("GROQ_API_KEY", "") or GROQ_API_KEY
+    if not key_to_use or not columns:
+        return None
+
+    try:
+        http_client = httpx.Client(verify=False, timeout=25.0)
+        client = Groq(api_key=key_to_use, http_client=http_client)
+
+        # Build compact sample preview
+        sample_preview = []
+        for col in columns:
+            vals = sample_values.get(col, [])
+            preview = ", ".join(str(v) for v in vals[:5])
+            sample_preview.append(f"  {col}: [{preview}]")
+
+        system_prompt = (
+            "You are a Business Data Schema Classifier AI.\n"
+            "Given column names and sample values from a dataset, classify each column into one of:\n"
+            "- store: Store/Branch/Outlet/Warehouse location data\n"
+            "- item: Product/Item/SKU/Inventory data\n"
+            "- customer: Customer/Client/Member/Shopper data\n"
+            "- transaction: Order/Sale/Invoice/Purchase/Billing data\n"
+            "- unknown: Does not fit any retail business entity\n\n"
+            "Rules:\n"
+            "- If a column like store_id or customer_id appears alongside order_date/quantity, "
+            "it is a foreign key in a Transaction — assign it to transaction.\n"
+            "- If the file has columns from multiple entity types, set file_type to 'mixed'.\n"
+            "- If the file has columns from only one entity type, set file_type to that entity.\n\n"
+            "Return valid JSON:\n"
+            "{\n"
+            '  "file_type": "store|item|customer|transaction|mixed|unknown",\n'
+            '  "column_assignments": {"col_name": "entity_type", ...},\n'
+            '  "entity_confidence": {"store": 0.0, "item": 0.0, "customer": 0.0, "transaction": 0.0},\n'
+            '  "details": "Brief explanation"\n'
+            "}"
+        )
+
+        user_content = (
+            f"Classify these {len(columns)} columns:\n"
+            + "\n".join(sample_preview)
+        )
+
+        for model_name in GROQ_MODELS:
+            try:
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_content},
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.1,
+                )
+                content = response.choices[0].message.content
+                parsed = json.loads(content)
+
+                if "file_type" in parsed and "column_assignments" in parsed:
+                    return parsed
+
+            except Exception as model_err:
+                print(f"Groq column classification model {model_name} failed: {model_err}")
+                continue
+
+    except Exception as e:
+        print(f"Groq column classification error: {e}")
+
+    return None

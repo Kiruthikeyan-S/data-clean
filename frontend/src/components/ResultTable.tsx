@@ -14,15 +14,29 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
 
   const isTabular = Array.isArray(result.structured_data);
 
+  const [selectedEntityTab, setSelectedEntityTab] = useState<number>(-1); // -1 means "Full Cleaned Dataset"
+
+  const splitTables = result.entity_info?.split_tables || [];
+  const hasSplitTables = splitTables.length > 0;
+
+  // If a split entity table is selected, use its records/columns
+  const activeTable = selectedEntityTab >= 0 && selectedEntityTab < splitTables.length ? splitTables[selectedEntityTab] : null;
+
   // Tabular data for multi-record datasets (CSV, Excel, JSON list, or multi-record text)
   const rawRows: Array<Record<string, any>> = useMemo(() => {
+    if (activeTable) {
+      return activeTable.records || [];
+    }
     if (isTabular) {
       return (result.structured_data as Array<Record<string, any>>) || [];
     }
     return [];
-  }, [result, isTabular]);
+  }, [result, isTabular, activeTable]);
 
   const columns: string[] = useMemo(() => {
+    if (activeTable) {
+      return activeTable.columns || (activeTable.records.length > 0 ? Object.keys(activeTable.records[0]) : []);
+    }
     if (isTabular) {
       const candidateCols = result.columns || (rawRows.length > 0 ? Object.keys(rawRows[0]) : []);
       // Filter out columns where ALL rows have null, empty, or missing values
@@ -37,32 +51,65 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
       return populatedCols.length > 0 ? populatedCols : candidateCols;
     }
     return ['Field', 'Standardized Value', 'Raw Extracted Value'];
-  }, [result, isTabular, rawRows]);
+  }, [result, isTabular, rawRows, activeTable]);
 
   // Filter structured rows
   const filteredRows = useMemo(() => {
-    if (!isTabular) return [];
+    if (!isTabular && !activeTable) return [];
     if (!searchQuery.trim()) return rawRows;
     const q = searchQuery.toLowerCase();
     return rawRows.filter(row =>
       Object.values(row).some(val => val !== null && String(val).toLowerCase().includes(q))
     );
-  }, [rawRows, searchQuery, isTabular]);
+  }, [rawRows, searchQuery, isTabular, activeTable]);
 
   // Pagination for structured rows
   const totalPages = Math.ceil(filteredRows.length / PAGE_SIZE) || 1;
   const paginatedRows = useMemo(() => {
-    if (!isTabular) return [];
+    if (!isTabular && !activeTable) return [];
     const start = (currentPage - 1) * PAGE_SIZE;
     return filteredRows.slice(start, start + PAGE_SIZE);
-  }, [filteredRows, currentPage, isTabular]);
+  }, [filteredRows, currentPage, isTabular, activeTable]);
+
+  const getEntityBadge = (type?: string) => {
+    switch (type?.toLowerCase()) {
+      case 'store':
+        return { label: 'Store Data', icon: '🏪', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+      case 'item':
+        return { label: 'Item / Product', icon: '📦', bg: 'bg-indigo-50 text-indigo-800 border-indigo-200' };
+      case 'customer':
+        return { label: 'Customer Data', icon: '👤', bg: 'bg-purple-50 text-purple-800 border-purple-200' };
+      case 'transaction':
+        return { label: 'Transaction Data', icon: '🧾', bg: 'bg-amber-50 text-amber-800 border-amber-200' };
+      case 'mixed':
+        return { label: 'Mixed Dataset', icon: '🔀', bg: 'bg-blue-50 text-blue-800 border-blue-200' };
+      default:
+        return { label: 'General / Custom', icon: '📁', bg: 'bg-slate-50 text-slate-700 border-slate-200' };
+    }
+  };
+
+  const entityBadge = getEntityBadge(result.entity_info?.entity_type);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Table Header / Metadata Bar */}
       <div className="p-5 sm:p-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Processed Data</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Processed Data</h2>
+            {result.entity_info && (
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${entityBadge.bg}`}>
+                <span>{entityBadge.icon}</span>
+                <span>{entityBadge.label}</span>
+                {result.entity_info.confidence > 0 && (
+                  <span className="opacity-75 font-normal text-[10px]">
+                    ({Math.round(result.entity_info.confidence * 100)}%)
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-500 font-medium">
             <div>
               <span className="text-slate-400 mr-1">File:</span>
@@ -95,7 +142,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
         </div>
 
         {/* Search Input for Structured & Multi-Record Datasets */}
-        {isTabular && rawRows.length > 0 && (
+        {(isTabular || activeTable) && rawRows.length > 0 && (
           <div className="relative min-w-[240px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -111,6 +158,45 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
           </div>
         )}
       </div>
+
+      {/* Per-Entity Sub-Tabs (for Mixed datasets split into Store, Item, Customer, Transaction tables) */}
+      {hasSplitTables && (
+        <div className="px-5 py-2.5 bg-slate-50/70 border-b border-slate-200 flex items-center gap-2 overflow-x-auto">
+          <span className="text-[11px] font-semibold text-slate-500 mr-1 shrink-0">
+            Entity Tables:
+          </span>
+          <button
+            onClick={() => { setSelectedEntityTab(-1); setCurrentPage(1); }}
+            className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors shrink-0 ${
+              selectedEntityTab === -1
+                ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            🔀 Full Combined ({result.cleansing_report?.final_rows || (result.structured_data as any[])?.length || 0} rows)
+          </button>
+
+          {splitTables.map((t, idx) => (
+            <button
+              key={idx}
+              onClick={() => { setSelectedEntityTab(idx); setCurrentPage(1); }}
+              className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors flex items-center gap-1.5 shrink-0 ${
+                selectedEntityTab === idx
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <span>{t.icon}</span>
+              <span>{t.display_name}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                selectedEntityTab === idx ? 'bg-blue-700 text-blue-100' : 'bg-slate-100 text-slate-600'
+              }`}>
+                {t.deduplicated_rows}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Multi-Record Tabular Table */}
       {isTabular ? (

@@ -59,6 +59,20 @@ export const ResultPage: React.FC<ResultPageProps> = ({
             {results.map((res, idx) => {
               const isSelected = idx === activeIndex;
               const ext = res.filename.split('.').pop()?.toUpperCase() || res.file_type.toUpperCase();
+              
+              const getEntityIcon = (type?: string) => {
+                switch (type?.toLowerCase()) {
+                  case 'store': return '🏪';
+                  case 'item': return '📦';
+                  case 'customer': return '👤';
+                  case 'transaction': return '🧾';
+                  case 'mixed': return '🔀';
+                  default: return null;
+                }
+              };
+
+              const entityIcon = getEntityIcon(res.entity_info?.entity_type);
+
               return (
                 <button
                   key={res.id || idx}
@@ -74,7 +88,13 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                   }`}>
                     {idx + 1}
                   </span>
-                  <span className="truncate max-w-[200px]">{res.filename}</span>
+                  {entityIcon && <span className="text-xs">{entityIcon}</span>}
+                  <span className="truncate max-w-[180px]">{res.filename}</span>
+                  {res.entity_info && res.entity_info.entity_type !== 'unknown' && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100/70 text-blue-800 font-semibold capitalize">
+                      {res.entity_info.entity_type}
+                    </span>
+                  )}
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/80 border border-slate-200 font-mono text-slate-600">
                     {ext}
                   </span>
