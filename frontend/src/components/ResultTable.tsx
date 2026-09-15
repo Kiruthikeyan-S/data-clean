@@ -10,7 +10,6 @@ import {
   GitMerge,
   ArrowRight,
   Sparkles,
-  Info,
   ShieldCheck
 } from 'lucide-react';
 import { ProcessResponse } from '../types';
@@ -482,13 +481,21 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
         )
       )}
 
-      {/* VIEW 2: RAW DATA TABLE (Unmerged inconsistent columns) */}
+      {/* VIEW 2: RAW DATA TABLE */}
       {activeView === 'raw' && (
         <div>
-          <div className="bg-amber-50/60 border-b border-amber-200/60 px-6 py-3 text-xs text-amber-900 flex items-center gap-2">
-            <Info className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>
-              Showing original raw records before alias merging and standardization. Notice the inconsistent keys and duplicate-like columns.
+          <div className="bg-slate-50 border-b border-slate-200 px-6 py-2.5 text-xs text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                <FileCode className="w-3 h-3" />
+                Raw Ingestion Data
+              </span>
+              <span className="text-slate-600">
+                Displaying original source records prior to canonical schema mapping and alias normalization.
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-400 font-mono shrink-0">
+              {rawColumns.length} columns &bull; {rawRows.length} rows
             </span>
           </div>
 
@@ -583,7 +590,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
                 Canonical Schema Mapping Breakdown
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Shows how raw inconsistent aliases were coalesced row-by-row into canonical enterprise fields.
+                Visual breakdown of source field normalization into standardized canonical attributes.
               </p>
             </div>
             <div className="flex items-center gap-2">
