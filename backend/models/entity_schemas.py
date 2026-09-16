@@ -118,7 +118,9 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
             "item_name": "product_name",
             "item_code": "product_code",
             "product_price": "unit_price",
-            "selling_price": "unit_price"
+            "selling_price": "unit_price",
+            "cat": "category",
+            "dept": "category"
         },
         value_patterns=[
             re.compile(r"^\d{12,13}$"),  # UPC/EAN approximation
@@ -300,7 +302,7 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "category": CanonicalField(
             name="category",
             field_type="text_title",
-            aliases={"category", "product_category", "item_category", "dept", "department", "sub_category", "subcategory", "group"},
+            aliases={"category", "product_category", "item_category", "dept", "department", "sub_category", "subcategory", "group", "cat", "cat_name", "category_name"},
             description="Merchandise category or department"
         ),
         "selling_price": CanonicalField(
@@ -318,7 +320,7 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "stock_quantity": CanonicalField(
             name="stock_quantity",
             field_type="numeric",
-            aliases={"stock_quantity", "inventory", "in_stock", "stock_qty", "stock", "quantity", "qty", "units_in_stock", "available_stock", "reorder_level"},
+            aliases={"stock_quantity", "inventory", "in_stock", "stock_qty", "stock", "quantity", "qty", "units_in_stock", "available_stock", "reorder_level", "stock_count", "units", "units_in_stock"},
             description="Units currently on hand in inventory"
         ),
         "available": CanonicalField(

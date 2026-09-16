@@ -103,6 +103,22 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
 
     df = df.map(clean_cell_tracker)
 
+    # 3b. Sanitize negative numbers in positive-only inventory/quantity columns
+    for col in df.columns:
+        col_lower = str(col).lower()
+        if any(k in col_lower for k in ("stock", "qty", "quantity", "inventory", "units")):
+            def _clean_qty(v):
+                if v is None:
+                    return None
+                try:
+                    num = float(str(v).replace(",", "").strip())
+                    if num < 0:
+                        return abs(int(num)) if num.is_integer() else abs(num)
+                except Exception:
+                    pass
+                return v
+            df[col] = df[col].map(_clean_qty)
+
     # 4. Check for any rows that became completely empty after null normalization
     all_empty_after = df.isna().all(axis=1)
     extra_empty = int(all_empty_after.sum())

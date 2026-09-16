@@ -241,6 +241,44 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
                                     ))
                         except ValueError:
                             pass
+                    # Check negative stock / quantity / inventory
+                    elif any(k in col_lower for k in ("stock", "qty", "quantity", "inventory", "units")):
+                        try:
+                            f_val = float(re.sub(r"[,\s]", "", val_str))
+                            if f_val < 0:
+                                invalid_count += 1
+                                invalid_cols_set.add(col_str)
+                                cleaned_rep = str(int(abs(f_val))) if f_val.is_integer() else str(abs(f_val))
+                                if len(invalid_items) < 30:
+                                    invalid_items.append(AuditDetailItem(
+                                        row_index=row_idx + 1,
+                                        column=col_str,
+                                        original_value=val_str,
+                                        cleaned_value=cleaned_rep,
+                                        issue_description=f"Negative stock/quantity ({val_str}) is invalid in inventory; auto-sanitized to non-negative {cleaned_rep}",
+                                        severity="error"
+                                    ))
+                        except ValueError:
+                            pass
+                    # Check negative prices / costs / monetary amounts
+                    elif any(k in col_lower for k in ("price", "cost", "mrp", "salary", "turnover", "revenue", "rate")):
+                        try:
+                            f_val = float(re.sub(r"[₹\$€£¥,\s]", "", val_str))
+                            if f_val < 0:
+                                invalid_count += 1
+                                invalid_cols_set.add(col_str)
+                                cleaned_rep = str(round(abs(f_val), 2))
+                                if len(invalid_items) < 30:
+                                    invalid_items.append(AuditDetailItem(
+                                        row_index=row_idx + 1,
+                                        column=col_str,
+                                        original_value=val_str,
+                                        cleaned_value=cleaned_rep,
+                                        issue_description=f"Negative monetary value ({val_str}) is invalid; auto-sanitized to non-negative {cleaned_rep}",
+                                        severity="error"
+                                    ))
+                        except ValueError:
+                            pass
 
     total_issues += invalid_count
     dimensions.append(QualityDimension(

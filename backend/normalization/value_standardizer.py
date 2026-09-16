@@ -185,6 +185,11 @@ def standardize_canonical_values(
 
             elif field_type == "numeric":
                 std_val = normalize_number(val)
+                # Auto-sanitize negative numbers in positive domains (stock quantity, prices, costs)
+                if std_val is not None and isinstance(std_val, (int, float)):
+                    if any(k in col_lower for k in ("stock", "qty", "quantity", "inventory", "units", "price", "cost", "mrp", "amount", "salary", "rate")):
+                        if std_val < 0:
+                            std_val = abs(std_val)
                 if std_val is not None and std_val != orig_val:
                     mod_counts["numbers_standardized"] += 1
                     changed_in_col += 1
