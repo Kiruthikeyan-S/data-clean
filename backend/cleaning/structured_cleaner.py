@@ -288,15 +288,61 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
     original_raw_df = df.copy()
     cleaned_df, metrics = clean_structured_dataframe(df)
     
-    # Run comprehensive quality audit on raw vs cleaned data
+    # Run comprehensive quality audit
     from backend.cleaning.data_auditor import audit_structured_data
-    audit_report = audit_structured_data(original_raw_df, cleaned_df)
-    metrics["quality_audit"] = audit_report
+    from backend.models.schemas import QualityAuditReport, QualityDimension
     
     if is_multi_collection:
+        # Audit each collection individually to avoid cross-schema sparse matrix null inflation
+        all_dims_by_id = {}
+        total_issues_sum = 0
+        total_cells_sum = 0
+        total_rows_sum = 0
+        
+        for k, c_info in collections_data.items():
+            c_audit = audit_structured_data(c_info["raw_df"], c_info["cleaned_df"])
+            total_issues_sum += c_audit.total_issues_handled
+            total_cells_sum += c_audit.total_cells or c_info["raw_df"].size
+            total_rows_sum += c_audit.total_rows or len(c_info["raw_df"])
+            
+            for d in c_audit.dimensions:
+                if d.id not in all_dims_by_id:
+                    all_dims_by_id[d.id] = QualityDimension(
+                        id=d.id,
+                        title=d.title,
+                        count=d.count,
+                        status=d.status,
+                        summary=d.summary,
+                        affected_columns=list(d.affected_columns),
+                        items=list(d.items),
+                        raw_samples=list(d.raw_samples) if d.raw_samples else None,
+                        total_denominator=d.total_denominator
+                    )
+                else:
+                    target_d = all_dims_by_id[d.id]
+                    target_d.count += d.count
+                    target_d.affected_columns = list(set(target_d.affected_columns + d.affected_columns))
+                    target_d.items.extend(d.items[:10])
+                    if d.total_denominator:
+                        target_d.total_denominator = (target_d.total_denominator or 0) + d.total_denominator
+                    if target_d.count > 0:
+                        target_d.status = f"{target_d.count} Handled" if d.id == "missing_values" else f"{target_d.count} Detected"
+                    else:
+                        target_d.status = "Clean"
+                        
+        audit_report = QualityAuditReport(
+            dimensions=list(all_dims_by_id.values()),
+            total_issues_handled=total_issues_sum,
+            total_cells=total_cells_sum,
+            total_rows=total_rows_sum
+        )
+        metrics["quality_audit"] = audit_report
         metrics["is_multi_collection"] = True
         metrics["collections"] = collections_data
         metrics["change_highlights"].insert(0, f"Detected multi-entity dataset containing {len(collections_data)} collections: {', '.join(collections_data.keys())}")
+    else:
+        audit_report = audit_structured_data(original_raw_df, cleaned_df)
+        metrics["quality_audit"] = audit_report
     
     records = cleaned_df.replace({np.nan: None}).to_dict(orient="records")
     columns = list(cleaned_df.columns)

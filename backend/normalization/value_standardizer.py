@@ -54,10 +54,25 @@ def standardize_id(val: Any) -> Any:
     s = str(val).strip()
     if not s or s.lower() in ("null", "none", "nan", "n/a", "-"):
         return None
-    # If standard code format like s001 / str-01 / ord-123 -> uppercase prefix
+    # Strip trailing .0 from float IDs (e.g. 102.0 -> 102, 107.0 -> 107)
+    if re.match(r"^\d+\.0+$", s):
+        s = s.split(".")[0]
+    # If standard code format like s001 / str-01 / ord-123 / str_102 -> uppercase prefix
     if re.match(r"^[a-zA-Z]+[-\s_]?\d+$", s):
         return s.upper()
     return s
+
+
+def standardize_state(val: Any) -> Any:
+    """Standardizes state representations (e.g. 'tx' -> 'TX', 'Fl' -> 'FL', 'Denver' -> 'Denver')."""
+    if val is None or pd.isna(val):
+        return None
+    s = str(val).strip()
+    if not s or s.lower() in ("null", "none", "nan", "n/a", "-"):
+        return None
+    if len(s) == 2:
+        return s.upper()
+    return normalize_name(s)
 
 
 def standardize_date_iso(val: Any) -> Any:
@@ -168,7 +183,10 @@ def standardize_canonical_values(
                     changed_in_col += 1
 
             elif field_type == "text_title":
-                std_val = normalize_name(str(val))
+                if col_lower in ("state", "store_state", "province"):
+                    std_val = standardize_state(val)
+                else:
+                    std_val = normalize_name(str(val))
                 if std_val is not None and std_val != orig_val:
                     mod_counts["text_standardized"] += 1
                     changed_in_col += 1

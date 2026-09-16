@@ -74,24 +74,28 @@ def extract_city_state_from_location(val: Any) -> Tuple[Optional[str], Optional[
     - '704 Main St, Miami, FL' -> ('Miami', 'FL')
     - 'Miami, FL' -> ('Miami', 'FL')
     - 'CO, Denver' -> ('Denver', 'CO')
+    - 'Denver, CO' -> ('Denver', 'CO')
+    - 'Dallas, TX' -> ('Dallas', 'TX')
     - 'Chennai, Tamil Nadu' -> ('Chennai', 'Tamil Nadu')
     """
     if val is None or pd.isna(val) or not isinstance(val, str):
         return None, None
     s = val.strip()
-    if not s:
+    if not s or s.lower() in ("null", "none", "nan", "n/a", "-"):
         return None, None
         
     # Match: "CO, Denver" (State, City)
-    m_rev = re.match(r"^([A-Z]{2}),\s*([A-Za-z\s]+)$", s)
+    m_rev = re.match(r"^([A-Za-z]{2}),\s*([A-Za-z\s]+)$", s)
     if m_rev:
-        return m_rev.group(2).strip(), m_rev.group(1).strip()
+        return m_rev.group(2).strip(), m_rev.group(1).strip().upper()
 
     # Match: "..., City, State" or "City, State"
     parts = [p.strip() for p in s.split(",") if p.strip()]
     if len(parts) >= 2:
-        candidate_state = parts[-1]
-        candidate_city = parts[-2]
+        candidate_state = parts[-1].strip()
+        candidate_city = parts[-2].strip()
+        if len(candidate_state) == 2:
+            candidate_state = candidate_state.upper()
         # Clean street number/name if mixed in city part
         city_clean = re.sub(r"^\d+\s+[A-Za-z0-9\.\s]+(?:\s+(?:St|Street|Ave|Avenue|Rd|Road|Blvd))\s*", "", candidate_city, flags=re.IGNORECASE).strip()
         if not city_clean:
@@ -215,27 +219,22 @@ def map_dataframe_to_canonical_schema(
 
     # B. Location splitting for Store / Customer (City / State from address or location)
     if entity_type in (EntityType.STORE.value, EntityType.CUSTOMER.value):
-        # Check if city or state are missing/null in canonical_df
-        need_city = "city" in canonical_df and (canonical_df["city"].isna().all() or canonical_df["city"].empty)
-        need_state = "state" in canonical_df and (canonical_df["state"].isna().all() or canonical_df["state"].empty)
-        
-        if need_city or need_state:
-            loc_candidates = [c for c in df.columns if any(k in normalize_header_token(c) for k in ("location", "address", "addr"))]
-            for l_col in loc_candidates:
-                cities, states = [], []
-                for val in df[l_col]:
-                    c_extracted, s_extracted = extract_city_state_from_location(val)
-                    cities.append(c_extracted)
-                    states.append(s_extracted)
-                
-                if any(cities) and "city" in canonical_df:
-                    canonical_df["city"] = canonical_df["city"].combine_first(pd.Series(cities, index=df.index))
-                if any(states) and "state" in canonical_df:
-                    canonical_df["state"] = canonical_df["state"].combine_first(pd.Series(states, index=df.index))
-                
-                if any(cities) or any(states):
-                    highlights.append(f"Extracted city/state attributes from location string '{l_col}'")
-                    break
+        loc_candidates = [c for c in df.columns if any(k in normalize_header_token(c) for k in ("location", "address", "addr"))]
+        for l_col in loc_candidates:
+            extracted_any = False
+            for idx in df.index:
+                val = df.loc[idx, l_col]
+                c_ext, s_ext = extract_city_state_from_location(val)
+                if c_ext and "city" in canonical_df:
+                    if pd.isna(canonical_df.loc[idx, "city"]) or not str(canonical_df.loc[idx, "city"]).strip():
+                        canonical_df.loc[idx, "city"] = c_ext
+                        extracted_any = True
+                if s_ext and "state" in canonical_df:
+                    if pd.isna(canonical_df.loc[idx, "state"]) or not str(canonical_df.loc[idx, "state"]).strip():
+                        canonical_df.loc[idx, "state"] = s_ext
+                        extracted_any = True
+            if extracted_any:
+                highlights.append(f"Extracted city/state values from '{l_col}'")
 
     # 4. Retain any unmapped extra columns (do NOT delete unrecognized fields)
     for u_col in unmapped_cols:
