@@ -48,10 +48,13 @@ class QualityDimension(BaseModel):
     affected_columns: List[str] = []
     items: List[AuditDetailItem] = []
     raw_samples: Optional[List[Dict[str, Any]]] = None
+    total_denominator: Optional[int] = None
 
 class QualityAuditReport(BaseModel):
     dimensions: List[QualityDimension] = []
     total_issues_handled: int = 0
+    total_cells: Optional[int] = None
+    total_rows: Optional[int] = None
 
 class CleansingReport(BaseModel):
     initial_rows: Optional[int] = None

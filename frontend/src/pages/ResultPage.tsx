@@ -36,7 +36,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
           <span>Upload More Files</span>
         </button>
 
-        <ExportButtons taskId={currentResult.id} />
+        <ExportButtons taskId={currentResult.id} currentResult={currentResult} />
       </div>
 
       {/* Multi-File Batch Dataset Switcher Tabs */}

@@ -50,11 +50,14 @@ export interface QualityDimension {
   affected_columns?: string[];
   items: AuditDetailItem[];
   raw_samples?: Array<Record<string, any>>;
+  total_denominator?: number;
 }
 
 export interface QualityAuditReport {
   dimensions: QualityDimension[];
   total_issues_handled: number;
+  total_cells?: number;
+  total_rows?: number;
 }
 
 export interface CleansingReport {

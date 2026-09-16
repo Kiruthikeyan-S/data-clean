@@ -164,6 +164,107 @@ async def export_excel(task_id: str):
     )
 
 
+@router.get("/export/{task_id}/pdf")
+async def export_pdf(task_id: str):
+    """
+    Exports structured data as a clean, professionally formatted PDF document.
+    """
+    if task_id not in RESULTS_STORE:
+        raise HTTPException(status_code=404, detail="Result not found.")
+    
+    res = RESULTS_STORE[task_id]
+    df = to_dataframe(res)
+    
+    output = io.BytesIO()
+    from reportlab.lib.pagesizes import letter, landscape, portrait
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    
+    pagesize = landscape(letter) if len(df.columns) > 4 else portrait(letter)
+    doc = SimpleDocTemplate(
+        output,
+        pagesize=pagesize,
+        rightMargin=24,
+        leftMargin=24,
+        topMargin=24,
+        bottomMargin=24
+    )
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'ReportTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        textColor=colors.HexColor('#0F172A'),
+        spaceAfter=4
+    )
+    sub_style = ParagraphStyle(
+        'ReportSubtitle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#64748B'),
+        spaceAfter=12
+    )
+    cell_style = ParagraphStyle(
+        'TableCell',
+        parent=styles['Normal'],
+        fontSize=8,
+        leading=10,
+        textColor=colors.HexColor('#1E293B')
+    )
+    header_style = ParagraphStyle(
+        'TableHeader',
+        parent=styles['Normal'],
+        fontSize=8,
+        leading=10,
+        fontName='Helvetica-Bold',
+        textColor=colors.whitesmoke
+    )
+    
+    elements = []
+    
+    base_name = clean_base_name(res.filename)
+    elements.append(Paragraph(f"Cleaned Dataset Report: {base_name}", title_style))
+    entity_label = res.entity_info.entity_type.upper() if res.entity_info else "GENERAL"
+    elements.append(Paragraph(f"Entity: {entity_label} | Format: {res.file_type.upper()} | Cleaned Records: {len(df)} | Exported: {time_now_iso()[:10]}", sub_style))
+    elements.append(Spacer(1, 6))
+    
+    headers = [Paragraph(str(col).replace('_', ' ').title(), header_style) for col in df.columns]
+    table_data = [headers]
+    
+    for _, row in df.head(500).iterrows():
+        row_cells = []
+        for val in row:
+            v_str = "" if pd.isna(val) or val is None else str(val)
+            row_cells.append(Paragraph(v_str, cell_style))
+        table_data.append(row_cells)
+        
+    t = Table(table_data, repeatRows=1)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F8FAFC')]),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+    ]))
+    
+    elements.append(t)
+    doc.build(elements)
+    output.seek(0)
+    
+    filename = f"{base_name}_clean.pdf"
+    return StreamingResponse(
+        output,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
 def to_dataframe(res: ProcessResponse) -> pd.DataFrame:
     """Helper to convert result structured data or fields into a clean DataFrame."""
     if res.classification == "structured" and isinstance(res.structured_data, list):

@@ -58,7 +58,7 @@ export async function getResult(id: string): Promise<ProcessResponse> {
   return response.json();
 }
 
-export function getExportUrl(id: string, format: 'json' | 'csv' | 'excel'): string {
+export function getExportUrl(id: string, format: 'pdf' | 'csv' | 'excel' | 'json'): string {
   return `${API_BASE}/export/${id}/${format}`;
 }
 

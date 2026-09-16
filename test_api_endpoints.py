@@ -48,6 +48,13 @@ def test_api_process_and_export():
     assert "spreadsheetml" in res_exp_excel.headers["content-type"]
     print("API /export/excel OK")
 
+    # 6. Test /api/export/{id}/pdf
+    res_exp_pdf = client.get(f"/api/export/{task_id}/pdf")
+    assert res_exp_pdf.status_code == 200
+    assert "application/pdf" in res_exp_pdf.headers["content-type"]
+    assert res_exp_pdf.content.startswith(b"%PDF")
+    print("API /export/pdf OK")
+
 if __name__ == "__main__":
     test_api_health()
     test_api_process_and_export()

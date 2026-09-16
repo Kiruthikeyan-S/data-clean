@@ -46,6 +46,8 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
     """
     dimensions: List[QualityDimension] = []
     total_issues = 0
+    total_rows = len(original_df)
+    total_cells = int(original_df.size) if original_df.size > 0 else (len(cleaned_df) * len(cleaned_df.columns))
 
     # =========================================================================
     # 1. MISSING VALUES
@@ -77,7 +79,8 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         status=f"{missing_count} Handled" if missing_count > 0 else "Clean",
         summary=f"Identified {missing_count} missing or unstandardized null values across {len(missing_cols_set)} column(s)." if missing_count > 0 else "No missing values found across dataset.",
         affected_columns=list(missing_cols_set),
-        items=missing_items
+        items=missing_items,
+        total_denominator=total_cells
     ))
 
     # =========================================================================
@@ -112,7 +115,8 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         summary=f"Found and eliminated {dup_count} identical duplicate row(s) to guarantee record uniqueness." if dup_count > 0 else "Zero duplicate rows found in dataset.",
         affected_columns=list(original_df.columns) if dup_count > 0 else [],
         items=dup_items,
-        raw_samples=raw_dup_samples
+        raw_samples=raw_dup_samples,
+        total_denominator=total_rows
     ))
 
     # =========================================================================
@@ -173,7 +177,8 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         status=f"{type_issues_count} Detected" if type_issues_count > 0 else "Clean",
         summary=f"Detected {type_issues_count} values with incompatible data types in {len(type_cols_set)} column(s)." if type_issues_count > 0 else "All column values conform to expected data types.",
         affected_columns=list(type_cols_set),
-        items=type_items
+        items=type_items,
+        total_denominator=total_cells
     ))
 
     # =========================================================================
@@ -288,7 +293,8 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         status=f"{invalid_count} Flagged" if invalid_count > 0 else "Clean",
         summary=f"Flagged {invalid_count} semantically invalid value(s) (such as syntax errors or range violations)." if invalid_count > 0 else "Zero invalid semantic values detected.",
         affected_columns=list(invalid_cols_set),
-        items=invalid_items
+        items=invalid_items,
+        total_denominator=total_cells
     ))
 
     # =========================================================================
@@ -344,7 +350,8 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         status=f"{outlier_count} Detected" if outlier_count > 0 else "Clean",
         summary=f"Detected {outlier_count} statistical outlier(s) based on IQR distribution in {len(outlier_cols_set)} column(s)." if outlier_count > 0 else "No statistical outliers detected in numeric distributions.",
         affected_columns=list(outlier_cols_set),
-        items=outlier_items
+        items=outlier_items,
+        total_denominator=total_cells
     ))
 
     # =========================================================================
@@ -413,12 +420,15 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         status=f"{format_count} Harmonized" if format_count > 0 else "Standard",
         summary=f"Harmonized {format_count} formatting inconsistencies (dates, currencies, whitespace, casing)." if format_count > 0 else "All values follow standardized uniform formatting.",
         affected_columns=list(format_cols_set),
-        items=format_items
+        items=format_items,
+        total_denominator=total_cells
     ))
 
     return QualityAuditReport(
         dimensions=dimensions,
-        total_issues_handled=total_issues
+        total_issues_handled=total_issues,
+        total_cells=total_cells,
+        total_rows=total_rows
     )
 
 
