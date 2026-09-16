@@ -338,7 +338,11 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
         )
         metrics["quality_audit"] = audit_report
         metrics["is_multi_collection"] = True
-        metrics["collections"] = collections_data
+        metrics["collections_data"] = collections_data
+        metrics["duplicates_removed"] = sum(c_info["metrics"].get("duplicates_removed", 0) for c_info in collections_data.values())
+        metrics["empty_rows_removed"] = sum(c_info["metrics"].get("empty_rows_removed", 0) for c_info in collections_data.values())
+        metrics["nulls_normalized"] = sum(c_info["metrics"].get("nulls_normalized", 0) for c_info in collections_data.values())
+        metrics["whitespace_trimmed"] = sum(c_info["metrics"].get("whitespace_trimmed", 0) for c_info in collections_data.values())
         metrics["change_highlights"].insert(0, f"Detected multi-entity dataset containing {len(collections_data)} collections: {', '.join(collections_data.keys())}")
     else:
         audit_report = audit_structured_data(original_raw_df, cleaned_df)

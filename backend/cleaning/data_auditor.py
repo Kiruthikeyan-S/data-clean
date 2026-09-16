@@ -86,7 +86,9 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
     # =========================================================================
     # 2. DUPLICATES
     # =========================================================================
-    dup_mask = safe_duplicated(original_df, keep="first")
+    # Check duplicates using trimmed string representations so trailing spaces ("Store A " vs "Store A") are detected
+    trimmed_original = original_df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    dup_mask = safe_duplicated(trimmed_original, keep="first")
     dup_count = int(dup_mask.sum())
     dup_items: List[AuditDetailItem] = []
     raw_dup_samples: List[Dict[str, Any]] = []
@@ -102,7 +104,7 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
                 column="All Columns (Full Row)",
                 original_value=sample_preview,
                 cleaned_value="Dropped (Duplicate removed)",
-                issue_description="Exact duplicate of an earlier row in the dataset",
+                issue_description="Duplicate of an earlier record in the dataset",
                 severity="warning"
             ))
 
