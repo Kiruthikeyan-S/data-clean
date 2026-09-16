@@ -91,8 +91,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                   {entityIcon && <span className="text-xs">{entityIcon}</span>}
                   <span className="truncate max-w-[180px]">{res.filename}</span>
                   {res.entity_info && res.entity_info.entity_type !== 'unknown' && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100/70 text-blue-800 font-semibold capitalize">
-                      {res.entity_info.entity_type}
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100/70 text-blue-800 font-semibold">
+                      {res.entity_info.entity_type === 'mixed' ? 'Multiple Entity' : res.entity_info.entity_type.charAt(0).toUpperCase() + res.entity_info.entity_type.slice(1)}
                     </span>
                   )}
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/80 border border-slate-200 font-mono text-slate-600">

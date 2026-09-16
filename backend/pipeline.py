@@ -579,11 +579,25 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     split_tables=split_tables_info
                 )
 
-                # Primary structured data uses the first separated table
+                # Primary structured data contains all combined records across separated tables
                 if split_tables_info:
-                    structured_data = split_tables_info[0].records
-                    columns = split_tables_info[0].columns
-                    schema_mapping_report = split_tables_info[0].schema_mapping_report
+                    all_combined_records = []
+                    all_cols_set: List[str] = []
+                    for t in split_tables_info:
+                        for c in t.columns:
+                            if c not in all_cols_set:
+                                all_cols_set.append(c)
+                        for r in t.records:
+                            all_combined_records.append(dict(r))
+                    
+                    structured_data = all_combined_records
+                    columns = all_cols_set
+                    
+                    all_sm_reports = []
+                    for t in split_tables_info:
+                        if t.schema_mapping_report:
+                            all_sm_reports.extend(t.schema_mapping_report)
+                    schema_mapping_report = all_sm_reports if all_sm_reports else None
                     if schema_mapping_report:
                         mapped_count = sum(1 for it in schema_mapping_report if it.is_mapped and it.rows_populated > 0)
                         schema_mapping_coverage = round(mapped_count / max(len(schema_mapping_report), 1), 4)
@@ -662,14 +676,10 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                         split_tables=split_tables_info
                     )
 
-                    # Default to first split table or transaction table for primary view
-                    if split_tables_info:
-                        structured_data = split_tables_info[0].records
-                        columns = split_tables_info[0].columns
-                        schema_mapping_report = split_tables_info[0].schema_mapping_report
-                        if schema_mapping_report:
-                            mapped_count = sum(1 for it in schema_mapping_report if it.is_mapped and it.rows_populated > 0)
-                            schema_mapping_coverage = round(mapped_count / max(len(schema_mapping_report), 1), 4)
+                    # Keep full combined records in structured_data for the combined view
+                    if raw_structured_data:
+                        structured_data = raw_structured_data
+                        columns = raw_columns or columns
 
                     detected_names = [e for e, c in entity_result.entities_detected.items() if c > 0.05]
                     split_msg = f" (Split into {len(split_tables_info)} tables)" if split_tables_info else ""

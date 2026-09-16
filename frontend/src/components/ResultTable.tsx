@@ -27,38 +27,52 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
   // Active split table if any selected
   const activeTable = selectedEntityTab >= 0 && selectedEntityTab < splitTables.length ? splitTables[selectedEntityTab] : null;
 
+  const isFullCombined = hasSplitTables && selectedEntityTab === -1;
+
   // Tabular data for Processed View
   const processedRows: Array<Record<string, any>> = useMemo(() => {
     if (activeTable) {
       return activeTable.records || [];
     }
     if (isTabular) {
-      if (hasSplitTables && selectedEntityTab === -1) {
-        const combined = splitTables.flatMap(t => t.records || []);
+      if (isFullCombined) {
+        const combined = splitTables.flatMap(t =>
+          (t.records || []).map(r => ({
+            ...r,
+            _entity_display: t.display_name,
+            _entity_icon: t.icon,
+            _entity_type: t.entity_type
+          }))
+        );
         if (combined.length > 0) return combined;
       }
       return (result.structured_data as Array<Record<string, any>>) || [];
     }
     return [];
-  }, [result.structured_data, isTabular, activeTable, hasSplitTables, selectedEntityTab, splitTables]);
+  }, [result.structured_data, isTabular, activeTable, isFullCombined, splitTables]);
 
   const processedColumns: string[] = useMemo(() => {
     if (activeTable) {
-      return activeTable.columns || (activeTable.records.length > 0 ? Object.keys(activeTable.records[0]) : []);
+      const cols = activeTable.columns || (activeTable.records.length > 0 ? Object.keys(activeTable.records[0]) : []);
+      return cols.filter(c => !c.startsWith('_'));
     }
     if (isTabular) {
-      let candidateCols = result.columns || [];
-      if (hasSplitTables && selectedEntityTab === -1) {
+      let candidateCols: string[] = [];
+      if (isFullCombined) {
         const colSet = new Set<string>();
         splitTables.forEach(t => {
-          (t.columns || []).forEach(c => colSet.add(c));
+          (t.columns || []).forEach(c => {
+            if (!c.startsWith('_')) colSet.add(c);
+          });
         });
         if (colSet.size > 0) {
           candidateCols = Array.from(colSet);
         }
+      } else {
+        candidateCols = (result.columns || []).filter(c => !c.startsWith('_'));
       }
       if (candidateCols.length === 0 && processedRows.length > 0) {
-        candidateCols = Object.keys(processedRows[0]);
+        candidateCols = Object.keys(processedRows[0]).filter(c => !c.startsWith('_'));
       }
       const populatedCols = candidateCols.filter(col => {
         return processedRows.some(row => {
@@ -71,7 +85,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
       return populatedCols.length > 0 ? populatedCols : candidateCols;
     }
     return ['Field', 'Standardized Value', 'Raw Extracted Value'];
-  }, [result.columns, isTabular, processedRows, activeTable, hasSplitTables, selectedEntityTab, splitTables]);
+  }, [result.columns, isTabular, processedRows, activeTable, isFullCombined, splitTables]);
 
   // Filter rows by search query
   const filteredRows = useMemo(() => {
@@ -106,7 +120,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
       case 'transaction':
         return { label: 'Transaction Data', icon: '🧾', bg: 'bg-amber-50 text-amber-800 border-amber-200' };
       case 'mixed':
-        return { label: 'Mixed Dataset', icon: '🔀', bg: 'bg-blue-50 text-blue-800 border-blue-200' };
+        return { label: 'Multiple Entity', icon: '🔀', bg: 'bg-blue-50 text-blue-800 border-blue-200' };
       default:
         return { label: 'General / Custom', icon: '📁', bg: 'bg-slate-50 text-slate-700 border-slate-200' };
     }
@@ -181,7 +195,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
         </div>
       </div>
 
-      {/* Per-Entity Sub-Tabs (for Mixed datasets split into Store, Item, Customer, Transaction tables) */}
+      {/* Per-Entity Sub-Tabs (for Mixed/Multiple Entity datasets split into Store, Item, Customer, Transaction tables) */}
       {hasSplitTables && (
         <div className="px-5 py-2.5 bg-slate-50/70 border-b border-slate-200 flex items-center gap-2 overflow-x-auto">
           <span className="text-[11px] font-semibold text-slate-500 mr-1 shrink-0">
@@ -195,7 +209,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            🔀 Full Combined ({result.cleansing_report?.final_rows || (result.structured_data as any[])?.length || 0} rows)
+            🔀 Full Combined ({result.cleansing_report?.final_rows || processedRows.length || (result.structured_data as any[])?.length || 0} rows)
           </button>
 
           {splitTables.map((t, idx) => (
@@ -227,7 +241,12 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
             <table className="w-full text-left text-sm text-slate-700">
               <thead className="bg-slate-50/80 text-xs font-semibold text-slate-600 border-b border-slate-200 uppercase tracking-wider">
                 <tr>
-                  <th className="px-5 py-3 w-12 text-center text-slate-400">#</th>
+                  <th className="px-4 py-3 w-12 text-center text-slate-400">#</th>
+                  {isFullCombined && (
+                    <th className="px-4 py-3 font-bold text-slate-700 whitespace-nowrap">
+                      ENTITY TYPE
+                    </th>
+                  )}
                   {processedColumns.map(col => (
                     <th key={col} className="px-5 py-3 font-bold text-slate-700 whitespace-nowrap">
                       {formatHeader(col)}
@@ -238,16 +257,24 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
               <tbody className="divide-y divide-slate-100">
                 {paginatedRows.length === 0 ? (
                   <tr>
-                    <td colSpan={processedColumns.length + 1} className="px-5 py-10 text-center text-slate-400 text-sm">
+                    <td colSpan={processedColumns.length + (isFullCombined ? 2 : 1)} className="px-5 py-10 text-center text-slate-400 text-sm">
                       No matching records found.
                     </td>
                   </tr>
                 ) : (
                   paginatedRows.map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="px-5 py-3 text-xs text-center text-slate-400 font-mono">
+                      <td className="px-4 py-3 text-xs text-center text-slate-400 font-mono">
                         {(currentPage - 1) * PAGE_SIZE + idx + 1}
                       </td>
+                      {isFullCombined && (
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                            <span>{row._entity_icon || '📁'}</span>
+                            <span>{row._entity_display || 'Record'}</span>
+                          </span>
+                        </td>
+                      )}
                       {processedColumns.map(col => {
                         const val = row[col];
                         return (
