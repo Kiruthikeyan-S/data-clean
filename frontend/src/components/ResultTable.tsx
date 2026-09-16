@@ -33,17 +33,33 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
       return activeTable.records || [];
     }
     if (isTabular) {
+      if (hasSplitTables && selectedEntityTab === -1) {
+        const combined = splitTables.flatMap(t => t.records || []);
+        if (combined.length > 0) return combined;
+      }
       return (result.structured_data as Array<Record<string, any>>) || [];
     }
     return [];
-  }, [result.structured_data, isTabular, activeTable]);
+  }, [result.structured_data, isTabular, activeTable, hasSplitTables, selectedEntityTab, splitTables]);
 
   const processedColumns: string[] = useMemo(() => {
     if (activeTable) {
       return activeTable.columns || (activeTable.records.length > 0 ? Object.keys(activeTable.records[0]) : []);
     }
     if (isTabular) {
-      const candidateCols = result.columns || (processedRows.length > 0 ? Object.keys(processedRows[0]) : []);
+      let candidateCols = result.columns || [];
+      if (hasSplitTables && selectedEntityTab === -1) {
+        const colSet = new Set<string>();
+        splitTables.forEach(t => {
+          (t.columns || []).forEach(c => colSet.add(c));
+        });
+        if (colSet.size > 0) {
+          candidateCols = Array.from(colSet);
+        }
+      }
+      if (candidateCols.length === 0 && processedRows.length > 0) {
+        candidateCols = Object.keys(processedRows[0]);
+      }
       const populatedCols = candidateCols.filter(col => {
         return processedRows.some(row => {
           const val = row[col];
@@ -55,7 +71,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
       return populatedCols.length > 0 ? populatedCols : candidateCols;
     }
     return ['Field', 'Standardized Value', 'Raw Extracted Value'];
-  }, [result.columns, isTabular, processedRows, activeTable]);
+  }, [result.columns, isTabular, processedRows, activeTable, hasSplitTables, selectedEntityTab, splitTables]);
 
   // Filter rows by search query
   const filteredRows = useMemo(() => {
