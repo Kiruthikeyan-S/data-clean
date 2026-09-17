@@ -326,15 +326,49 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
                     if d.total_denominator:
                         target_d.total_denominator = (target_d.total_denominator or 0) + d.total_denominator
                     if target_d.count > 0:
-                        target_d.status = f"{target_d.count} Handled" if d.id == "missing_values" else f"{target_d.count} Detected"
+                        if d.id == "record_matching":
+                            target_d.status = f"{target_d.count} Candidates"
+                        elif d.id == "missing_values":
+                            target_d.status = f"{target_d.count} Handled"
+                        else:
+                            target_d.status = f"{target_d.count} Detected"
                     else:
                         target_d.status = "Clean"
                         
+        from backend.models.schemas import RecordMatchingReport
+        all_candidates = []
+        all_merged_recs = []
+        all_conflicts = []
+        for k, c_info in collections_data.items():
+            c_aud = audit_structured_data(c_info["raw_df"], c_info["cleaned_df"])
+            if c_aud.record_matching:
+                all_candidates.extend(c_aud.record_matching.candidate_pairs)
+                all_merged_recs.extend(c_aud.record_matching.merged_records)
+                all_conflicts.extend(c_aud.record_matching.conflicts)
+                
+        multi_matching_report = RecordMatchingReport(
+            total_records=total_rows_sum,
+            merge_candidates_count=len(all_candidates),
+            merged_count=len(all_merged_recs),
+            conflicts_count=len(all_conflicts),
+            kept_separate_count=max(0, total_rows_sum - (len(all_merged_recs) * 2)),
+            final_records_count=max(1, total_rows_sum - len(all_merged_recs)),
+            candidate_pairs=all_candidates,
+            merged_records=all_merged_recs,
+            conflicts=all_conflicts
+        )
+        if "record_matching" in all_dims_by_id:
+            all_dims_by_id["record_matching"].record_matching = multi_matching_report
+            all_dims_by_id["record_matching"].count = len(all_candidates) + len(all_conflicts)
+            all_dims_by_id["record_matching"].total_denominator = total_rows_sum
+            all_dims_by_id["record_matching"].status = f"{len(all_candidates)} Candidates" if len(all_candidates) > 0 else ("Conflicts Found" if len(all_conflicts) > 0 else "Clean")
+
         audit_report = QualityAuditReport(
             dimensions=list(all_dims_by_id.values()),
             total_issues_handled=total_issues_sum,
             total_cells=total_cells_sum,
-            total_rows=total_rows_sum
+            total_rows=total_rows_sum,
+            record_matching=multi_matching_report
         )
         metrics["quality_audit"] = audit_report
         metrics["is_multi_collection"] = True

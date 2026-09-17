@@ -41,8 +41,59 @@ export interface AuditDetailItem {
   severity: 'warning' | 'info' | 'error';
 }
 
+export interface RecordMatchCandidate {
+  candidate_id: string;
+  record_a_index: number;
+  record_b_index: number;
+  record_a: Record<string, any>;
+  record_b: Record<string, any>;
+  matched_fields: string[];
+  matched_field_count: number;
+  match_confidence: number;
+  match_status: 'merge_candidate' | 'high_confidence' | string;
+  merged_preview: Record<string, any>;
+  entity_type?: string;
+}
+
+export interface MergedRecordDetail {
+  merge_id: string;
+  record_a_index: number;
+  record_b_index: number;
+  original_record_a: Record<string, any>;
+  original_record_b: Record<string, any>;
+  merged_record: Record<string, any>;
+  filled_fields: string[];
+  matched_using_fields: string[];
+  status: string;
+  entity_type?: string;
+}
+
+export interface RecordMatchConflict {
+  conflict_id: string;
+  record_a_index: number;
+  record_b_index: number;
+  record_a: Record<string, any>;
+  record_b: Record<string, any>;
+  matched_fields: string[];
+  conflicting_fields: Record<string, [any, any]>;
+  status: string;
+  entity_type?: string;
+}
+
+export interface RecordMatchingReport {
+  total_records: number;
+  merge_candidates_count: number;
+  merged_count: number;
+  conflicts_count: number;
+  kept_separate_count: number;
+  final_records_count: number;
+  candidate_pairs: RecordMatchCandidate[];
+  merged_records: MergedRecordDetail[];
+  conflicts: RecordMatchConflict[];
+}
+
 export interface QualityDimension {
-  id: string; // 'missing_values' | 'duplicates' | 'wrong_data_types' | 'invalid_values' | 'outliers' | 'format_differences'
+  id: string; // 'missing_values' | 'duplicates' | 'wrong_data_types' | 'invalid_values' | 'outliers' | 'format_differences' | 'record_matching'
   title: string;
   count: number;
   status: string;
@@ -51,6 +102,7 @@ export interface QualityDimension {
   items: AuditDetailItem[];
   raw_samples?: Array<Record<string, any>>;
   total_denominator?: number;
+  record_matching?: RecordMatchingReport;
 }
 
 export interface QualityAuditReport {
@@ -58,6 +110,7 @@ export interface QualityAuditReport {
   total_issues_handled: number;
   total_cells?: number;
   total_rows?: number;
+  record_matching?: RecordMatchingReport;
 }
 
 export interface CleansingReport {

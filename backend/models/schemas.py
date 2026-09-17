@@ -39,22 +39,71 @@ class AuditDetailItem(BaseModel):
     issue_description: str
     severity: str = "warning"  # "warning", "info", "error"
 
+class RecordMatchCandidate(BaseModel):
+    candidate_id: str
+    record_a_index: int
+    record_b_index: int
+    record_a: Dict[str, Any]
+    record_b: Dict[str, Any]
+    matched_fields: List[str]
+    matched_field_count: int
+    match_confidence: float
+    match_status: str = "merge_candidate"  # "merge_candidate" | "high_confidence"
+    merged_preview: Dict[str, Any]
+    entity_type: Optional[str] = None
+
+class MergedRecordDetail(BaseModel):
+    merge_id: str
+    record_a_index: int
+    record_b_index: int
+    original_record_a: Dict[str, Any]
+    original_record_b: Dict[str, Any]
+    merged_record: Dict[str, Any]
+    filled_fields: List[str]
+    matched_using_fields: List[str]
+    status: str = "Successfully Merged"
+    entity_type: Optional[str] = None
+
+class RecordMatchConflict(BaseModel):
+    conflict_id: str
+    record_a_index: int
+    record_b_index: int
+    record_a: Dict[str, Any]
+    record_b: Dict[str, Any]
+    matched_fields: List[str]
+    conflicting_fields: Dict[str, List[Any]]  # {field_name: [valA, valB]}
+    status: str = "Review Required"
+    entity_type: Optional[str] = None
+
+class RecordMatchingReport(BaseModel):
+    total_records: int = 0
+    merge_candidates_count: int = 0
+    merged_count: int = 0
+    conflicts_count: int = 0
+    kept_separate_count: int = 0
+    final_records_count: int = 0
+    candidate_pairs: List[RecordMatchCandidate] = []
+    merged_records: List[MergedRecordDetail] = []
+    conflicts: List[RecordMatchConflict] = []
+
 class QualityDimension(BaseModel):
-    id: str  # "missing_values", "duplicates", "wrong_data_types", "invalid_values", "outliers", "format_differences"
+    id: str  # "missing_values", "duplicates", "wrong_data_types", "invalid_values", "outliers", "format_differences", "record_matching"
     title: str
     count: int
-    status: str  # "Clean", "Fixed", "Detected", "Resolved"
+    status: str  # "Clean", "Fixed", "Detected", "Resolved", "X Candidates"
     summary: str
     affected_columns: List[str] = []
     items: List[AuditDetailItem] = []
     raw_samples: Optional[List[Dict[str, Any]]] = None
     total_denominator: Optional[int] = None
+    record_matching: Optional[RecordMatchingReport] = None
 
 class QualityAuditReport(BaseModel):
     dimensions: List[QualityDimension] = []
     total_issues_handled: int = 0
     total_cells: Optional[int] = None
     total_rows: Optional[int] = None
+    record_matching: Optional[RecordMatchingReport] = None
 
 class CleansingReport(BaseModel):
     initial_rows: Optional[int] = None

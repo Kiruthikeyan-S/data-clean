@@ -34,7 +34,11 @@ def is_valid_cell(val: Any) -> bool:
         return True
     return True
 
-def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -> QualityAuditReport:
+def audit_structured_data(
+    original_df: pd.DataFrame,
+    cleaned_df: pd.DataFrame,
+    entity_type: Optional[str] = "general"
+) -> QualityAuditReport:
     """
     Performs comprehensive data quality audit across the 6 key dimensions:
     1. Missing Values
@@ -419,18 +423,74 @@ def audit_structured_data(original_df: pd.DataFrame, cleaned_df: pd.DataFrame) -
         id="format_differences",
         title="Format Differences",
         count=format_count,
-        status=f"{format_count} Harmonized" if format_count > 0 else "Standard",
+        status=f"{format_count} Harmonized" if format_count > 0 else "Clean",
         summary=f"Harmonized {format_count} formatting inconsistencies (dates, currencies, whitespace, casing)." if format_count > 0 else "All values follow standardized uniform formatting.",
         affected_columns=list(format_cols_set),
         items=format_items,
         total_denominator=total_cells
     ))
 
+    # =========================================================================
+    # 7. RECORD MATCHING
+    # =========================================================================
+    from backend.matching.record_matcher import audit_record_matching_for_dataset
+    matching_report = audit_record_matching_for_dataset(cleaned_df, entity_type=entity_type or "general")
+    
+    matching_items: List[AuditDetailItem] = []
+    for c in matching_report.candidate_pairs[:30]:
+        matched_str = ", ".join(c.matched_fields)
+        matching_items.append(AuditDetailItem(
+            row_index=c.record_a_index,
+            column="Merge Candidate",
+            original_value=f"Row {c.record_a_index} & Row {c.record_b_index}",
+            cleaned_value=f"{c.matched_field_count} Matched ({matched_str})",
+            issue_description=f"Merge candidate with {c.match_confidence:.0%} confidence. Missing fields can be safely combined.",
+            severity="info"
+        ))
+    for cf in matching_report.conflicts[:30]:
+        conf_cols = ", ".join(cf.conflicting_fields.keys())
+        matching_items.append(AuditDetailItem(
+            row_index=cf.record_a_index,
+            column="Record Conflict",
+            original_value=f"Row {cf.record_a_index} & Row {cf.record_b_index}",
+            cleaned_value=f"Conflicting: {conf_cols}",
+            issue_description=f"Conflicting non-null values detected across matching records. Manual review required.",
+            severity="warning"
+        ))
+        
+    candidates_count = matching_report.merge_candidates_count
+    conflicts_count = matching_report.conflicts_count
+    total_matching_issues = candidates_count + conflicts_count
+    total_issues += total_matching_issues
+    
+    match_status = f"{candidates_count} Candidates" if candidates_count > 0 else ("Conflicts Found" if conflicts_count > 0 else "Clean")
+    if candidates_count > 0 and conflicts_count > 0:
+        match_summary = f"Detected {candidates_count} merge candidate pair(s) and {conflicts_count} conflict(s) requiring review."
+    elif candidates_count > 0:
+        match_summary = f"Detected {candidates_count} merge candidate pair(s) with complementary missing fields."
+    elif conflicts_count > 0:
+        match_summary = f"Detected {conflicts_count} record conflict(s) with non-matching attribute values."
+    else:
+        match_summary = "All records represent distinct entities with no complementary merge candidates."
+        
+    dimensions.append(QualityDimension(
+        id="record_matching",
+        title="Record Matching",
+        count=candidates_count + conflicts_count,
+        status=match_status,
+        summary=match_summary,
+        affected_columns=[c for p in matching_report.candidate_pairs for c in p.matched_fields] or ["All Records"],
+        items=matching_items,
+        total_denominator=total_rows,
+        record_matching=matching_report
+    ))
+
     return QualityAuditReport(
         dimensions=dimensions,
         total_issues_handled=total_issues,
         total_cells=total_cells,
-        total_rows=total_rows
+        total_rows=total_rows,
+        record_matching=matching_report
     )
 
 
