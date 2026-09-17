@@ -626,7 +626,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                         <th className="px-4 py-2.5 w-1/5">Column / Field</th>
                         <th className="px-4 py-2.5 w-1/4">Original Value</th>
                         <th className="px-4 py-2.5 w-1/4">Cleaned / Fixed Value</th>
-                        <th className="px-4 py-2.5">Diagnosis & Action</th>
+                        <th className="px-4 py-2.5">Record (ID / Name)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -665,8 +665,14 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-2.5 text-slate-600 font-medium">
-                              {item.issue_description}
+                            <td className="px-4 py-2.5 text-slate-800 font-medium">
+                              {item.issue_description && item.issue_description.startsWith('Record: ') ? (
+                                <span className="font-mono text-[11px] font-semibold bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200 shadow-2xs">
+                                  {item.issue_description.replace('Record: ', '')}
+                                </span>
+                              ) : (
+                                <span className="text-slate-600 text-xs">{item.issue_description}</span>
+                              )}
                             </td>
                           </tr>
                         ))

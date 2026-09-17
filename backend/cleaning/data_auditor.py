@@ -34,6 +34,53 @@ def is_valid_cell(val: Any) -> bool:
         return True
     return True
 
+def get_row_identity(df: pd.DataFrame, row_idx: int) -> str:
+    """Extracts a human-readable identifier (e.g. 'STU1001 (Naveen Singh)' or 'CUST-001' or 'STR-001') for a row."""
+    if df is None or df.empty or row_idx < 0 or row_idx >= len(df):
+        return f"Row #{row_idx + 1}"
+    
+    try:
+        row = df.iloc[row_idx]
+    except Exception:
+        return f"Row #{row_idx + 1}"
+    
+    # 1. Look for ID column
+    id_val = None
+    id_col_name = None
+    for col in df.columns:
+        c_lower = str(col).lower().strip().replace('-', '_').replace(' ', '_')
+        if c_lower.endswith('_id') or c_lower.endswith('id') or c_lower in ('id', 'roll_no', 'reg_no', 'code', 'sku', 'branch_id', 'outlet_id', 'student_id', 'emp_id', 'cust_id'):
+            v = row.get(col)
+            if v is not None and not pd.isna(v) and str(v).strip() and str(v).strip().lower() not in NULL_REPRESENTATIONS:
+                id_val = str(v).strip()
+                id_col_name = str(col)
+                break
+                
+    # 2. Look for Name / Title column
+    name_val = None
+    for col in df.columns:
+        c_lower = str(col).lower().strip().replace('-', '_').replace(' ', '_')
+        if c_lower in ('name', 'full_name', 'first_name', 'student_name', 'customer_name', 'store_name', 'item_name', 'employee_name', 'emp_name', 'title', 'product_name'):
+            v = row.get(col)
+            if v is not None and not pd.isna(v) and str(v).strip() and str(v).strip().lower() not in NULL_REPRESENTATIONS:
+                name_val = str(v).strip()
+                break
+
+    if id_val and name_val:
+        return f"{id_val} ({name_val})"
+    elif id_val:
+        return f"{id_val}"
+    elif name_val:
+        return f"{name_val}"
+    
+    # Fallback to first non-null cell value in row
+    for col in df.columns:
+        v = row.get(col)
+        if v is not None and not pd.isna(v) and str(v).strip() and str(v).strip().lower() not in NULL_REPRESENTATIONS:
+            return f"{col}: {str(v).strip()[:20]}"
+            
+    return f"Row #{row_idx + 1}"
+
 def audit_structured_data(
     original_df: pd.DataFrame,
     cleaned_df: pd.DataFrame,
@@ -65,13 +112,14 @@ def audit_structured_data(
             if not is_valid_cell(val):
                 missing_count += 1
                 missing_cols_set.add(col)
-                if len(missing_items) < 30:
+                if len(missing_items) < 50:
+                    row_ident = get_row_identity(original_df, idx)
                     missing_items.append(AuditDetailItem(
                         row_index=idx + 1,
                         column=col,
                         original_value="Missing / Null",
                         cleaned_value=None,
-                        issue_description=f"Missing value normalized in column '{col}'",
+                        issue_description=f"Record: {row_ident}",
                         severity="info"
                     ))
 
