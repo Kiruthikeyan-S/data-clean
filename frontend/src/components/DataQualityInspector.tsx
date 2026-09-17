@@ -134,7 +134,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
 
       {/* 7 Clickable Quality Dimensions Grid */}
       <div className="p-4 sm:p-5 bg-slate-50/60 border-b border-slate-200/80">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-2.5">
           {audit.dimensions.map(dim => {
             const isSelected = selectedDimensionId === dim.id;
             const isClean = dim.count === 0;

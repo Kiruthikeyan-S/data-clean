@@ -157,6 +157,23 @@ def merge_record_pair(
             
     return merged, filled_fields
 
+PRIMARY_ID_KEYS: Set[str] = {
+    'id', 'customer_id', 'cust_id', 'client_id', 'member_id', 'user_id',
+    'store_id', 'branch_id', 'outlet_id', 'warehouse_id',
+    'item_id', 'product_id', 'sku', 'sku_id', 'barcode', 'upc', 'ean', 'asin',
+    'transaction_id', 'order_id', 'invoice_id', 'receipt_id', 'bill_id', 'sale_id'
+}
+
+def have_conflicting_primary_ids(rec_a: Dict[str, Any], rec_b: Dict[str, Any]) -> bool:
+    """Returns True if both records have non-empty but DIFFERENT primary identifiers."""
+    for key in PRIMARY_ID_KEYS:
+        val_a = rec_a.get(key)
+        val_b = rec_b.get(key)
+        if not is_empty_value(val_a) and not is_empty_value(val_b):
+            if normalize_match_val(val_a) != normalize_match_val(val_b):
+                return True
+    return False
+
 def analyze_record_matching(
     records: List[Dict[str, Any]],
     entity_type: Optional[str] = 'general',
@@ -179,6 +196,9 @@ def analyze_record_matching(
     
     matched_indices_set: Set[int] = set()
     comparison_count = 0
+    is_transaction_entity = str(entity_type).lower().strip() in (
+        'transaction', 'transactions', 'sale', 'sales', 'order', 'orders', 'log', 'logs'
+    )
 
     for i in range(n):
         for j in range(i + 1, n):
@@ -188,7 +208,18 @@ def analyze_record_matching(
                 
             rec_a = records[i]
             rec_b = records[j]
-            
+
+            # If comparing transaction events with different transaction IDs -> distinct transactions
+            if is_transaction_entity:
+                txn_id_a = rec_a.get('transaction_id') or rec_a.get('order_id') or rec_a.get('invoice_id')
+                txn_id_b = rec_b.get('transaction_id') or rec_b.get('order_id') or rec_b.get('invoice_id')
+                if txn_id_a and txn_id_b and normalize_match_val(txn_id_a) != normalize_match_val(txn_id_b):
+                    continue
+
+            # If both records have distinct non-empty Primary IDs (e.g. CUST-001 vs CUST-002) -> distinct entities
+            if have_conflicting_primary_ids(rec_a, rec_b):
+                continue
+                
             matched_fields, conflict_dict, confidence = compare_records(rec_a, rec_b, entity_type)
             
             is_only_weak = all(get_field_weight(f) <= 0.30 for f in matched_fields)
