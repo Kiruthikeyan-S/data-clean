@@ -15,7 +15,8 @@ import {
   Link2,
   GitMerge,
   Sparkles,
-  Check
+  Check,
+  Filter
 } from 'lucide-react';
 import { QualityAuditReport, QualityDimension } from '../types';
 
@@ -26,6 +27,7 @@ interface DataQualityInspectorProps {
 export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audit }) => {
   const [selectedDimensionId, setSelectedDimensionId] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
+  const [selectedColumnFilter, setSelectedColumnFilter] = useState<string | null>(null);
   const [matchingSubTab, setMatchingSubTab] = useState<'candidates' | 'merged'>('candidates');
   const [candidateActions, setCandidateActions] = useState<Record<string, 'merged' | 'separate' | 'review'>>({});
 
@@ -96,8 +98,11 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
     );
   };
 
-  // Filter items in selected dimension based on search
+  // Filter items in selected dimension based on search and selected column filter
   const filteredItems = selectedDimension?.items.filter(item => {
+    if (selectedColumnFilter && item.column.toLowerCase() !== selectedColumnFilter.toLowerCase()) {
+      return false;
+    }
     if (!searchFilter.trim()) return true;
     const q = searchFilter.toLowerCase();
     return (
@@ -155,8 +160,10 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                 onClick={() => {
                   if (selectedDimensionId === dim.id) {
                     setSelectedDimensionId(null);
+                    setSelectedColumnFilter(null);
                   } else {
                     setSelectedDimensionId(dim.id);
+                    setSelectedColumnFilter(null);
                     setSearchFilter('');
                   }
                 }}
@@ -514,15 +521,64 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
           ) : (
             /* Standard Quality Dimensions Inspector Table for Dimensions 1 to 6 */
             <div>
-              {/* Affected Columns Badges if applicable */}
+              {/* Affected Columns Interactive Filter Badges */}
               {selectedDimension.affected_columns && selectedDimension.affected_columns.length > 0 && (
                 <div className="py-3 flex flex-wrap items-center gap-1.5 text-xs border-b border-slate-100">
-                  <span className="font-semibold text-slate-500 mr-1">Affected Columns ({selectedDimension.affected_columns.length}):</span>
-                  {selectedDimension.affected_columns.map(col => (
-                    <span key={col} className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[11px] border border-slate-200">
-                      {col}
-                    </span>
-                  ))}
+                  <span className="font-semibold text-slate-500 mr-1 flex items-center gap-1">
+                    <Filter className="w-3 h-3 text-slate-400" />
+                    <span>Filter by Column ({selectedDimension.affected_columns.length}):</span>
+                  </span>
+
+                  {/* All Columns Reset Button */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedColumnFilter(null)}
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                      selectedColumnFilter === null
+                        ? 'bg-blue-600 text-white shadow-2xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                    }`}
+                  >
+                    All ({selectedDimension.items.length})
+                  </button>
+
+                  {selectedDimension.affected_columns.map(col => {
+                    const isColActive = selectedColumnFilter?.toLowerCase() === col.toLowerCase();
+                    const colCount = selectedDimension.items.filter(it => it.column.toLowerCase() === col.toLowerCase()).length;
+
+                    return (
+                      <button
+                        key={col}
+                        type="button"
+                        onClick={() => setSelectedColumnFilter(prev => prev?.toLowerCase() === col.toLowerCase() ? null : col)}
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isColActive
+                            ? 'bg-blue-600 text-white font-bold shadow-2xs ring-2 ring-blue-400/40'
+                            : 'bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200'
+                        }`}
+                        title={`Click to filter issues in column '${col}'`}
+                      >
+                        <span>{col}</span>
+                        {colCount > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-sans font-bold ${
+                            isColActive ? 'bg-blue-700 text-white' : 'bg-slate-200 text-slate-600'
+                          }`}>
+                            {colCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+
+                  {selectedColumnFilter && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedColumnFilter(null)}
+                      className="ml-auto text-[11px] text-blue-600 hover:text-blue-800 font-medium underline cursor-pointer"
+                    >
+                      Clear filter
+                    </button>
+                  )}
                 </div>
               )}
 
