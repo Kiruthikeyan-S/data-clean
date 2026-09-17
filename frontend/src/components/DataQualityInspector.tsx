@@ -14,7 +14,6 @@ import {
   Info,
   Link2,
   GitMerge,
-  AlertTriangle,
   Sparkles,
   Check
 } from 'lucide-react';
@@ -286,7 +285,6 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
-                  <Link2 className="w-3.5 h-3.5" />
                   <span>1. Merge Candidates</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
                     matchingSubTab === 'candidates' ? 'bg-blue-700 text-blue-100' : 'bg-slate-200 text-slate-700'
@@ -304,7 +302,6 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
                   <span>2. Merged Records</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
                     matchingSubTab === 'merged' ? 'bg-emerald-700 text-emerald-100' : 'bg-slate-200 text-slate-700'
@@ -322,7 +319,6 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
-                  <AlertTriangle className="w-3.5 h-3.5" />
                   <span>3. Conflicts</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
                     matchingSubTab === 'conflicts' ? 'bg-amber-700 text-amber-100' : 'bg-slate-200 text-slate-700'
