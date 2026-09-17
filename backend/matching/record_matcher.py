@@ -161,17 +161,29 @@ PRIMARY_ID_KEYS: Set[str] = {
     'id', 'customer_id', 'cust_id', 'client_id', 'member_id', 'user_id',
     'store_id', 'branch_id', 'outlet_id', 'warehouse_id',
     'item_id', 'product_id', 'sku', 'sku_id', 'barcode', 'upc', 'ean', 'asin',
-    'transaction_id', 'order_id', 'invoice_id', 'receipt_id', 'bill_id', 'sale_id'
+    'transaction_id', 'order_id', 'invoice_id', 'receipt_id', 'bill_id', 'sale_id',
+    'student_id', 'emp_id', 'employee_id', 'roll_no', 'reg_no'
 }
 
 def have_conflicting_primary_ids(rec_a: Dict[str, Any], rec_b: Dict[str, Any]) -> bool:
-    """Returns True if both records have non-empty but DIFFERENT primary identifiers."""
-    for key in PRIMARY_ID_KEYS:
-        val_a = rec_a.get(key)
-        val_b = rec_b.get(key)
-        if not is_empty_value(val_a) and not is_empty_value(val_b):
-            if normalize_match_val(val_a) != normalize_match_val(val_b):
-                return True
+    """Returns True if both records have non-empty but DIFFERENT primary identifiers or distinct person names."""
+    all_keys = set(rec_a.keys()).union(set(rec_b.keys()))
+    for key in all_keys:
+        k_clean = str(key).strip().lower().replace('-', '_').replace(' ', '_')
+        # Check all ID columns (student_id, employee_id, id, etc.)
+        if k_clean.endswith('_id') or k_clean.endswith('id') or k_clean in PRIMARY_ID_KEYS or k_clean in ('roll_no', 'reg_no', 'code'):
+            val_a = rec_a.get(key)
+            val_b = rec_b.get(key)
+            if not is_empty_value(val_a) and not is_empty_value(val_b):
+                if normalize_match_val(val_a) != normalize_match_val(val_b):
+                    return True
+        # Check name columns (name, full_name, first_name)
+        if k_clean in ('name', 'full_name', 'first_name', 'student_name', 'customer_name', 'person_name'):
+            val_a = rec_a.get(key)
+            val_b = rec_b.get(key)
+            if not is_empty_value(val_a) and not is_empty_value(val_b):
+                if normalize_match_val(val_a) != normalize_match_val(val_b):
+                    return True
     return False
 
 def analyze_record_matching(

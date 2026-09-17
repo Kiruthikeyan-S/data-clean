@@ -26,9 +26,8 @@ interface DataQualityInspectorProps {
 export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audit }) => {
   const [selectedDimensionId, setSelectedDimensionId] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
-  const [matchingSubTab, setMatchingSubTab] = useState<'candidates' | 'merged' | 'conflicts'>('candidates');
+  const [matchingSubTab, setMatchingSubTab] = useState<'candidates' | 'merged'>('candidates');
   const [candidateActions, setCandidateActions] = useState<Record<string, 'merged' | 'separate' | 'review'>>({});
-  const [conflictActions, setConflictActions] = useState<Record<string, 'keep_a' | 'keep_b' | 'separate' | 'manual'>>({});
 
   if (!audit || !audit.dimensions || audit.dimensions.length === 0) {
     return null;
@@ -247,7 +246,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
           {selectedDimension.id === 'record_matching' && recordMatchingReport ? (
             <div className="mt-4 space-y-5">
               {/* Record Matching Summary Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200">
                 <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
                   <div className="text-[11px] text-slate-500 font-medium">Total Records</div>
                   <div className="text-base font-bold text-slate-900 font-mono mt-0.5">{recordMatchingReport.total_records}</div>
@@ -260,10 +259,6 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                   <div className="text-[11px] text-emerald-600 font-medium">Successfully Merged</div>
                   <div className="text-base font-bold text-emerald-700 font-mono mt-0.5">{recordMatchingReport.merged_count}</div>
                 </div>
-                <div className="bg-white p-2.5 rounded-lg border border-amber-200 shadow-2xs">
-                  <div className="text-[11px] text-amber-700 font-medium">Conflicts</div>
-                  <div className="text-base font-bold text-amber-800 font-mono mt-0.5">{recordMatchingReport.conflicts_count}</div>
-                </div>
                 <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
                   <div className="text-[11px] text-slate-500 font-medium">Kept Separate</div>
                   <div className="text-base font-bold text-slate-700 font-mono mt-0.5">{recordMatchingReport.kept_separate_count}</div>
@@ -274,7 +269,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                 </div>
               </div>
 
-              {/* 3 Section Sub-Tabs */}
+              {/* Sub-Tabs: Merge Candidates & Merged Records */}
               <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
                 <button
                   type="button"
@@ -307,23 +302,6 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                     matchingSubTab === 'merged' ? 'bg-emerald-700 text-emerald-100' : 'bg-slate-200 text-slate-700'
                   }`}>
                     {recordMatchingReport.merged_records.length}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setMatchingSubTab('conflicts')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                    matchingSubTab === 'conflicts'
-                      ? 'bg-amber-600 text-white shadow-2xs'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  <span>3. Conflicts</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                    matchingSubTab === 'conflicts' ? 'bg-amber-700 text-amber-100' : 'bg-slate-200 text-slate-700'
-                  }`}>
-                    {recordMatchingReport.conflicts.length}
                   </span>
                 </button>
               </div>
@@ -529,120 +507,6 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({ audi
                         </div>
                       </div>
                     ))
-                  )}
-                </div>
-              )}
-
-              {/* SECTION 3: CONFLICTS */}
-              {matchingSubTab === 'conflicts' && (
-                <div className="space-y-4">
-                  {recordMatchingReport.conflicts.length === 0 ? (
-                    <div className="py-8 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                      <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                      <p className="text-xs font-semibold text-slate-700">No Record Conflicts Detected</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">All matching record pairs have non-conflicting attribute values.</p>
-                    </div>
-                  ) : (
-                    recordMatchingReport.conflicts.map((conflict, cfIdx) => {
-                      const action = conflictActions[conflict.conflict_id];
-
-                      return (
-                        <div key={conflict.conflict_id || cfIdx} className="bg-amber-50/40 rounded-xl border border-amber-300 p-4 space-y-3">
-                          {/* Header */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-amber-200">
-                            <div className="flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center">
-                                {cfIdx + 1}
-                              </span>
-                              <span className="text-xs font-bold text-amber-950">
-                                Row #{conflict.record_a_index} vs Row #{conflict.record_b_index}
-                              </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-semibold border border-amber-300">
-                                ⚠️ Status: {conflict.status}
-                              </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold border border-blue-200">
-                                Matched on: {conflict.matched_fields.join(', ')}
-                              </span>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                              {action ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300">
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>
-                                    {action === 'keep_a' ? 'Kept Record A' : action === 'keep_b' ? 'Kept Record B' : action === 'separate' ? 'Kept Separate' : 'Manual Edit Applied'}
-                                  </span>
-                                </span>
-                              ) : (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConflictActions(prev => ({ ...prev, [conflict.conflict_id]: 'keep_a' }))}
-                                    className="px-2 py-1 text-[11px] font-semibold rounded-md bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 shadow-2xs"
-                                  >
-                                    Keep Record A
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConflictActions(prev => ({ ...prev, [conflict.conflict_id]: 'keep_b' }))}
-                                    className="px-2 py-1 text-[11px] font-semibold rounded-md bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 shadow-2xs"
-                                  >
-                                    Keep Record B
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConflictActions(prev => ({ ...prev, [conflict.conflict_id]: 'separate' }))}
-                                    className="px-2 py-1 text-[11px] font-semibold rounded-md bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 shadow-2xs"
-                                  >
-                                    Keep Separate
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConflictActions(prev => ({ ...prev, [conflict.conflict_id]: 'manual' }))}
-                                    className="px-2 py-1 text-[11px] font-semibold rounded-md bg-amber-600 hover:bg-amber-700 text-white shadow-2xs"
-                                  >
-                                    Manual Edit
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Conflicting Fields Breakdown */}
-                          <div className="overflow-x-auto rounded-lg border border-amber-200 bg-white">
-                            <table className="w-full text-left text-xs">
-                              <thead className="bg-amber-100/50 font-semibold text-amber-950 border-b border-amber-200 text-[11px]">
-                                <tr>
-                                  <th className="px-3.5 py-2 w-1/4">Conflicting Field</th>
-                                  <th className="px-3.5 py-2 w-1/3">Record A Value (Row #{conflict.record_a_index})</th>
-                                  <th className="px-3.5 py-2 w-1/3">Record B Value (Row #{conflict.record_b_index})</th>
-                                  <th className="px-3.5 py-2 text-center">Conflict Type</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-amber-100 font-mono text-[11px]">
-                                {Object.entries(conflict.conflicting_fields).map(([field, [valA, valB]]) => (
-                                  <tr key={field} className="bg-red-50/30">
-                                    <td className="px-3.5 py-2 font-semibold text-red-950 font-sans">{field}</td>
-                                    <td className="px-3.5 py-2 text-red-700 font-bold bg-red-50/50">
-                                      {String(valA)}
-                                    </td>
-                                    <td className="px-3.5 py-2 text-red-700 font-bold bg-red-50/50">
-                                      {String(valB)}
-                                    </td>
-                                    <td className="px-3.5 py-2 text-center">
-                                      <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full border border-red-300">
-                                        Differing Values
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      );
-                    })
                   )}
                 </div>
               )}
