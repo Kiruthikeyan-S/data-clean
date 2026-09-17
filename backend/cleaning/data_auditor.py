@@ -459,27 +459,22 @@ def audit_structured_data(
         ))
         
     candidates_count = matching_report.merge_candidates_count
-    conflicts_count = matching_report.conflicts_count
-    total_matching_issues = candidates_count + conflicts_count
+    total_matching_issues = candidates_count
     total_issues += total_matching_issues
     
-    match_status = f"{candidates_count} Candidates" if candidates_count > 0 else ("Conflicts Found" if conflicts_count > 0 else "Clean")
-    if candidates_count > 0 and conflicts_count > 0:
-        match_summary = f"Detected {candidates_count} merge candidate pair(s) and {conflicts_count} conflict(s) requiring review."
-    elif candidates_count > 0:
-        match_summary = f"Detected {candidates_count} merge candidate pair(s) with complementary missing fields."
-    elif conflicts_count > 0:
-        match_summary = f"Detected {conflicts_count} record conflict(s) with non-matching attribute values."
+    match_status = f"{candidates_count} Candidates" if candidates_count > 0 else "Clean"
+    if candidates_count > 0:
+        match_summary = f"Detected {candidates_count} merge candidate pair(s) with complementary missing fields ready to be combined."
     else:
         match_summary = "All records represent distinct entities with no complementary merge candidates."
         
     dimensions.append(QualityDimension(
         id="record_matching",
         title="Record Matching",
-        count=candidates_count + conflicts_count,
+        count=candidates_count,
         status=match_status,
         summary=match_summary,
-        affected_columns=[c for p in matching_report.candidate_pairs for c in p.matched_fields] or ["All Records"],
+        affected_columns=[],
         items=matching_items,
         total_denominator=total_rows,
         record_matching=matching_report

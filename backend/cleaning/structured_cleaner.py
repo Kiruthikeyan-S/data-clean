@@ -378,9 +378,10 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
         )
         if "record_matching" in all_dims_by_id:
             all_dims_by_id["record_matching"].record_matching = multi_matching_report
-            all_dims_by_id["record_matching"].count = len(all_candidates) + len(all_conflicts)
+            all_dims_by_id["record_matching"].count = len(all_candidates)
             all_dims_by_id["record_matching"].total_denominator = total_rows_sum
-            all_dims_by_id["record_matching"].status = f"{len(all_candidates)} Candidates" if len(all_candidates) > 0 else ("Conflicts Found" if len(all_conflicts) > 0 else "Clean")
+            all_dims_by_id["record_matching"].status = f"{len(all_candidates)} Candidates" if len(all_candidates) > 0 else "Clean"
+            all_dims_by_id["record_matching"].summary = f"Detected {len(all_candidates)} merge candidate pair(s) with complementary missing fields ready to be combined." if len(all_candidates) > 0 else "All records represent distinct entities with no complementary merge candidates."
 
         audit_report = QualityAuditReport(
             dimensions=list(all_dims_by_id.values()),
