@@ -253,23 +253,41 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             aliases={"store_name", "store_title", "branch_name", "outlet_name", "warehouse_name", "location_name", "store", "name", "branch"},
             description="Official name of the store location"
         ),
+        "address": CanonicalField(
+            name="address",
+            field_type="text",
+            aliases={"address", "street", "address_street", "store_address", "address_line1", "address_line_1", "location_address", "street_address", "addr"},
+            description="Street address of the store"
+        ),
         "city": CanonicalField(
             name="city",
             field_type="text_title",
-            aliases={"city", "store_city", "town", "district", "municipality"},
+            aliases={"city", "store_city", "address_city", "town", "district", "municipality"},
             description="City where the store is located"
         ),
         "state": CanonicalField(
             name="state",
             field_type="text_title",
-            aliases={"state", "store_state", "province", "region"},
+            aliases={"state", "store_state", "address_state", "province", "region"},
             description="State or province code/name"
         ),
         "postal_code": CanonicalField(
             name="postal_code",
             field_type="postal_code",
-            aliases={"postal_code", "zipcode", "zip_code", "zip", "pin_code", "pincode", "pin", "postcode"},
+            aliases={"postal_code", "address_postal_code", "zipcode", "zip_code", "address_zip", "zip", "pin_code", "pincode", "pin", "postcode"},
             description="Postal or ZIP code"
+        ),
+        "country": CanonicalField(
+            name="country",
+            field_type="text_title",
+            aliases={"country", "store_country", "address_country", "nation"},
+            description="Country where the store is located"
+        ),
+        "phone": CanonicalField(
+            name="phone",
+            field_type="phone",
+            aliases={"phone", "store_phone", "contact", "telephone", "mobile", "phone_number", "contact_number"},
+            description="Store contact phone number"
         ),
         "opened_on": CanonicalField(
             name="opened_on",
@@ -356,6 +374,36 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             field_type="phone",
             aliases={"phone", "mobile", "telephone", "customer_phone", "cust_phone", "contact", "cell", "phone_number", "contact_number"},
             description="Customer contact phone number"
+        ),
+        "address": CanonicalField(
+            name="address",
+            field_type="text",
+            aliases={"address", "street", "customer_address", "address_street", "address_line1", "addr"},
+            description="Customer street address"
+        ),
+        "city": CanonicalField(
+            name="city",
+            field_type="text_title",
+            aliases={"city", "customer_city", "address_city", "town"},
+            description="Customer city"
+        ),
+        "state": CanonicalField(
+            name="state",
+            field_type="text_title",
+            aliases={"state", "customer_state", "address_state", "province"},
+            description="Customer state"
+        ),
+        "postal_code": CanonicalField(
+            name="postal_code",
+            field_type="postal_code",
+            aliases={"postal_code", "customer_postal_code", "customer_zip", "zip", "zipcode", "pin", "pincode"},
+            description="Customer postal/zip code"
+        ),
+        "country": CanonicalField(
+            name="country",
+            field_type="text_title",
+            aliases={"country", "customer_country", "address_country"},
+            description="Customer country"
         ),
         "registered_on": CanonicalField(
             name="registered_on",

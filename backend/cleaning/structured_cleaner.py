@@ -227,9 +227,28 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
                 df = pd.DataFrame(data)
         elif isinstance(data, dict):
             # Check for multiple entity collections (e.g. {"stores": [...], "items": [...], "customers": [...]})
+            def is_summary_or_metadata(key: str, val: Any) -> bool:
+                k_lower = key.lower().strip()
+                if any(k_lower.endswith(s) or k_lower.startswith(s) or k_lower == s for s in (
+                    "summary", "metadata", "meta", "stats", "pagination", "config", "settings", "header", "footer"
+                )):
+                    return True
+                if isinstance(val, dict):
+                    summary_keys = {
+                        "total", "total_transactions", "total_count", "total_items", "total_records",
+                        "total_amount", "count", "currency", "version", "page", "page_size",
+                        "per_page", "limit", "offset", "status", "success", "error", "timestamp",
+                        "datetime", "date"
+                    }
+                    if len(val) <= 4 and all(k.lower() in summary_keys for k in val.keys()):
+                        return True
+                return False
+
             coll_keys = [
                 k for k, v in data.items()
-                if (isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict)) or (isinstance(v, dict) and len(v) > 0)
+                if not is_summary_or_metadata(k, v) and (
+                    (isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict)) or (isinstance(v, dict) and len(v) > 0)
+                )
             ]
             if len(coll_keys) >= 2:
                 # Multi-collection JSON dataset
@@ -373,6 +392,7 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
         metrics["quality_audit"] = audit_report
         metrics["is_multi_collection"] = True
         metrics["collections_data"] = collections_data
+        metrics["collections"] = collections_data
         metrics["duplicates_removed"] = sum(c_info["metrics"].get("duplicates_removed", 0) for c_info in collections_data.values())
         metrics["empty_rows_removed"] = sum(c_info["metrics"].get("empty_rows_removed", 0) for c_info in collections_data.values())
         metrics["nulls_normalized"] = sum(c_info["metrics"].get("nulls_normalized", 0) for c_info in collections_data.values())
