@@ -138,6 +138,8 @@ def standardize_canonical_values(
             # Fallback heuristic by column name
             if "date" in col_lower or "dob" in col_lower or "opened" in col_lower or "registered" in col_lower:
                 field_type = "date"
+            elif "zip" in col_lower or "pin" in col_lower or "postal" in col_lower or "postcode" in col_lower:
+                field_type = "postal_code"
             elif "email" in col_lower:
                 field_type = "email"
             elif "phone" in col_lower or "mobile" in col_lower:
@@ -150,8 +152,6 @@ def standardize_canonical_values(
                 field_type = "id"
             elif col_lower in ("city", "state", "country", "name", "category", "brand", "manager_name", "store_name", "item_name", "full_name", "payment_method", "loyalty_tier"):
                 field_type = "text_title"
-            elif "zip" in col_lower or "pin" in col_lower or "postal" in col_lower:
-                field_type = "postal_code"
 
         if not field_type:
             continue

@@ -100,8 +100,12 @@ def normalize_phone(phone_str: Optional[str], default_region: str = "IN") -> Opt
         return None
     
     phone_s = str(phone_str).strip()
-    if not phone_s:
+    if not phone_s or phone_s.lower() in ("null", "none", "nan", "n/a", "-"):
         return None
+    
+    # Strip trailing .0 if float representation
+    if re.match(r"^\d+\.0+$", phone_s):
+        phone_s = phone_s.split(".")[0]
     
     # Try phonenumbers parse
     try:
@@ -161,9 +165,14 @@ def normalize_postal_code(code_val: Any) -> Optional[str]:
     """
     Normalizes ZIP / PIN postal codes.
     """
-    if not code_val:
+    if code_val is None:
         return None
     val_str = str(code_val).strip()
+    if not val_str or val_str.lower() in ("null", "none", "nan", "n/a", "-"):
+        return None
+    # Strip trailing .0 from float representations (e.g. 600001.0 -> 600001)
+    if re.match(r"^\d+\.0+$", val_str):
+        val_str = val_str.split(".")[0]
     # Remove extra spaces
     cleaned = re.sub(r"\s+", "", val_str)
     if re.match(r"^\d{5,6}(-\d{4})?$", cleaned):

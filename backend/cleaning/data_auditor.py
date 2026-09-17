@@ -187,8 +187,9 @@ def audit_structured_data(
     }
     TEXT_EXCLUSION_TOKENS = {
         "country", "name", "manager", "manager_name", "address", "city", "state",
-        "email", "phone", "status", "category", "type", "description", "title",
-        "code", "id", "record_type", "branch"
+        "email", "phone", "mobile", "status", "category", "type", "description", "title",
+        "code", "id", "record_type", "branch", "pin", "pincode", "pin_code", "postal", "postal_code",
+        "zip", "zipcode", "zip_code", "postcode", "barcode", "sku", "roll_no", "reg_no"
     }
 
     for col in original_df.columns:
@@ -196,8 +197,8 @@ def audit_structured_data(
         col_lower = col_str.lower().strip()
         tokens = set(re.split(r"[_\s\-]+", col_lower))
 
-        # Check if column is genuinely expected to be numeric (not a text/name/country column)
-        is_text_column = bool(tokens.intersection(TEXT_EXCLUSION_TOKENS)) or col_lower in TEXT_EXCLUSION_TOKENS
+        # Check if column is genuinely expected to be numeric (not a text/name/country/identifier column)
+        is_text_column = bool(tokens.intersection(TEXT_EXCLUSION_TOKENS)) or col_lower in TEXT_EXCLUSION_TOKENS or col_lower.endswith("_id") or col_lower.endswith("_code")
         is_expected_numeric = bool(tokens.intersection(NUMERIC_TOKENS)) and not is_text_column
         
         if is_expected_numeric:
@@ -358,9 +359,23 @@ def audit_structured_data(
     outlier_cols_set = set()
     outlier_count = 0
 
-    # Detect outliers using Interquartile Range (IQR) on numeric columns with >= 4 values
+    # Detect outliers using Interquartile Range (IQR) on numeric columns with >= 6 values
+    NON_METRIC_COL_KEYWORDS = {
+        "pin", "pincode", "pin_code", "postal", "postal_code", "zip", "zipcode", "zip_code", "postcode",
+        "phone", "mobile", "telephone", "contact", "fax", "cell",
+        "id", "code", "roll_no", "reg_no", "rollno", "regno", "serial", "barcode", "upc", "ean", "asin", "sku",
+        "year", "yy", "yyyy", "date", "dob", "time", "timestamp"
+    }
+
     for col in original_df.columns:
         col_str = str(col)
+        col_lower = col_str.lower().strip()
+        tokens = set(re.split(r"[_\s\-]+", col_lower))
+
+        # Skip non-metric columns (identifiers, postal codes, phone numbers, codes, dates) from statistical outlier analysis
+        if bool(tokens.intersection(NON_METRIC_COL_KEYWORDS)) or col_lower in NON_METRIC_COL_KEYWORDS or col_lower.endswith("_id") or col_lower.endswith("_code") or col_lower.endswith("id"):
+            continue
+
         # Extract numeric series
         numeric_vals = []
         val_indices = []
@@ -386,13 +401,15 @@ def audit_structured_data(
                         outlier_count += 1
                         outlier_cols_set.add(col_str)
                         row_num = val_indices[pos] + 1
+                        orig_val_str = str(original_df[col].iloc[val_indices[pos]])
+                        cleaned_rep = str(int(num)) if num.is_integer() else str(num)
                         if len(outlier_items) < 30:
                             outlier_items.append(AuditDetailItem(
                                 row_index=row_num,
                                 column=col_str,
-                                original_value=str(original_df[col].iloc[val_indices[pos]]),
-                                cleaned_value=str(num),
-                                issue_description=f"Statistical outlier ({num}) falls outside normal IQR range [{round(lower_bound, 1)}, {round(upper_bound, 1)}]",
+                                original_value=orig_val_str,
+                                cleaned_value=cleaned_rep,
+                                issue_description=f"Statistical outlier ({cleaned_rep}) falls outside normal IQR range [{round(lower_bound, 1)}, {round(upper_bound, 1)}]",
                                 severity="info"
                             ))
 
