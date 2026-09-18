@@ -152,11 +152,15 @@ class EntityTableInfo(BaseModel):
 
 class EntityClassificationInfo(BaseModel):
     """Describes the business entity classification result for a processed file."""
-    entity_type: str = "unknown"  # "store", "item", "customer", "transaction", "mixed", "unknown"
+    entity_type: str = "unknown"  # "store", "item", "customer", "transaction", "car", "invoice", "employee", "student", "medical", "mixed", "unknown"
+    display_name: Optional[str] = None
+    primary_match_key: Optional[str] = None
     is_mixed: bool = False
     confidence: float = 0.0
     method: str = "rule_based"  # "rule_based" or "llm_fallback"
     details: str = ""
+    reasoning: Optional[str] = None
+    extracted_fields: Optional[List[str]] = None
     entities_detected: Dict[str, float] = {}
     column_assignments: Dict[str, str] = {}
     split_tables: Optional[List[EntityTableInfo]] = None

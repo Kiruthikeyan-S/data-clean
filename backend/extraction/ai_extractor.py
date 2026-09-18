@@ -272,7 +272,8 @@ def classify_columns_with_llm(
 ) -> dict:
     """
     Use Groq LLM to classify DataFrame columns into business entity types
-    (Store, Item, Customer, Transaction) when rule-based confidence is low.
+    (store, item, customer, transaction, car, invoice, employee, student, medical)
+    when rule-based confidence is low.
 
     Args:
         columns: List of column names.
@@ -298,23 +299,28 @@ def classify_columns_with_llm(
             sample_preview.append(f"  {col}: [{preview}]")
 
         system_prompt = (
-            "You are a Business Data Schema Classifier AI.\n"
-            "Given column names and sample values from a dataset, classify each column into one of:\n"
-            "- store: Store/Branch/Outlet/Warehouse location data\n"
-            "- item: Product/Item/SKU/Inventory data\n"
-            "- customer: Customer/Client/Member/Shopper data\n"
-            "- transaction: Order/Sale/Invoice/Purchase/Billing data\n"
-            "- unknown: Does not fit any retail business entity\n\n"
+            "You are an expert Multi-Domain Business Data Schema Classifier AI.\n"
+            "Given column names and sample values from a dataset, classify the dataset into one of the canonical domains:\n"
+            "- car: Vehicle/Automotive (VIN, make, model, year, mileage, license plate, odometer, engine)\n"
+            "- customer: Customer/Client/Member/Shopper (name, phone, email, address, loyalty)\n"
+            "- store: Store/Branch/Outlet/Warehouse location (store_id, branch_name, city, manager)\n"
+            "- item: Product/Item/SKU/Inventory/Merchandise (sku, item_name, unit_price, stock, category)\n"
+            "- transaction: Order/Sale/Purchase/Billing log (transaction_id, customer_id, store_id, total_amount, date)\n"
+            "- invoice: Invoice/Billing document (invoice_no, vendor_name, bill_to, tax_amount, due_date)\n"
+            "- employee: Employee/HR/Staff record (emp_id, name, department, designation, salary, joining_date)\n"
+            "- student: Student/Academic record (student_id, roll_no, name, cgpa, department, course)\n"
+            "- medical: Medical/Patient record (patient_id, mrn, doctor_name, diagnosis, prescription, blood_group)\n"
+            "- mixed: Dataset containing multiple independent entity tables\n"
+            "- unknown: Unrecognized general dataset\n\n"
             "Rules:\n"
-            "- If a column like store_id or customer_id appears alongside order_date/quantity, "
-            "it is a foreign key in a Transaction — assign it to transaction.\n"
-            "- If the file has columns from multiple entity types, set file_type to 'mixed'.\n"
-            "- If the file has columns from only one entity type, set file_type to that entity.\n\n"
+            "- If a column like store_id or customer_id appears alongside order_date/quantity, it is a foreign key in a Transaction.\n"
+            "- If the file has columns from only one domain, set file_type to that domain.\n\n"
             "Return valid JSON:\n"
             "{\n"
-            '  "file_type": "store|item|customer|transaction|mixed|unknown",\n'
-            '  "column_assignments": {"col_name": "entity_type", ...},\n'
-            '  "entity_confidence": {"store": 0.0, "item": 0.0, "customer": 0.0, "transaction": 0.0},\n'
+            '  "file_type": "car|customer|store|item|transaction|invoice|employee|student|medical|mixed|unknown",\n'
+            '  "column_assignments": {"col_name": "domain_type", ...},\n'
+            '  "entity_confidence": {"car": 0.0, "customer": 0.0, "store": 0.0, "item": 0.0, "transaction": 0.0, "invoice": 0.0, "employee": 0.0, "student": 0.0, "medical": 0.0},\n'
+            '  "reasoning": "Brief explanation of domain decision",\n'
             '  "details": "Brief explanation"\n'
             "}"
         )
@@ -338,7 +344,7 @@ def classify_columns_with_llm(
                 content = response.choices[0].message.content
                 parsed = json.loads(content)
 
-                if "file_type" in parsed and "column_assignments" in parsed:
+                if "file_type" in parsed:
                     return parsed
 
             except Exception as model_err:
@@ -349,3 +355,74 @@ def classify_columns_with_llm(
         print(f"Groq column classification error: {e}")
 
     return None
+
+
+def classify_domain_with_llm(
+    text_or_data: str,
+    api_key: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Use Groq LLM to classify unstructured text or document contents into a business domain.
+
+    Returns:
+        Dict with detected_type, confidence, reasoning, primary_match_key, extracted_fields.
+    """
+    key_to_use = api_key or os.environ.get("GROQ_API_KEY", "") or GROQ_API_KEY
+    if not key_to_use or not text_or_data.strip():
+        return None
+
+    try:
+        http_client = httpx.Client(verify=False, timeout=25.0)
+        client = Groq(api_key=key_to_use, http_client=http_client)
+
+        system_prompt = (
+            "You are an expert Multi-Domain Document Classification AI.\n"
+            "Analyze the provided document text and classify it into one of these business domains:\n"
+            "- car: Vehicle/Automotive (VIN, make, model, year, mileage, license plate)\n"
+            "- customer: Customer/Client profile (name, phone, email, address)\n"
+            "- store: Retail store/branch profile (store_id, address, manager)\n"
+            "- item: Product catalog/item description (sku, price, specs)\n"
+            "- transaction: Sales transaction/receipt (transaction_id, date, amount)\n"
+            "- invoice: Commercial invoice/bill (invoice_no, vendor, bill_to, tax, total)\n"
+            "- employee: Employee/Staff profile (emp_id, department, designation, salary)\n"
+            "- student: Student/Academic profile (student_id, roll_no, cgpa, department)\n"
+            "- medical: Medical/Patient chart (patient_id, mrn, diagnosis, prescription, doctor)\n"
+            "- unknown: General or unrecognized document\n\n"
+            "Return valid JSON:\n"
+            "{\n"
+            '  "detected_type": "car|customer|store|item|transaction|invoice|employee|student|medical|unknown",\n'
+            '  "confidence": 0.95,\n'
+            '  "reasoning": "Explanation why this belongs to the detected domain",\n'
+            '  "primary_match_key": "vin|phone|store_id|product_id|transaction_id|invoice_no|emp_id|student_id|patient_id",\n'
+            '  "extracted_fields": ["field1", "field2", ...]\n'
+            "}"
+        )
+
+        user_content = f"Classify the domain of this document text:\n\n{text_or_data[:6000]}"
+
+        for model_name in GROQ_MODELS:
+            try:
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_content},
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.1,
+                )
+                content = response.choices[0].message.content
+                parsed = json.loads(content)
+
+                if "detected_type" in parsed:
+                    return parsed
+
+            except Exception as model_err:
+                print(f"Groq domain classification model {model_name} failed: {model_err}")
+                continue
+
+    except Exception as e:
+        print(f"Groq domain classification error: {e}")
+
+    return None
+

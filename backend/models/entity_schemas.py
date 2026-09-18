@@ -4,11 +4,16 @@ from typing import Dict, List, Set, Pattern
 from enum import Enum
 
 class EntityType(str, Enum):
-    """Business entity types."""
+    """Business entity and domain types."""
     STORE = "store"
     ITEM = "item"
     CUSTOMER = "customer"
     TRANSACTION = "transaction"
+    CAR = "car"
+    INVOICE = "invoice"
+    EMPLOYEE = "employee"
+    STUDENT = "student"
+    MEDICAL = "medical"
 
 CONFIDENCE_THRESHOLD = 0.70
 
@@ -217,12 +222,183 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
         ],
         foreign_key_columns={"transaction_id", "order_id", "invoice_id"}
     )
-    
+
+    car_schema = EntitySchema(
+        name=EntityType.CAR.value,
+        display_name="Vehicle / Automotive",
+        icon="directions_car",
+        strong_keywords={
+            "vin", "vehicle_identification_number", "make", "model", "car_model", "vehicle_model",
+            "mileage", "odometer", "odometer_reading", "license_plate", "plate_number", "plate_no",
+            "engine_no", "engine_number", "transmission", "fuel_type", "body_style", "vehicle_id",
+            "car_name", "trim", "doors", "seating_capacity", "cubic_capacity", "chassis_number", "chassis_no"
+        },
+        medium_keywords={
+            "vehicle", "car", "auto", "engine", "gearbox", "horsepower", "torque", "exterior_color",
+            "interior_color", "cylinders", "displacement", "mpg", "kpl", "fuel_economy"
+        },
+        weak_keywords={
+            "year", "price", "color", "status", "type", "description", "id", "city", "state", "brand"
+        },
+        aliases={
+            "vehicle_identification_number": "vin",
+            "chassis_number": "vin",
+            "chassis_no": "vin",
+            "car_model": "model",
+            "plate_number": "license_plate",
+            "plate_no": "license_plate",
+            "odometer": "mileage",
+            "odometer_reading": "mileage"
+        },
+        value_patterns=[
+            re.compile(r"^[A-HJ-NPR-Z0-9]{17}$", re.IGNORECASE),  # Standard 17-char VIN
+            re.compile(r"^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$", re.IGNORECASE)  # Plate number format
+        ],
+        co_occurrence_rules=[
+            {"vin", "make", "model"},
+            {"make", "model", "year", "mileage"},
+            {"license_plate", "engine_no"}
+        ],
+        foreign_key_columns={"vin", "license_plate"}
+    )
+
+    invoice_schema = EntitySchema(
+        name=EntityType.INVOICE.value,
+        display_name="Invoice / Billing Document",
+        icon="receipt_long",
+        strong_keywords={
+            "invoice_no", "invoice_num", "invoice_number", "bill_to", "billed_to", "invoice_date",
+            "due_date", "vendor_name", "supplier_name", "tax_amount", "tax_rate", "po_number",
+            "purchase_order", "payment_terms", "gstin", "vat_number", "subtotal"
+        },
+        medium_keywords={
+            "invoice", "billing", "bill", "vendor", "supplier", "tax", "gst", "vat", "remit_to"
+        },
+        weak_keywords={
+            "date", "total", "amount", "discount", "notes", "status", "description"
+        },
+        aliases={
+            "invoice_num": "invoice_no",
+            "invoice_number": "invoice_no",
+            "bill_number": "invoice_no",
+            "billed_to": "bill_to"
+        },
+        value_patterns=[
+            re.compile(r"^INV[-\s]?\d+$", re.IGNORECASE),
+            re.compile(r"^BILL[-\s]?\d+$", re.IGNORECASE)
+        ],
+        co_occurrence_rules=[
+            {"invoice_no", "invoice_date", "total_amount"},
+            {"bill_to", "vendor_name", "total_amount"}
+        ],
+        foreign_key_columns={"invoice_no"}
+    )
+
+    employee_schema = EntitySchema(
+        name=EntityType.EMPLOYEE.value,
+        display_name="Employee / HR Record",
+        icon="badge",
+        strong_keywords={
+            "emp_id", "employee_id", "employee_name", "emp_name", "department", "designation",
+            "job_title", "salary", "hire_date", "joining_date", "date_of_joining", "manager_id",
+            "work_email", "emp_email", "payroll", "employment_status", "job_role"
+        },
+        medium_keywords={
+            "employee", "staff", "dept", "experience", "qualification", "supervisor", "grade"
+        },
+        weak_keywords={
+            "name", "email", "phone", "address", "city", "state", "status", "age", "gender"
+        },
+        aliases={
+            "employee_id": "emp_id",
+            "employee_name": "name",
+            "emp_name": "name",
+            "date_of_joining": "joining_date",
+            "job_title": "designation"
+        },
+        value_patterns=[
+            re.compile(r"^EMP[-\s]?\d+$", re.IGNORECASE)
+        ],
+        co_occurrence_rules=[
+            {"emp_id", "department", "salary"},
+            {"employee_id", "designation", "hire_date"}
+        ],
+        foreign_key_columns={"emp_id", "manager_id"}
+    )
+
+    student_schema = EntitySchema(
+        name=EntityType.STUDENT.value,
+        display_name="Student / Academic Record",
+        icon="school",
+        strong_keywords={
+            "student_id", "roll_no", "reg_no", "roll_number", "registration_no", "student_name",
+            "cgpa", "gpa", "course", "major", "semester", "attendance_pct", "enrollment_date",
+            "graduation_year", "academic_year", "batch_year"
+        },
+        medium_keywords={
+            "student", "class", "section", "subject", "marks", "exam_score", "grade"
+        },
+        weak_keywords={
+            "name", "dob", "email", "phone", "department", "status", "age", "gender"
+        },
+        aliases={
+            "roll_number": "roll_no",
+            "registration_no": "reg_no",
+            "student_name": "name",
+            "gpa": "cgpa"
+        },
+        value_patterns=[
+            re.compile(r"^STU[-\s]?\d+$", re.IGNORECASE)
+        ],
+        co_occurrence_rules=[
+            {"student_id", "cgpa", "department"},
+            {"roll_no", "course", "semester"}
+        ],
+        foreign_key_columns={"student_id", "roll_no"}
+    )
+
+    medical_schema = EntitySchema(
+        name=EntityType.MEDICAL.value,
+        display_name="Medical / Patient Record",
+        icon="local_hospital",
+        strong_keywords={
+            "patient_id", "patient_name", "doctor_name", "physician", "diagnosis", "prescription",
+            "blood_group", "hospital", "clinic", "treatment", "admission_date", "discharge_date",
+            "dosage", "symptoms", "medical_record_number", "mrn"
+        },
+        medium_keywords={
+            "patient", "doctor", "medication", "disease", "vital_signs", "allergies", "ward"
+        },
+        weak_keywords={
+            "name", "dob", "age", "gender", "phone", "address", "date", "status"
+        },
+        aliases={
+            "medical_record_number": "patient_id",
+            "mrn": "patient_id",
+            "patient_name": "name",
+            "physician": "doctor_name"
+        },
+        value_patterns=[
+            re.compile(r"^PAT[-\s]?\d+$", re.IGNORECASE),
+            re.compile(r"^MRN[-\s]?\d+$", re.IGNORECASE)
+        ],
+        co_occurrence_rules=[
+            {"patient_id", "diagnosis", "doctor_name"},
+            {"patient_id", "treatment", "admission_date"}
+        ],
+        foreign_key_columns={"patient_id"}
+    )
+
     return {
         EntityType.STORE.value: store_schema,
         EntityType.ITEM.value: item_schema,
         EntityType.CUSTOMER.value: customer_schema,
         EntityType.TRANSACTION.value: transaction_schema,
+        EntityType.CAR.value: car_schema,
+        EntityType.INVOICE.value: invoice_schema,
+        EntityType.EMPLOYEE.value: employee_schema,
+        EntityType.STUDENT.value: student_schema,
+        EntityType.MEDICAL.value: medical_schema,
     }
 
 
@@ -486,6 +662,266 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             field_type="text_title",
             aliases={"payment_method", "payment_type", "payment_mode", "pay_type", "tender_type", "payment"},
             description="Payment method used (Credit Card, Cash, UPI)"
+        )
+    },
+
+    EntityType.CAR.value: {
+        "vin": CanonicalField(
+            name="vin",
+            field_type="id",
+            aliases={"vin", "vehicle_identification_number", "chassis_number", "chassis_no", "vehicle_id", "car_id", "id"},
+            description="17-character unique Vehicle Identification Number",
+            is_primary_key=True
+        ),
+        "make": CanonicalField(
+            name="make",
+            field_type="text_title",
+            aliases={"make", "brand", "manufacturer", "car_make", "vehicle_make", "company"},
+            description="Vehicle manufacturer/brand (e.g. Honda, Toyota, BMW)"
+        ),
+        "model": CanonicalField(
+            name="model",
+            field_type="text_title",
+            aliases={"model", "car_model", "vehicle_model", "trim", "variant", "name", "car_name"},
+            description="Vehicle model and variant (e.g. Civic, Camry, Model 3)"
+        ),
+        "year": CanonicalField(
+            name="year",
+            field_type="numeric",
+            aliases={"year", "model_year", "manufacturing_year", "mfg_year", "yr"},
+            description="Manufacturing model year"
+        ),
+        "mileage": CanonicalField(
+            name="mileage",
+            field_type="numeric",
+            aliases={"mileage", "odometer", "odometer_reading", "km_driven", "miles", "distance"},
+            description="Total odometer mileage or distance traveled"
+        ),
+        "price": CanonicalField(
+            name="price",
+            field_type="numeric",
+            aliases={"price", "selling_price", "cost", "msrp", "rate", "amount", "total_price"},
+            description="Vehicle market or sale price"
+        ),
+        "color": CanonicalField(
+            name="color",
+            field_type="text_title",
+            aliases={"color", "exterior_color", "paint", "body_color", "colour"},
+            description="Exterior vehicle color"
+        ),
+        "license_plate": CanonicalField(
+            name="license_plate",
+            field_type="id",
+            aliases={"license_plate", "plate_number", "plate_no", "registration_number", "reg_no", "plate"},
+            description="Official vehicle registration license plate"
+        ),
+        "transmission": CanonicalField(
+            name="transmission",
+            field_type="text",
+            aliases={"transmission", "gearbox", "transmission_type", "gear_type", "drive_type"},
+            description="Transmission type (Automatic, Manual, CVT, EV Single-Speed)"
+        ),
+        "fuel_type": CanonicalField(
+            name="fuel_type",
+            field_type="text",
+            aliases={"fuel_type", "fuel", "engine_type", "propulsion"},
+            description="Fuel propulsion type (Gasoline, Diesel, Electric, Hybrid)"
+        )
+    },
+
+    EntityType.INVOICE.value: {
+        "invoice_no": CanonicalField(
+            name="invoice_no",
+            field_type="id",
+            aliases={"invoice_no", "invoice_number", "invoice_num", "bill_no", "bill_number", "id", "inv_no"},
+            description="Unique invoice or bill number",
+            is_primary_key=True
+        ),
+        "invoice_date": CanonicalField(
+            name="invoice_date",
+            field_type="date",
+            aliases={"invoice_date", "bill_date", "date", "issue_date", "created_at"},
+            description="Date when invoice was issued"
+        ),
+        "due_date": CanonicalField(
+            name="due_date",
+            field_type="date",
+            aliases={"due_date", "payment_due_date", "expiry_date"},
+            description="Payment due date"
+        ),
+        "vendor_name": CanonicalField(
+            name="vendor_name",
+            field_type="text_title",
+            aliases={"vendor_name", "supplier_name", "merchant_name", "biller", "company_name", "seller"},
+            description="Issuing vendor or supplier business name"
+        ),
+        "bill_to": CanonicalField(
+            name="bill_to",
+            field_type="text_title",
+            aliases={"bill_to", "billed_to", "customer_name", "client_name", "buyer_name", "recipient"},
+            description="Recipient customer or business name"
+        ),
+        "subtotal": CanonicalField(
+            name="subtotal",
+            field_type="numeric",
+            aliases={"subtotal", "sub_total", "net_amount", "base_amount"},
+            description="Invoice subtotal before taxes"
+        ),
+        "tax_amount": CanonicalField(
+            name="tax_amount",
+            field_type="numeric",
+            aliases={"tax_amount", "tax", "gst", "vat", "sales_tax"},
+            description="Total tax amount"
+        ),
+        "total_amount": CanonicalField(
+            name="total_amount",
+            field_type="numeric",
+            aliases={"total_amount", "grand_total", "total", "amount_due", "balance_due", "final_amount"},
+            description="Final payable invoice amount"
+        )
+    },
+
+    EntityType.EMPLOYEE.value: {
+        "emp_id": CanonicalField(
+            name="emp_id",
+            field_type="id",
+            aliases={"emp_id", "employee_id", "staff_id", "worker_id", "id", "badge_no"},
+            description="Unique employee corporate identifier",
+            is_primary_key=True
+        ),
+        "name": CanonicalField(
+            name="name",
+            field_type="text_title",
+            aliases={"name", "employee_name", "emp_name", "full_name", "staff_name"},
+            description="Employee full name"
+        ),
+        "department": CanonicalField(
+            name="department",
+            field_type="text_title",
+            aliases={"department", "dept", "division", "team", "business_unit", "dept_name"},
+            description="Assigned corporate department"
+        ),
+        "designation": CanonicalField(
+            name="designation",
+            field_type="text_title",
+            aliases={"designation", "job_title", "title", "role", "position", "job_role"},
+            description="Job title or designation"
+        ),
+        "salary": CanonicalField(
+            name="salary",
+            field_type="numeric",
+            aliases={"salary", "compensation", "wage", "base_salary", "ctc", "pay_rate", "annual_salary"},
+            description="Annual or monthly base salary"
+        ),
+        "joining_date": CanonicalField(
+            name="joining_date",
+            field_type="date",
+            aliases={"joining_date", "hire_date", "start_date", "date_of_joining", "employment_date"},
+            description="Date when employment commenced (YYYY-MM-DD)"
+        ),
+        "email": CanonicalField(
+            name="email",
+            field_type="email",
+            aliases={"email", "work_email", "emp_email", "corporate_email"},
+            description="Corporate email address"
+        ),
+        "phone": CanonicalField(
+            name="phone",
+            field_type="phone",
+            aliases={"phone", "mobile", "contact", "work_phone"},
+            description="Contact phone number"
+        )
+    },
+
+    EntityType.STUDENT.value: {
+        "student_id": CanonicalField(
+            name="student_id",
+            field_type="id",
+            aliases={"student_id", "roll_no", "reg_no", "roll_number", "registration_no", "id", "admission_no"},
+            description="Unique student matriculation or registration number",
+            is_primary_key=True
+        ),
+        "name": CanonicalField(
+            name="name",
+            field_type="text_title",
+            aliases={"name", "student_name", "full_name", "candidate_name"},
+            description="Student full name"
+        ),
+        "department": CanonicalField(
+            name="department",
+            field_type="text_title",
+            aliases={"department", "branch", "major", "stream", "dept", "discipline"},
+            description="Academic department or specialization"
+        ),
+        "cgpa": CanonicalField(
+            name="cgpa",
+            field_type="numeric",
+            aliases={"cgpa", "gpa", "grade_point", "percentage", "score", "marks_pct"},
+            description="Cumulative Grade Point Average (0.0 - 10.0 or 4.0)"
+        ),
+        "attendance_pct": CanonicalField(
+            name="attendance_pct",
+            field_type="numeric",
+            aliases={"attendance_pct", "attendance", "attendance_percentage", "attendance_rate", "pct_attendance"},
+            description="Academic course attendance percentage (0 - 100%)"
+        ),
+        "course": CanonicalField(
+            name="course",
+            field_type="text_title",
+            aliases={"course", "degree", "program", "course_name", "curriculum"},
+            description="Academic degree program (B.Tech, B.Sc, MBA)"
+        ),
+        "email": CanonicalField(
+            name="email",
+            field_type="email",
+            aliases={"email", "student_email", "college_email"},
+            description="Student email address"
+        )
+    },
+
+    EntityType.MEDICAL.value: {
+        "patient_id": CanonicalField(
+            name="patient_id",
+            field_type="id",
+            aliases={"patient_id", "mrn", "medical_record_number", "patient_no", "id", "case_id"},
+            description="Unique medical record number (MRN)",
+            is_primary_key=True
+        ),
+        "name": CanonicalField(
+            name="name",
+            field_type="text_title",
+            aliases={"name", "patient_name", "full_name"},
+            description="Patient full name"
+        ),
+        "doctor_name": CanonicalField(
+            name="doctor_name",
+            field_type="text_title",
+            aliases={"doctor_name", "physician", "doctor", "consultant", "surgeon", "dr_name"},
+            description="Attending physician / doctor"
+        ),
+        "diagnosis": CanonicalField(
+            name="diagnosis",
+            field_type="text",
+            aliases={"diagnosis", "condition", "illness", "disease", "findings"},
+            description="Clinical diagnosis or disease finding"
+        ),
+        "prescription": CanonicalField(
+            name="prescription",
+            field_type="text",
+            aliases={"prescription", "medication", "treatment", "medicine", "drugs", "rx"},
+            description="Prescribed medications and dosage"
+        ),
+        "blood_group": CanonicalField(
+            name="blood_group",
+            field_type="text",
+            aliases={"blood_group", "blood_type", "blood_grp"},
+            description="Patient blood group (e.g. O+, A+, B-, AB+)"
+        ),
+        "hospital": CanonicalField(
+            name="hospital",
+            field_type="text_title",
+            aliases={"hospital", "clinic", "facility", "health_center", "medical_center"},
+            description="Treating hospital or medical center"
         )
     }
 }

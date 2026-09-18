@@ -25,6 +25,7 @@ from backend.extraction.ai_extractor import extract_fields_with_llm, classify_co
 from backend.validation.validator import validate_unstructured_fields, validate_structured_records
 from backend.extraction.entity_classifier import (
     classify_columns,
+    classify_domain,
     classify_with_llm_fallback,
     infer_entity_from_collection_name
 )
@@ -613,7 +614,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
             else:
                 df_for_classify = pd.DataFrame(structured_data)
 
-                # Run 3-layer rule-based classification
+                # Run 3-layer rule-based classification across all 9 domains
                 entity_result = classify_columns(list(columns), df_for_classify)
 
                 # LLM fallback if confidence is low
@@ -671,6 +672,10 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                         confidence=entity_result.confidence,
                         method=entity_result.method,
                         details=entity_result.details,
+                        reasoning=entity_result.reasoning or entity_result.details,
+                        display_name=entity_result.display_name or "Multi-Entity Dataset",
+                        primary_match_key=entity_result.primary_match_key,
+                        extracted_fields=entity_result.extracted_fields or list(columns),
                         entities_detected=entity_result.entities_detected,
                         column_assignments=entity_result.column_assignments,
                         split_tables=split_tables_info
@@ -691,19 +696,23 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     ))
 
                 else:
-                    # Single-Entity Dataset -> Do NOT separate; directly apply canonical schema mapping & standardization
+                    # Single-Entity Dataset -> Apply canonical schema mapping & standardization across all 9 domains
                     entity_info = EntityClassificationInfo(
                         entity_type=entity_result.file_type,
                         is_mixed=False,
                         confidence=entity_result.confidence,
                         method=entity_result.method,
                         details=entity_result.details,
+                        reasoning=entity_result.reasoning or entity_result.details,
+                        display_name=entity_result.display_name or entity_result.file_type.capitalize(),
+                        primary_match_key=entity_result.primary_match_key,
+                        extracted_fields=entity_result.extracted_fields or list(columns),
                         entities_detected=entity_result.entities_detected,
                         column_assignments=entity_result.column_assignments,
                         split_tables=None
                     )
 
-                    if entity_result.file_type in ("store", "item", "customer", "transaction"):
+                    if entity_result.file_type in ("store", "item", "customer", "transaction", "car", "invoice", "employee", "student", "medical"):
                         try:
                             # 1. Map raw headers to canonical schema target names & merge duplicate aliases
                             mapped_df, raw_schema_report, map_highlights = map_dataframe_to_canonical_schema(
@@ -751,18 +760,32 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
 
                     steps.append(StepStatus(
                         step_id="entity_classified",
-                        name="Business entity identified",
+                        name="Domain & Entity identified",
                         status="completed",
-                        message=f"Identified as Single-Entity {entity_result.file_type.capitalize()} data ({entity_result.confidence:.0%} confidence, {entity_result.method})"
+                        message=f"Identified as {entity_info.display_name} ({entity_result.confidence:.0%} confidence, {entity_result.method})"
                     ))
 
         except Exception as e:
             steps.append(StepStatus(
                 step_id="entity_classified",
-                name="Business entity identification",
+                name="Domain & Entity identification",
                 status="completed",
                 message=f"Entity classification skipped: {str(e)}"
             ))
+
+    # ─── Unstructured Document Domain Classification ───
+    elif status != "failed" and classification == "unstructured" and (raw_text or structured_data or fields_list):
+        try:
+            content_to_classify = structured_data if (isinstance(structured_data, dict) and structured_data) else (cleaned_text if 'cleaned_text' in locals() else (raw_text or ""))
+            entity_info = classify_domain(content_to_classify)
+            steps.append(StepStatus(
+                step_id="entity_classified",
+                name="Domain & Entity identified",
+                status="completed",
+                message=f"Identified as {entity_info.display_name} ({entity_info.confidence:.0%} confidence, {entity_info.method})"
+            ))
+        except Exception as e:
+            print(f"Unstructured domain classification error: {e}")
     
     data_quality_score = round(max(0.0, (total_records - len(errors)) / max(total_records, 1)), 4) if total_records > 0 else 1.0
 
