@@ -24,6 +24,7 @@ from backend.models.entity_schemas import (
     CanonicalField,
     EntityType
 )
+from backend.rag.schema_retriever import retrieve_schema_mapping_for_column
 
 
 def normalize_header_token(header: str) -> str:
@@ -36,11 +37,12 @@ def normalize_header_token(header: str) -> str:
 
 def find_canonical_field_for_header(
     header: str,
-    canonical_fields: Dict[str, CanonicalField]
+    canonical_fields: Dict[str, CanonicalField],
+    entity_type: Optional[str] = "general"
 ) -> Optional[str]:
     """
     Finds the canonical target field name matching a raw header.
-    Matches exact canonical name or any alias in the canonical schema.
+    Matches exact canonical name, alias dictionary, sub-token, or Schema RAG retrieval.
     """
     token = normalize_header_token(header)
     
@@ -64,6 +66,18 @@ def find_canonical_field_for_header(
             if alias in token and len(alias) >= 4:
                 if token.endswith(f"_{alias}") or token.startswith(f"{alias}_"):
                     return canonical_name
+
+    # Schema Knowledge RAG Semantic Retrieval Fallback
+    try:
+        rag_candidates = retrieve_schema_mapping_for_column(header, entity_type=entity_type or "general", top_k=1)
+        if rag_candidates:
+            top_cand = rag_candidates[0]
+            if top_cand.get("similarity_score", 0) >= 0.50:
+                rag_field = top_cand.get("canonical_field")
+                if rag_field in canonical_fields:
+                    return rag_field
+    except Exception:
+        pass
 
     return None
 
@@ -138,7 +152,7 @@ def map_dataframe_to_canonical_schema(
     unmapped_cols: List[str] = []
     
     for raw_col in df.columns:
-        canonical_target = find_canonical_field_for_header(raw_col, canonical_fields)
+        canonical_target = find_canonical_field_for_header(raw_col, canonical_fields, entity_type=entity_type)
         if canonical_target:
             if canonical_target not in canonical_groups:
                 canonical_groups[canonical_target] = []

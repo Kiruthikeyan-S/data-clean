@@ -51,6 +51,8 @@ class RecordMatchCandidate(BaseModel):
     match_status: str = "merge_candidate"  # "merge_candidate" | "high_confidence"
     merged_preview: Dict[str, Any]
     entity_type: Optional[str] = None
+    rag_explanation: Optional[str] = None
+    rag_matched_record_id: Optional[str] = None
 
 class MergedRecordDetail(BaseModel):
     merge_id: str

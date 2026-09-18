@@ -11,6 +11,8 @@ from backend.models.schemas import (
     RecordMatchConflict,
     RecordMatchingReport
 )
+from backend.rag.llm_rag_analyzer import heuristic_rag_analysis, analyze_candidate_with_llm
+from backend.rag.record_retriever import search_similar_records, ingest_records_batch
 
 FIELD_WEIGHTS: Dict[str, float] = {
     'id': 1.0,
@@ -77,8 +79,67 @@ def normalize_match_val(val: Any) -> str:
     val_str = str(val).strip().lower()
     if re.match(r'^\d+\.0+$', val_str):
         val_str = val_str.split('.')[0]
-    val_str = re.sub(r'\s+', ' ', val_str)
+    # Remove punctuation commas, periods, hyphens for text comparison
+    val_str = re.sub(r'[,;\.\-_]+', ' ', val_str)
+    val_str = re.sub(r'\s+', ' ', val_str).strip()
     return val_str
+
+
+def levenshtein_ratio(s1: str, s2: str) -> float:
+    """Computes exact Levenshtein character similarity ratio."""
+    if s1 == s2:
+        return 1.0
+    if not s1 or not s2:
+        return 0.0
+    len1, len2 = len(s1), len(s2)
+    dp = [[0] * (len2 + 1) for _ in range(len1 + 1)]
+    for i in range(len1 + 1):
+        dp[i][0] = i
+    for j in range(len2 + 1):
+        dp[0][j] = j
+    for i in range(1, len1 + 1):
+        for j in range(1, len2 + 1):
+            cost = 0 if s1[i - 1] == s2[j - 1] else 1
+            dp[i][j] = min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
+    dist = dp[len1][len2]
+    max_len = max(len1, len2)
+    return max(0.0, 1.0 - (dist / max_len))
+
+
+def string_similarity(s1: str, s2: str) -> float:
+    """Computes token set / fuzzy character similarity between two strings (0.0 to 1.0)."""
+    if not s1 or not s2:
+        return 0.0
+    if s1 == s2:
+        return 1.0
+    
+    # Strip single character initials (e.g. "s kiruthikeyan" -> "kiruthikeyan")
+    tokens1 = [w for w in s1.split() if len(w) > 1]
+    tokens2 = [w for w in s2.split() if len(w) > 1]
+    main1 = " ".join(tokens1) if tokens1 else s1
+    main2 = " ".join(tokens2) if tokens2 else s2
+
+    # Direct Levenshtein on main strings & full strings
+    ratio_main = levenshtein_ratio(main1, main2)
+    ratio_full = levenshtein_ratio(s1, s2)
+    best_lev = max(ratio_main, ratio_full)
+    if best_lev >= 0.70:
+        return best_lev
+
+    # Token set equality (e.g. "Apple MacBook Pro M3" vs "MacBook Pro M3 Apple")
+    t1 = set(s1.split())
+    t2 = set(s2.split())
+    if t1 and t2:
+        jaccard_tokens = len(t1.intersection(t2)) / len(t1.union(t2))
+        if jaccard_tokens >= 0.60:
+            return min(1.0, 0.85 + (0.15 * jaccard_tokens))
+
+    # Token subset / initial check
+    if s1 in s2 or s2 in s1 or main1 in main2 or main2 in main1:
+        return 0.90
+
+    return best_lev
+
 
 def get_field_weight(field_name: str) -> float:
     clean_name = str(field_name).strip().lower().replace('-', '_').replace(' ', '_')
@@ -88,6 +149,7 @@ def get_field_weight(field_name: str) -> float:
         if key in clean_name or clean_name in key:
             return weight
     return 0.50
+
 
 def compare_records(
     rec_a: Dict[str, Any],
@@ -100,7 +162,13 @@ def compare_records(
     matched_fields: List[str] = []
     conflicts: Dict[str, List[Any]] = {}
     weighted_score = 0.0
+    total_active_weight = 0.0
     
+    FUZZY_MATCHABLE_FIELDS = {
+        'name', 'full_name', 'first_name', 'last_name', 'customer_name', 'store_name',
+        'product_name', 'item_name', 'address', 'street', 'location', 'city', 'title', 'brand'
+    }
+
     for key in all_keys:
         val_a = rec_a.get(key)
         val_b = rec_b.get(key)
@@ -111,19 +179,34 @@ def compare_records(
         if not is_empty_a and not is_empty_b:
             norm_a = normalize_match_val(val_a)
             norm_b = normalize_match_val(val_b)
+            k_clean = str(key).strip().lower().replace('-', '_').replace(' ', '_')
+            f_weight = get_field_weight(k_clean)
+            total_active_weight += f_weight
             
+            # Exact match after punctuation/case normalization
             if norm_a == norm_b:
                 matched_fields.append(str(key))
-                weighted_score += get_field_weight(str(key))
+                weighted_score += f_weight
+            elif k_clean in FUZZY_MATCHABLE_FIELDS or any(f in k_clean for f in FUZZY_MATCHABLE_FIELDS):
+                # Fuzzy matching for names, addresses, products
+                sim = string_similarity(norm_a, norm_b)
+                if sim >= 0.70:
+                    matched_fields.append(str(key))
+                    weighted_score += (f_weight * sim)
+                else:
+                    conflicts[str(key)] = [val_a, val_b]
             else:
                 conflicts[str(key)] = [val_a, val_b]
                 
-    confidence = min(0.99, round(weighted_score / max(len(matched_fields) or 1, 2.0) * (len(matched_fields) / 2.0), 2))
-    confidence = min(0.98, max(0.0, confidence))
-    if len(matched_fields) >= 3:
-        confidence = max(confidence, 0.88)
-    elif len(matched_fields) == 2:
-        confidence = max(confidence, 0.72)
+    if total_active_weight > 0:
+        confidence = min(0.99, round(weighted_score / total_active_weight, 2))
+    else:
+        confidence = 0.0
+
+    if len(matched_fields) >= 3 and len(conflicts) == 0:
+        confidence = max(confidence, 0.95)
+    elif len(matched_fields) == 2 and len(conflicts) == 0:
+        confidence = max(confidence, 0.85)
         
     return matched_fields, conflicts, confidence
 
@@ -182,7 +265,9 @@ def have_conflicting_primary_ids(rec_a: Dict[str, Any], rec_b: Dict[str, Any]) -
             val_a = rec_a.get(key)
             val_b = rec_b.get(key)
             if not is_empty_value(val_a) and not is_empty_value(val_b):
-                if normalize_match_val(val_a) != normalize_match_val(val_b):
+                norm_a = normalize_match_val(val_a)
+                norm_b = normalize_match_val(val_b)
+                if norm_a != norm_b and string_similarity(norm_a, norm_b) < 0.65:
                     return True
     return False
 
@@ -256,6 +341,8 @@ def analyze_record_matching(
                     
                     if len(filled_fields) > 0:
                         status_label = 'high_confidence' if len(matched_fields) >= 3 or confidence >= 0.85 else 'merge_candidate'
+                        rag_eval = heuristic_rag_analysis(rec_a, rec_b, f'cand_{i}_{j}', entity_type or 'general')
+                        rag_explanation = rag_eval.get("reason", f"Matched using fields: {', '.join(matched_fields)}")
                         
                         candidate_pairs.append(RecordMatchCandidate(
                             candidate_id=f'cand_{i}_{j}',
@@ -268,7 +355,9 @@ def analyze_record_matching(
                             match_confidence=confidence,
                             match_status=status_label,
                             merged_preview=merged_preview,
-                            entity_type=entity_type
+                            entity_type=entity_type,
+                            rag_explanation=rag_explanation,
+                            rag_matched_record_id=rec_b.get("id") or rec_b.get(f"{entity_type}_id") or f"ROW-{j+1}"
                         ))
                         
                         merged_records.append(MergedRecordDetail(
@@ -344,3 +433,93 @@ def audit_record_matching_for_dataset(
     else:
         records = df.replace({np.nan: None}).to_dict(orient='records') if df is not None and not df.empty else []
         return analyze_record_matching(records, entity_type=entity_type)
+
+
+def find_rag_matches_for_record(
+    query_record: Dict[str, Any],
+    entity_type: str = "customer",
+    top_k: int = 5,
+    min_similarity: float = 0.35
+) -> Dict[str, Any]:
+    """
+    RAG-Powered Entity Matching Function.
+    
+    1. Retrieves Top-K similar historical records from the isolated Vector Database.
+    2. Uses Groq LLM to generate semantic analysis and reason about relationship.
+    3. Deterministically verifies field weights, exact/fuzzy matches, and validation rules.
+    4. Returns structured decision JSON.
+    """
+    if not query_record:
+        return {"possible_match": False, "matches": []}
+
+    # Step 1: RAG Vector Retrieval
+    candidates = search_similar_records(
+        query_record=query_record,
+        entity_type=entity_type,
+        top_k=top_k,
+        min_score=min_similarity
+    )
+
+    if not candidates:
+        return {
+            "possible_match": False,
+            "query_record": query_record,
+            "entity_type": entity_type,
+            "matches": []
+        }
+
+    # Step 2: Groq LLM Semantic Analysis
+    llm_analyses = analyze_candidate_with_llm(
+        current_record=query_record,
+        retrieved_candidates=candidates,
+        entity_type=entity_type
+    )
+
+    llm_map = {a.get("candidate_id"): a for a in llm_analyses}
+
+    # Step 3: Deterministic Record Matcher Verification
+    verified_matches = []
+    for cand in candidates:
+        cand_id = cand["record_id"]
+        cand_rec = cand["cleaned_record"]
+
+        # Check conflicting primary IDs
+        if have_conflicting_primary_ids(query_record, cand_rec):
+            continue
+
+        matched_fields, conflicts, confidence = compare_records(query_record, cand_rec, entity_type)
+        
+        # Must have at least 1 strong field or confidence >= 0.70
+        is_only_weak = all(get_field_weight(f) <= 0.30 for f in matched_fields)
+        if is_only_weak or len(matched_fields) == 0:
+            continue
+
+        llm_eval = llm_map.get(cand_id, {})
+        reason = llm_eval.get("reason") or f"Matched using fields: {', '.join(matched_fields)}"
+
+        merged_preview, filled_fields = merge_record_pair(query_record, cand_rec)
+
+        verified_matches.append({
+            "possible_match": True,
+            "matched_record_id": cand_id,
+            "matching_fields": matched_fields,
+            "match_score": round(confidence, 2),
+            "reason": reason,
+            "has_conflicts": len(conflicts) > 0,
+            "conflicting_fields": conflicts,
+            "merged_preview": merged_preview,
+            "filled_fields": filled_fields
+        })
+
+    # Sort by match score descending
+    verified_matches.sort(key=lambda x: x["match_score"], reverse=True)
+
+    best_match = verified_matches[0] if verified_matches else None
+
+    return {
+        "possible_match": bool(best_match),
+        "best_match": best_match,
+        "all_candidates": verified_matches,
+        "retrieved_count": len(candidates),
+        "verified_count": len(verified_matches)
+    }

@@ -293,3 +293,63 @@ def clean_base_name(filename: str) -> str:
 def time_now_iso() -> str:
     import datetime
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+@router.post("/rag/match")
+async def rag_entity_match(payload: dict):
+    """
+    Accepts a single entity record (e.g. new customer, store, item),
+    performs isolated Vector RAG search on historical data, generates Groq LLM semantic reasoning,
+    and runs deterministic record matching validation.
+    """
+    from backend.matching.record_matcher import find_rag_matches_for_record
+    
+    query_record = payload.get("record", {})
+    entity_type = payload.get("entity_type", "customer")
+    top_k = payload.get("top_k", 5)
+
+    if not query_record:
+        raise HTTPException(status_code=400, detail="Payload must include 'record' dictionary.")
+
+    result = find_rag_matches_for_record(
+        query_record=query_record,
+        entity_type=entity_type,
+        top_k=top_k
+    )
+    return result
+
+
+@router.post("/rag/schema-lookup")
+async def rag_schema_lookup(payload: dict):
+    """
+    Accepts unfamiliar column headers, queries the Schema Knowledge Base RAG,
+    and returns matching canonical schema target fields with explanations.
+    """
+    from backend.rag.schema_retriever import retrieve_batch_schema_mappings
+    
+    columns = payload.get("columns", [])
+    entity_type = payload.get("entity_type", "general")
+
+    if not columns:
+        raise HTTPException(status_code=400, detail="Payload must include 'columns' list.")
+
+    mappings = retrieve_batch_schema_mappings(columns=columns, entity_type=entity_type)
+    return {"entity_type": entity_type, "mappings": mappings}
+
+
+@router.post("/rag/ingest")
+async def rag_ingest_records(payload: dict):
+    """
+    Ingests records into the isolated entity Vector Database knowledge base.
+    """
+    from backend.rag.record_retriever import ingest_records_batch
+    
+    records = payload.get("records", [])
+    entity_type = payload.get("entity_type", "customer")
+
+    if not records:
+        raise HTTPException(status_code=400, detail="Payload must include 'records' list.")
+
+    count = ingest_records_batch(records=records, entity_type=entity_type)
+    return {"status": "success", "ingested_count": count, "entity_type": entity_type}
+
