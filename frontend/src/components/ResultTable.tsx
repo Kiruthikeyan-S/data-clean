@@ -109,24 +109,37 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
     return col.replace(/_/g, ' ').toUpperCase();
   };
 
-  const getEntityBadge = (type?: string) => {
+  const getEntityBadge = (type?: string, customDisplayName?: string) => {
     switch (type?.toLowerCase()) {
+      case 'car':
+        return { label: customDisplayName || 'Vehicle / Automotive', icon: '🚗', bg: 'bg-orange-50 text-orange-800 border-orange-200' };
+      case 'invoice':
+        return { label: customDisplayName || 'Invoice / Billing Document', icon: '🧾', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+      case 'employee':
+        return { label: customDisplayName || 'Employee / HR Record', icon: '💼', bg: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
+      case 'student':
+      case 'academic':
+      case 'syllabus':
+      case 'course':
+        return { label: customDisplayName || 'Academic / Course Syllabus', icon: '🎓', bg: 'bg-blue-50 text-blue-800 border-blue-200' };
+      case 'medical':
+        return { label: customDisplayName || 'Medical / Patient Record', icon: '🏥', bg: 'bg-rose-50 text-rose-800 border-rose-200' };
       case 'store':
-        return { label: 'Store Data', icon: '🏪', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+        return { label: customDisplayName || 'Store / Branch Data', icon: '🏪', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
       case 'item':
-        return { label: 'Item / Product', icon: '📦', bg: 'bg-indigo-50 text-indigo-800 border-indigo-200' };
+        return { label: customDisplayName || 'Item / Product', icon: '📦', bg: 'bg-indigo-50 text-indigo-800 border-indigo-200' };
       case 'customer':
-        return { label: 'Customer Data', icon: '👤', bg: 'bg-purple-50 text-purple-800 border-purple-200' };
+        return { label: customDisplayName || 'Customer Data', icon: '👤', bg: 'bg-purple-50 text-purple-800 border-purple-200' };
       case 'transaction':
-        return { label: 'Transaction Data', icon: '🧾', bg: 'bg-amber-50 text-amber-800 border-amber-200' };
+        return { label: customDisplayName || 'Transaction Data', icon: '💳', bg: 'bg-amber-50 text-amber-800 border-amber-200' };
       case 'mixed':
-        return { label: 'Multiple Entity', icon: '🔀', bg: 'bg-blue-50 text-blue-800 border-blue-200' };
+        return { label: 'Multiple Entity', icon: '🔀', bg: 'bg-indigo-50 text-indigo-800 border-indigo-200' };
       default:
-        return { label: 'General / Custom', icon: '📁', bg: 'bg-slate-50 text-slate-700 border-slate-200' };
+        return { label: customDisplayName || 'General / Custom', icon: '📁', bg: 'bg-slate-50 text-slate-700 border-slate-200' };
     }
   };
 
-  const entityBadge = getEntityBadge(result.entity_info?.entity_type);
+  const entityBadge = getEntityBadge(result.entity_info?.entity_type, result.entity_info?.display_name);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

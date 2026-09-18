@@ -62,12 +62,20 @@ export const ResultPage: React.FC<ResultPageProps> = ({
               
               const getEntityIcon = (type?: string) => {
                 switch (type?.toLowerCase()) {
+                  case 'car': return '🚗';
+                  case 'invoice': return '🧾';
+                  case 'employee': return '💼';
+                  case 'student':
+                  case 'academic':
+                  case 'syllabus':
+                  case 'course': return '🎓';
+                  case 'medical': return '🏥';
                   case 'store': return '🏪';
                   case 'item': return '📦';
                   case 'customer': return '👤';
-                  case 'transaction': return '🧾';
+                  case 'transaction': return '💳';
                   case 'mixed': return '🔀';
-                  default: return null;
+                  default: return '📁';
                 }
               };
 

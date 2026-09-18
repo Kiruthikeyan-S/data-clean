@@ -328,33 +328,56 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
 
     student_schema = EntitySchema(
         name=EntityType.STUDENT.value,
-        display_name="Student / Academic Record",
+        display_name="Academic / Course Syllabus & Student Record",
         icon="school",
         strong_keywords={
             "student_id", "roll_no", "reg_no", "roll_number", "registration_no", "student_name",
-            "cgpa", "gpa", "course", "major", "semester", "attendance_pct", "enrollment_date",
-            "graduation_year", "academic_year", "batch_year"
+            "cgpa", "gpa", "course", "major", "semester", "sem", "attendance_pct", "enrollment_date",
+            "graduation_year", "academic_year", "batch_year", "course_code", "subject_code",
+            "course_title", "course_name", "subject_name", "credits", "credit", "syllabus",
+            "curriculum", "lecture_hours", "tutorial_hours", "practical_hours", "prerequisites",
+            "course_category", "course_type", "admission_no", "paper_code", "paper_name"
         },
         medium_keywords={
-            "student", "class", "section", "subject", "marks", "exam_score", "grade"
+            "student", "class", "section", "subject", "marks", "exam_score", "grade",
+            "module", "unit", "topic", "topics", "lecture", "tutorial", "practical", "lab",
+            "faculty", "instructor", "professor", "branch", "stream", "program", "degree",
+            "regulations", "scheme", "internal_marks", "end_sem", "elective"
         },
         weak_keywords={
-            "name", "dob", "email", "phone", "department", "status", "age", "gender"
+            "name", "code", "title", "dob", "email", "phone", "department", "status",
+            "age", "gender", "category", "type", "hours", "description"
         },
         aliases={
+            "course_name": "course_title",
+            "subject_name": "course_title",
+            "subject": "course_title",
+            "subject_code": "course_code",
+            "sem": "semester",
+            "credit": "credits",
             "roll_number": "roll_no",
             "registration_no": "reg_no",
             "student_name": "name",
             "gpa": "cgpa"
         },
         value_patterns=[
-            re.compile(r"^STU[-\s]?\d+$", re.IGNORECASE)
+            re.compile(r"^STU[-\s]?\d+$", re.IGNORECASE),
+            re.compile(r"^[A-Z]{2,4}\s?\d{3,5}[A-Z]?$", re.IGNORECASE),  # e.g. CS301, AI101, AD8302
+            re.compile(r"^(?:Semester|Sem)[-\s]?(?:[1-8]|I|II|III|IV|V|VI|VII|VIII)$", re.IGNORECASE)
         ],
         co_occurrence_rules=[
+            {"course_code", "course_title", "credits"},
+            {"course_code", "course_name", "credits"},
+            {"subject_code", "subject_name", "credits"},
+            {"semester", "course_code", "credits"},
+            {"semester", "course_title"},
+            {"semester", "subject_name"},
             {"student_id", "cgpa", "department"},
-            {"roll_no", "course", "semester"}
+            {"roll_no", "course", "semester"},
+            {"syllabus", "course_code"},
+            {"curriculum", "semester"}
         ],
-        foreign_key_columns={"student_id", "roll_no"}
+        foreign_key_columns={"student_id", "roll_no", "course_code", "subject_code"}
     )
 
     medical_schema = EntitySchema(
@@ -834,6 +857,36 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
     },
 
     EntityType.STUDENT.value: {
+        "course_code": CanonicalField(
+            name="course_code",
+            field_type="id",
+            aliases={"course_code", "subject_code", "code", "c_code", "paper_code", "course_no", "subject_no"},
+            description="Academic course or subject code"
+        ),
+        "course_title": CanonicalField(
+            name="course_title",
+            field_type="text_title",
+            aliases={"course_title", "course_name", "subject_name", "subject", "course", "paper_name", "title", "course_description"},
+            description="Official title/name of the course or subject"
+        ),
+        "semester": CanonicalField(
+            name="semester",
+            field_type="text_title",
+            aliases={"semester", "sem", "term", "academic_semester", "academic_term"},
+            description="Academic semester or term"
+        ),
+        "credits": CanonicalField(
+            name="credits",
+            field_type="numeric",
+            aliases={"credits", "credit", "credits_count", "cr", "course_credits", "unit_credits"},
+            description="Number of academic course credits"
+        ),
+        "course_category": CanonicalField(
+            name="course_category",
+            field_type="text_title",
+            aliases={"course_category", "category", "course_type", "type", "elective_type", "domain"},
+            description="Academic course category (Core, Elective, Lab)"
+        ),
         "student_id": CanonicalField(
             name="student_id",
             field_type="id",
@@ -844,19 +897,19 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "name": CanonicalField(
             name="name",
             field_type="text_title",
-            aliases={"name", "student_name", "full_name", "candidate_name"},
-            description="Student full name"
+            aliases={"name", "student_name", "full_name", "candidate_name", "instructor", "faculty", "professor"},
+            description="Student or faculty full name"
         ),
         "department": CanonicalField(
             name="department",
             field_type="text_title",
-            aliases={"department", "branch", "major", "stream", "dept", "discipline"},
+            aliases={"department", "branch", "major", "stream", "dept", "discipline", "program"},
             description="Academic department or specialization"
         ),
         "cgpa": CanonicalField(
             name="cgpa",
             field_type="numeric",
-            aliases={"cgpa", "gpa", "grade_point", "percentage", "score", "marks_pct"},
+            aliases={"cgpa", "gpa", "grade_point", "percentage", "score", "marks_pct", "marks"},
             description="Cumulative Grade Point Average (0.0 - 10.0 or 4.0)"
         ),
         "attendance_pct": CanonicalField(
@@ -865,17 +918,11 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             aliases={"attendance_pct", "attendance", "attendance_percentage", "attendance_rate", "pct_attendance"},
             description="Academic course attendance percentage (0 - 100%)"
         ),
-        "course": CanonicalField(
-            name="course",
-            field_type="text_title",
-            aliases={"course", "degree", "program", "course_name", "curriculum"},
-            description="Academic degree program (B.Tech, B.Sc, MBA)"
-        ),
         "email": CanonicalField(
             name="email",
             field_type="email",
-            aliases={"email", "student_email", "college_email"},
-            description="Student email address"
+            aliases={"email", "student_email", "college_email", "university_email"},
+            description="Student / academic email address"
         )
     },
 

@@ -159,11 +159,15 @@ export interface EntityTableInfo {
 }
 
 export interface EntityClassificationInfo {
-  entity_type: 'store' | 'item' | 'customer' | 'transaction' | 'mixed' | 'unknown';
+  entity_type: 'store' | 'item' | 'customer' | 'transaction' | 'car' | 'invoice' | 'employee' | 'student' | 'academic' | 'medical' | 'mixed' | 'unknown' | string;
+  display_name?: string;
+  primary_match_key?: string;
   is_mixed: boolean;
   confidence: number;
-  method: 'rule_based' | 'llm_fallback';
+  method: 'rule_based' | 'llm_fallback' | string;
   details: string;
+  reasoning?: string;
+  extracted_fields?: string[];
   entities_detected: Record<string, number>;
   column_assignments: Record<string, string>;
   split_tables?: EntityTableInfo[];

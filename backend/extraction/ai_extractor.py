@@ -308,11 +308,12 @@ def classify_columns_with_llm(
             "- transaction: Order/Sale/Purchase/Billing log (transaction_id, customer_id, store_id, total_amount, date)\n"
             "- invoice: Invoice/Billing document (invoice_no, vendor_name, bill_to, tax_amount, due_date)\n"
             "- employee: Employee/HR/Staff record (emp_id, name, department, designation, salary, joining_date)\n"
-            "- student: Student/Academic record (student_id, roll_no, name, cgpa, department, course)\n"
+            "- student: Academic/Course Syllabus/Curriculum/Student record (syllabus, course_code, subject_name, semester, credits, student_id, roll_no, cgpa, department)\n"
             "- medical: Medical/Patient record (patient_id, mrn, doctor_name, diagnosis, prescription, blood_group)\n"
             "- mixed: Dataset containing multiple independent entity tables\n"
             "- unknown: Unrecognized general dataset\n\n"
             "Rules:\n"
+            "- If a dataset contains course codes, subject titles, semesters, credits, or syllabus modules, classify as 'student' (Academic / Course Syllabus).\n"
             "- If a column like store_id or customer_id appears alongside order_date/quantity, it is a foreign key in a Transaction.\n"
             "- If the file has columns from only one domain, set file_type to that domain.\n\n"
             "Return valid JSON:\n"
@@ -385,7 +386,7 @@ def classify_domain_with_llm(
             "- transaction: Sales transaction/receipt (transaction_id, date, amount)\n"
             "- invoice: Commercial invoice/bill (invoice_no, vendor, bill_to, tax, total)\n"
             "- employee: Employee/Staff profile (emp_id, department, designation, salary)\n"
-            "- student: Student/Academic profile (student_id, roll_no, cgpa, department)\n"
+            "- student: Academic/Course Syllabus/Curriculum/Student record (syllabus, course_code, semester, credits, subjects, modules, student_id, roll_no, cgpa, department)\n"
             "- medical: Medical/Patient chart (patient_id, mrn, diagnosis, prescription, doctor)\n"
             "- unknown: General or unrecognized document\n\n"
             "Return valid JSON:\n"
@@ -393,7 +394,7 @@ def classify_domain_with_llm(
             '  "detected_type": "car|customer|store|item|transaction|invoice|employee|student|medical|unknown",\n'
             '  "confidence": 0.95,\n'
             '  "reasoning": "Explanation why this belongs to the detected domain",\n'
-            '  "primary_match_key": "vin|phone|store_id|product_id|transaction_id|invoice_no|emp_id|student_id|patient_id",\n'
+            '  "primary_match_key": "vin|phone|store_id|product_id|transaction_id|invoice_no|emp_id|student_id|patient_id|course_code",\n'
             '  "extracted_fields": ["field1", "field2", ...]\n'
             "}"
         )

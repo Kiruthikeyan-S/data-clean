@@ -164,6 +164,10 @@ _INV_ID_RE = re.compile(r"^(?:INV|BILL)[-\s]?\d+$", re.IGNORECASE)
 _STR_ID_RE = re.compile(r"^(?:STR|BRN)[-\s]?\d+$", re.IGNORECASE)
 
 
+_COURSE_CODE_RE = re.compile(r"^[A-Z]{2,4}\s?\d{3,5}[A-Z]?$", re.IGNORECASE)
+_SEMESTER_RE = re.compile(r"^(?:Semester|Sem)[-\s]?(?:[1-8]|I|II|III|IV|V|VI|VII|VIII)$", re.IGNORECASE)
+
+
 def _analyse_values(
     df: pd.DataFrame,
     columns: List[str],
@@ -202,10 +206,12 @@ def _analyse_values(
             entity_scores["medical"][raw_col] = entity_scores["medical"].get(raw_col, 0) + 0.30
             column_assignments[raw_col] = "medical"
 
-        # 4. Student ID / Roll pattern → Student
+        # 4. Student ID / Roll pattern or Course Code / Semester pattern → Student/Academic
         stu_hits = sum(1 for v in sample if _STU_ID_RE.match(v.strip()))
-        if stu_hits >= max(1, int(len(sample) * 0.4)):
-            entity_scores["student"][raw_col] = entity_scores["student"].get(raw_col, 0) + 0.30
+        course_hits = sum(1 for v in sample if _COURSE_CODE_RE.match(v.strip()))
+        sem_hits = sum(1 for v in sample if _SEMESTER_RE.match(v.strip()))
+        if stu_hits >= max(1, int(len(sample) * 0.4)) or course_hits >= max(1, int(len(sample) * 0.4)) or sem_hits >= max(1, int(len(sample) * 0.4)):
+            entity_scores["student"][raw_col] = entity_scores["student"].get(raw_col, 0) + 0.35
             column_assignments[raw_col] = "student"
 
         # 5. Employee ID pattern → Employee
@@ -409,7 +415,7 @@ def classify_columns(
         "car": any(k in norm_cols for k in ("vin", "vehicle_identification_number", "chassis_number", "chassis_no", "license_plate")),
         "invoice": any(k in norm_cols for k in ("invoice_no", "invoice_num", "invoice_number", "bill_to", "vendor_name", "billed_to")),
         "medical": any(k in norm_cols for k in ("patient_id", "mrn", "medical_record_number", "diagnosis", "prescription")),
-        "student": any(k in norm_cols for k in ("student_id", "roll_no", "reg_no", "roll_number", "cgpa")),
+        "student": any(k in norm_cols for k in ("student_id", "roll_no", "reg_no", "roll_number", "cgpa", "course_code", "subject_code", "course_title", "semester", "credits", "syllabus", "curriculum")),
         "employee": any(k in norm_cols for k in ("emp_id", "employee_id", "department", "designation", "salary")),
         "store": any(k in norm_cols for k in ("store_id", "store_name", "branch_id", "outlet_id")),
         "item": any(k in norm_cols for k in ("product_id", "item_id", "sku", "sku_id", "barcode")),
@@ -782,7 +788,7 @@ def infer_entity_from_collection_name(name: str) -> Optional[str]:
         return EntityType.INVOICE.value
     if any(k in s for k in ("employee", "staff", "hr", "payroll", "worker", "personnel")):
         return EntityType.EMPLOYEE.value
-    if any(k in s for k in ("student", "academic", "scholar", "enrollment", "course", "grade")):
+    if any(k in s for k in ("student", "academic", "scholar", "enrollment", "course", "grade", "syllabus", "curriculum", "semester", "subject", "curricula")):
         return EntityType.STUDENT.value
     if any(k in s for k in ("patient", "medical", "clinic", "hospital", "doctor", "health", "clinical")):
         return EntityType.MEDICAL.value
