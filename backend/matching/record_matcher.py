@@ -106,39 +106,56 @@ def levenshtein_ratio(s1: str, s2: str) -> float:
     return max(0.0, 1.0 - (dist / max_len))
 
 
+def extract_distinctive_suffix(s: str) -> Optional[str]:
+    """Extracts trailing index letters or digits like '1', '2', 'a', 'b'."""
+    m = re.search(r'\b([a-z]|\d+|[ivx]+)\s*$', s.strip().lower())
+    return m.group(1) if m else None
+
+
 def string_similarity(s1: str, s2: str) -> float:
     """Computes token set / fuzzy character similarity between two strings (0.0 to 1.0)."""
     if not s1 or not s2:
         return 0.0
-    if s1 == s2:
+    s1_clean = s1.strip().lower()
+    s2_clean = s2.strip().lower()
+    if s1_clean == s2_clean:
         return 1.0
+
+    # Check for conflicting index numbers/letters (e.g. "Admin User 1" vs "Admin User 2", "Store A" vs "Store B")
+    suff1 = extract_distinctive_suffix(s1_clean)
+    suff2 = extract_distinctive_suffix(s2_clean)
+    if suff1 and suff2 and suff1 != suff2:
+        return 0.20  # Explicitly different entity indices
+
+    # Check for initial prefix (e.g. "s kiruthikeyan" vs "kiruthikeyan")
+    tokens1 = s1_clean.split()
+    tokens2 = s2_clean.split()
     
-    # Strip single character initials (e.g. "s kiruthikeyan" -> "kiruthikeyan")
-    tokens1 = [w for w in s1.split() if len(w) > 1]
-    tokens2 = [w for w in s2.split() if len(w) > 1]
-    main1 = " ".join(tokens1) if tokens1 else s1
-    main2 = " ".join(tokens2) if tokens2 else s2
+    # If first token is a single letter initial and remaining tokens match
+    if len(tokens1) > 1 and len(tokens1[0]) == 1 and " ".join(tokens1[1:]) == s2_clean:
+        return 0.92
+    if len(tokens2) > 1 and len(tokens2[0]) == 1 and " ".join(tokens2[1:]) == s1_clean:
+        return 0.92
 
-    # Direct Levenshtein on main strings & full strings
-    ratio_main = levenshtein_ratio(main1, main2)
-    ratio_full = levenshtein_ratio(s1, s2)
-    best_lev = max(ratio_main, ratio_full)
-    if best_lev >= 0.70:
-        return best_lev
+    # Direct Levenshtein on full strings
+    ratio_full = levenshtein_ratio(s1_clean, s2_clean)
+    if ratio_full >= 0.75:
+        return ratio_full
 
-    # Token set equality (e.g. "Apple MacBook Pro M3" vs "MacBook Pro M3 Apple")
-    t1 = set(s1.split())
-    t2 = set(s2.split())
+    # Token set Jaccard similarity
+    t1 = set(tokens1)
+    t2 = set(tokens2)
     if t1 and t2:
         jaccard_tokens = len(t1.intersection(t2)) / len(t1.union(t2))
-        if jaccard_tokens >= 0.60:
-            return min(1.0, 0.85 + (0.15 * jaccard_tokens))
+        if jaccard_tokens >= 0.70:
+            return min(0.95, 0.70 + (0.25 * jaccard_tokens))
 
-    # Token subset / initial check
-    if s1 in s2 or s2 in s1 or main1 in main2 or main2 in main1:
-        return 0.90
+    # Substring check only if length ratio is very close (e.g. >= 0.80)
+    len_ratio = min(len(s1_clean), len(s2_clean)) / max(len(s1_clean), len(s2_clean))
+    if (s1_clean in s2_clean or s2_clean in s1_clean) and len_ratio >= 0.80:
+        return 0.85
 
-    return best_lev
+    return ratio_full
 
 
 def get_field_weight(field_name: str) -> float:
