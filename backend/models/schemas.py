@@ -188,3 +188,5 @@ class BatchProcessResponse(BaseModel):
     total_files: int
     results: List[ProcessResponse]
     processing_time_ms: float
+    relationship_index: Optional[Dict[str, Any]] = None
+    total_entities_linked: int = 0

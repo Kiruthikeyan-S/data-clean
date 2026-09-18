@@ -39,11 +39,16 @@ async def process_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
 
 
+# In-memory storage for results and exports
+BATCH_RESULTS_STORE: dict = {}
+
+
 @router.post("/process-batch", response_model=BatchProcessResponse)
 async def process_batch_files(files: List[UploadFile] = File(...)):
     """
     Accepts multiple uploaded files simultaneously (e.g. Store, Item, Customer files or multiple receipts),
-    cleans all files in parallel, and returns an array of structured clean datasets.
+    cleans all files in parallel, performs cross-file entity resolution, stamps shared entity_id,
+    and returns linked clean datasets with a relationship index.
     """
     if not files or len(files) == 0:
         raise HTTPException(status_code=400, detail="No files uploaded.")
@@ -72,12 +77,100 @@ async def process_batch_files(files: List[UploadFile] = File(...)):
     if not results:
         raise HTTPException(status_code=400, detail="None of the uploaded batch files could be processed.")
         
+    # Cross-File Record Linkage & Entity Resolution
+    from backend.matching.cross_file_linker import link_batch_records
+    results, relationship_index = link_batch_records(results)
+
     total_time = round((time.time() - start_time) * 1000, 2)
-    return BatchProcessResponse(
+    batch_response = BatchProcessResponse(
         batch_id=batch_id,
         total_files=len(results),
         results=results,
+        relationship_index=relationship_index,
+        total_entities_linked=relationship_index.get("total_entities_linked", 0),
         processing_time_ms=total_time
+    )
+    BATCH_RESULTS_STORE[batch_id] = batch_response
+    return batch_response
+
+
+@router.get("/batch/{batch_id}/export/excel")
+async def export_batch_excel(batch_id: str):
+    """
+    Exports all batch datasets into a single multi-sheet Excel workbook
+    containing one sheet per cleaned dataset plus a 'Relationships & Links' sheet.
+    """
+    if batch_id not in BATCH_RESULTS_STORE:
+        raise HTTPException(status_code=404, detail="Batch result not found.")
+
+    batch = BATCH_RESULTS_STORE[batch_id]
+    output = io.BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        for idx, res in enumerate(batch.results):
+            raw_title = clean_base_name(res.filename) or f"Dataset_{idx + 1}"
+            sheet_title = raw_title[:28]
+            df = to_dataframe(res)
+            df.to_excel(writer, index=False, sheet_name=sheet_title)
+
+        rel_index = batch.relationship_index or {}
+        entities = rel_index.get("entities", [])
+        if entities:
+            rel_rows = []
+            for ent in entities:
+                rel_rows.append({
+                    "Entity ID": ent.get("entity_id"),
+                    "Display Name": ent.get("display_name"),
+                    "Primary Match Key": ent.get("primary_match_key"),
+                    "Files Linked": ", ".join(ent.get("files_involved", [])),
+                    "Records Count": ent.get("records_count"),
+                    "Is Cross-File": "Yes" if ent.get("is_cross_file") else "No"
+                })
+            rel_df = pd.DataFrame(rel_rows)
+            rel_df.to_excel(writer, index=False, sheet_name="Relationships & Links")
+
+    output.seek(0)
+    filename = f"batch_{batch_id[:8]}_linked_datasets.xlsx"
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
+@router.get("/batch/{batch_id}/export/json")
+async def export_batch_json(batch_id: str):
+    """
+    Exports all batch datasets with their tagged entity_id and the relationship_index as structured JSON.
+    """
+    if batch_id not in BATCH_RESULTS_STORE:
+        raise HTTPException(status_code=404, detail="Batch result not found.")
+
+    batch = BATCH_RESULTS_STORE[batch_id]
+    payload = {
+        "batch_id": batch.batch_id,
+        "total_files": batch.total_files,
+        "total_entities_linked": batch.total_entities_linked,
+        "relationship_index": batch.relationship_index,
+        "datasets": [
+            {
+                "filename": r.filename,
+                "file_type": r.file_type,
+                "records_count": len(r.structured_data) if isinstance(r.structured_data, list) else 1,
+                "data": r.structured_data
+            }
+            for r in batch.results
+        ]
+    }
+
+    json_str = json.dumps(payload, indent=2, ensure_ascii=False)
+    filename = f"batch_{batch_id[:8]}_linked_export.json"
+
+    return Response(
+        content=json_str,
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
 
