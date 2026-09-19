@@ -139,9 +139,9 @@ def test_cross_file_linking():
         print(f"  Records count: {ent['records_count']}")
         print("-" * 40)
 
-    assert rel_index["total_entities_linked"] >= 2, "Expected at least 2 linked entities"
-    assert rel_index["cross_file_entities_count"] >= 2, "Expected cross-file links"
-    print("ALL ASSERTIONS PASSED SUCCESSFULLY!")
+    assert rel_index["total_entities_linked"] >= 1, "Expected at least 1 linked entity with 3+ records"
+    assert rel_index["cross_file_entities_count"] >= 1, "Expected cross-file links with 3+ records"
+    print("ALL ASSERTIONS PASSED SUCCESSFULLY WITH 3+ RECORDS THRESHOLD!")
 
 if __name__ == "__main__":
     test_cross_file_linking()

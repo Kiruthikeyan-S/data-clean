@@ -274,14 +274,15 @@ def calculate_cluster_confidence(grecs: List[Dict[str, Any]]) -> Tuple[float, st
 
 
 def link_batch_records(
-    results: List[ProcessResponse]
+    results: List[ProcessResponse],
+    min_cluster_size: int = 3
 ) -> Tuple[List[ProcessResponse], Dict[str, Any]]:
     """
     Performs cross-file entity resolution on a batch of ProcessResponses:
     1. Extracts match keys across all records in all files.
     2. Clusters records by shared match keys (Phone, Email, ID, VIN, Name, Address).
     3. Calculates relationship confidence scores and assigns relationship types.
-    4. Stamps each record with `entity_id`.
+    4. Stamps each record with `entity_id` when 3 or more matching records/links are found.
     5. Builds and returns the comprehensive `relationship_index`.
     """
     if not results:
@@ -329,7 +330,7 @@ def link_batch_records(
                 "keys": extract_record_keys(field_dict)
             })
 
-    if len(global_records) < 2:
+    if len(global_records) < min_cluster_size:
         return results, {
             "total_entities_linked": 0,
             "cross_file_entities_count": 0,
@@ -387,7 +388,7 @@ def link_batch_records(
             clusters[root] = []
         clusters[root].append(grec)
 
-    # Filter clusters: only multi-record or cross-file clusters get linked entity IDs
+    # Filter clusters: only clusters with 3 or more matching records
     entity_counter = 1
     relationship_entities: List[Dict[str, Any]] = []
     type_breakdown: Dict[str, int] = {}
@@ -397,8 +398,8 @@ def link_batch_records(
         files_set = {g["filename"] for g in grecs}
         is_cross_file = len(files_set) > 1
         
-        # Only process clusters with 2+ records or cross-file spans
-        if len(grecs) < 2 and not is_cross_file:
+        # Require 3 or more matched records
+        if len(grecs) < min_cluster_size:
             continue
 
         entity_id = f"ENT-{entity_counter:03d}"

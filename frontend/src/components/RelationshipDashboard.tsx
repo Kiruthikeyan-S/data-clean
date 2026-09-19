@@ -35,6 +35,7 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [minRecordsFilter, setMinRecordsFilter] = useState<number>(3);
   const [expandedEntities, setExpandedEntities] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (entityId: string) => {
@@ -68,9 +69,11 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
     return Array.from(types);
   }, [entities]);
 
-  // Filtered entities
+  // Filtered entities (requires min records threshold e.g. >= 3)
   const filteredEntities = useMemo(() => {
     return entities.filter(entity => {
+      if (entity.records_count < minRecordsFilter) return false;
+
       const matchesType = selectedType === 'all' || entity.relationship_type === selectedType;
       if (!matchesType) return false;
 
@@ -88,7 +91,7 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
 
       return inId || inName || inKey || inMethod || inFiles || inRecords;
     });
-  }, [entities, selectedType, searchTerm]);
+  }, [entities, selectedType, searchTerm, minRecordsFilter]);
 
   const getDomainIcon = (domain?: string) => {
     switch (domain?.toLowerCase()) {
@@ -270,6 +273,43 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
               Collapse All
             </button>
           </div>
+        </div>
+
+        {/* Match Count Threshold Pills */}
+        <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100">
+          <span className="text-[11px] font-bold text-slate-500 mr-1 flex items-center gap-1">
+            <Link2 className="w-3.5 h-3.5 text-blue-600" /> Matches Count:
+          </span>
+          <button
+            onClick={() => setMinRecordsFilter(3)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+              minRecordsFilter === 3
+                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+            }`}
+          >
+            3+ Records Matched (Default)
+          </button>
+          <button
+            onClick={() => setMinRecordsFilter(2)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+              minRecordsFilter === 2
+                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+            }`}
+          >
+            2+ Records Matched
+          </button>
+          <button
+            onClick={() => setMinRecordsFilter(4)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+              minRecordsFilter === 4
+                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+            }`}
+          >
+            4+ Records Matched
+          </button>
         </div>
 
         {/* Relationship Type Badges */}
