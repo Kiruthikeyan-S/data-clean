@@ -196,36 +196,59 @@ export interface ProcessResponse {
   entity_info?: EntityClassificationInfo;
 }
 
-export interface RelationshipEntityMember {
+export interface RelationshipNode {
+  entity_type: string;
+  entity_id: string;
+  name: string;
+}
+
+export interface RelationshipEdge {
+  relationship_id: string;
+  source: RelationshipNode;
+  target: RelationshipNode;
+  relationship_type: string; // 'purchased' | 'purchased_at' | 'sold' | 'customer' | 'product' | 'store'
+  confidence: number;
+  confidence_percent: string;
+  match_method: string;
+  matched_fields: string[];
+  source_files: string[];
+  evidence?: string[];
+  context?: Record<string, any>;
+}
+
+export interface SameEntityMatchRecord {
   filename: string;
   file_type: string;
-  entity_domain?: string;
   row_index: number;
   record: Record<string, any>;
 }
 
-export interface RelationshipEntity {
-  entity_id: string;
-  primary_match_key: string;
+export interface SameEntityMatch {
+  match_id: string;
+  entity_type: string;
   display_name: string;
-  relationship_type: string;
-  confidence_score: number;
+  primary_key: string;
+  confidence: number;
   confidence_percent: string;
-  match_method: string;
-  matched_keys: string[];
-  files_involved: string[];
   records_count: number;
-  is_cross_file: boolean;
-  records: RelationshipEntityMember[];
+  files_involved: string[];
+  matched_keys: string[];
+  records: SameEntityMatchRecord[];
+}
+
+export interface RelationshipSummary {
+  files_uploaded: number;
+  records_scanned: number;
+  relationships_found: number;
+  records_connected: number;
+  average_confidence: number;
 }
 
 export interface RelationshipIndexData {
-  total_entities_linked: number;
-  cross_file_entities_count: number;
-  total_records_processed: number;
-  average_confidence: number;
-  relationship_types_breakdown: Record<string, number>;
-  entities: RelationshipEntity[];
+  summary: RelationshipSummary;
+  relationship_type_counts: Record<string, number>;
+  relationships: RelationshipEdge[];
+  entity_matches: SameEntityMatch[];
 }
 
 export interface BatchProcessResponse {

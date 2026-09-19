@@ -77,17 +77,18 @@ async def process_batch_files(files: List[UploadFile] = File(...)):
     if not results:
         raise HTTPException(status_code=400, detail="None of the uploaded batch files could be processed.")
         
-    # Cross-File Record Linkage & Entity Resolution
+    # Cross-File Record Linkage & Relationship Engine
     from backend.matching.cross_file_linker import link_batch_records
     results, relationship_index = link_batch_records(results)
 
     total_time = round((time.time() - start_time) * 1000, 2)
+    summary_data = relationship_index.get("summary", {})
     batch_response = BatchProcessResponse(
         batch_id=batch_id,
         total_files=len(results),
         results=results,
         relationship_index=relationship_index,
-        total_entities_linked=relationship_index.get("total_entities_linked", 0),
+        total_entities_linked=summary_data.get("relationships_found", 0),
         processing_time_ms=total_time
     )
     BATCH_RESULTS_STORE[batch_id] = batch_response
@@ -97,8 +98,10 @@ async def process_batch_files(files: List[UploadFile] = File(...)):
 @router.get("/batch/{batch_id}/export/excel")
 async def export_batch_excel(batch_id: str):
     """
-    Exports all batch datasets into a single multi-sheet Excel workbook
-    containing one sheet per cleaned dataset plus a 'Relationships & Links' sheet.
+    Exports all batch datasets into a single multi-sheet Excel workbook containing:
+    - One sheet per cleaned dataset (Customers, Stores, Products, Transactions)
+    - A 'Relationships' sheet
+    - An 'Entity Matches' sheet
     """
     if batch_id not in BATCH_RESULTS_STORE:
         raise HTTPException(status_code=404, detail="Batch result not found.")
@@ -107,6 +110,7 @@ async def export_batch_excel(batch_id: str):
     output = io.BytesIO()
 
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        # 1. Cleaned Datasets Sheets
         for idx, res in enumerate(batch.results):
             raw_title = clean_base_name(res.filename) or f"Dataset_{idx + 1}"
             sheet_title = raw_title[:28]
@@ -114,20 +118,44 @@ async def export_batch_excel(batch_id: str):
             df.to_excel(writer, index=False, sheet_name=sheet_title)
 
         rel_index = batch.relationship_index or {}
-        entities = rel_index.get("entities", [])
-        if entities:
+        
+        # 2. Relationships Sheet
+        relationships = rel_index.get("relationships", [])
+        if relationships:
             rel_rows = []
-            for ent in entities:
+            for r in relationships:
                 rel_rows.append({
-                    "Entity ID": ent.get("entity_id"),
-                    "Display Name": ent.get("display_name"),
-                    "Primary Match Key": ent.get("primary_match_key"),
-                    "Files Linked": ", ".join(ent.get("files_involved", [])),
-                    "Records Count": ent.get("records_count"),
-                    "Is Cross-File": "Yes" if ent.get("is_cross_file") else "No"
+                    "relationship_id": r.get("relationship_id"),
+                    "source_type": r.get("source", {}).get("entity_type"),
+                    "source_id": r.get("source", {}).get("entity_id"),
+                    "source_name": r.get("source", {}).get("name"),
+                    "relationship_type": r.get("relationship_type"),
+                    "target_type": r.get("target", {}).get("entity_type"),
+                    "target_id": r.get("target", {}).get("entity_id"),
+                    "target_name": r.get("target", {}).get("name"),
+                    "confidence": r.get("confidence"),
+                    "match_method": r.get("match_method"),
+                    "matched_fields": ", ".join(r.get("matched_fields", [])),
+                    "source_files": ", ".join(r.get("source_files", []))
                 })
-            rel_df = pd.DataFrame(rel_rows)
-            rel_df.to_excel(writer, index=False, sheet_name="Relationships & Links")
+            pd.DataFrame(rel_rows).to_excel(writer, index=False, sheet_name="Relationships")
+
+        # 3. Entity Matches Sheet (Same-Entity duplicates)
+        entity_matches = rel_index.get("entity_matches", [])
+        if entity_matches:
+            em_rows = []
+            for em in entity_matches:
+                em_rows.append({
+                    "match_id": em.get("match_id"),
+                    "entity_type": em.get("entity_type"),
+                    "display_name": em.get("display_name"),
+                    "primary_key": em.get("primary_key"),
+                    "confidence": em.get("confidence"),
+                    "records_count": em.get("records_count"),
+                    "matched_keys": ", ".join(em.get("matched_keys", [])),
+                    "files_involved": ", ".join(em.get("files_involved", []))
+                })
+            pd.DataFrame(em_rows).to_excel(writer, index=False, sheet_name="Entity Matches")
 
     output.seek(0)
     filename = f"batch_{batch_id[:8]}_linked_datasets.xlsx"
@@ -142,21 +170,26 @@ async def export_batch_excel(batch_id: str):
 @router.get("/batch/{batch_id}/export/json")
 async def export_batch_json(batch_id: str):
     """
-    Exports all batch datasets with their tagged entity_id and the relationship_index as structured JSON.
+    Exports all batch datasets, structured relationships, and same-entity matches as clean JSON.
     """
     if batch_id not in BATCH_RESULTS_STORE:
         raise HTTPException(status_code=404, detail="Batch result not found.")
 
     batch = BATCH_RESULTS_STORE[batch_id]
+    rel_index = batch.relationship_index or {}
+
     payload = {
         "batch_id": batch.batch_id,
         "total_files": batch.total_files,
-        "total_entities_linked": batch.total_entities_linked,
-        "relationship_index": batch.relationship_index,
+        "summary": rel_index.get("summary", {}),
+        "relationship_type_counts": rel_index.get("relationship_type_counts", {}),
+        "relationships": rel_index.get("relationships", []),
+        "entity_matches": rel_index.get("entity_matches", []),
         "datasets": [
             {
                 "filename": r.filename,
                 "file_type": r.file_type,
+                "entity_domain": r.entity_info.entity_type if r.entity_info else "general",
                 "records_count": len(r.structured_data) if isinstance(r.structured_data, list) else 1,
                 "data": r.structured_data
             }

@@ -1,26 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Network, 
-  Link2, 
   ShieldCheck, 
-  Layers, 
   Search, 
-  ChevronDown, 
-  ChevronUp, 
   FileSpreadsheet, 
   FileCode, 
-  ArrowRightLeft,
+  ArrowRight,
   Building2,
   Package,
   User,
   CreditCard,
   Car,
   GraduationCap,
-  Stethoscope,
   Briefcase,
-  FileText
+  FileText,
+  CheckCircle2,
+  SlidersHorizontal,
+  Layers
 } from 'lucide-react';
-import { RelationshipIndexData } from '../types';
+import { RelationshipIndexData, RelationshipEdge } from '../types';
 import { getBatchExportUrl } from '../services/api';
 
 interface RelationshipDashboardProps {
@@ -34,148 +32,156 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [minRecordsFilter, setMinRecordsFilter] = useState<number>(3);
-  const [expandedEntities, setExpandedEntities] = useState<Record<string, boolean>>({});
+  const [confidenceFilter, setConfidenceFilter] = useState<'all' | 'high' | 'medium' | 'review'>('all');
+  const [methodFilter, setMethodFilter] = useState<string>('all');
 
-  const toggleExpand = (entityId: string) => {
-    setExpandedEntities(prev => ({
-      ...prev,
-      [entityId]: !prev[entityId]
-    }));
+  const relationships: RelationshipEdge[] = relationshipIndex?.relationships || [];
+  const summary = relationshipIndex?.summary || {
+    files_uploaded: 0,
+    records_scanned: 0,
+    relationships_found: 0,
+    records_connected: 0,
+    average_confidence: 0.95
   };
 
-  const expandAll = () => {
-    if (!relationshipIndex) return;
-    const allExpanded: Record<string, boolean> = {};
-    relationshipIndex.entities.forEach(e => {
-      allExpanded[e.entity_id] = true;
-    });
-    setExpandedEntities(allExpanded);
+  const getRelationshipTypeLabel = (rel: RelationshipEdge) => {
+    const src = rel.source.entity_type;
+    const tgt = rel.target.entity_type;
+    return `${src.charAt(0).toUpperCase() + src.slice(1)} ↔ ${tgt.charAt(0).toUpperCase() + tgt.slice(1)}`;
   };
 
-  const collapseAll = () => {
-    setExpandedEntities({});
-  };
-
-  const entities = relationshipIndex?.entities || [];
-
-  // Distinct relationship types for filtering
-  const availableTypes = useMemo(() => {
+  const availableRelTypes = useMemo(() => {
     const types = new Set<string>();
-    entities.forEach(e => {
-      if (e.relationship_type) types.add(e.relationship_type);
+    relationships.forEach(r => {
+      types.add(getRelationshipTypeLabel(r));
     });
     return Array.from(types);
-  }, [entities]);
+  }, [relationships]);
 
-  // Filtered entities (requires min records threshold e.g. >= 3)
-  const filteredEntities = useMemo(() => {
-    return entities.filter(entity => {
-      if (entity.records_count < minRecordsFilter) return false;
+  const filteredRelationships = useMemo(() => {
+    return relationships.filter(rel => {
+      // 1. Filter by relationship type
+      const relTypeLabel = getRelationshipTypeLabel(rel);
+      if (selectedType !== 'all' && relTypeLabel !== selectedType) return false;
 
-      const matchesType = selectedType === 'all' || entity.relationship_type === selectedType;
-      if (!matchesType) return false;
+      // 2. Filter by confidence
+      if (confidenceFilter === 'high' && rel.confidence < 0.90) return false;
+      if (confidenceFilter === 'medium' && (rel.confidence < 0.75 || rel.confidence >= 0.90)) return false;
+      if (confidenceFilter === 'review' && rel.confidence >= 0.75) return false;
 
+      // 3. Filter by match method
+      if (methodFilter !== 'all') {
+        const m = rel.match_method.toLowerCase();
+        if (methodFilter === 'exact' && !m.includes('exact')) return false;
+        if (methodFilter === 'normalized' && !m.includes('normalized')) return false;
+        if (methodFilter === 'fuzzy' && !m.includes('fuzzy') && !m.includes('similarity')) return false;
+      }
+
+      // 4. Search query
       if (!searchTerm.trim()) return true;
       const term = searchTerm.toLowerCase();
 
-      const inId = entity.entity_id.toLowerCase().includes(term);
-      const inName = entity.display_name.toLowerCase().includes(term);
-      const inKey = entity.primary_match_key.toLowerCase().includes(term);
-      const inMethod = entity.match_method.toLowerCase().includes(term);
-      const inFiles = entity.files_involved.some(f => f.toLowerCase().includes(term));
-      const inRecords = entity.records.some(r => 
-        Object.values(r.record).some(v => String(v).toLowerCase().includes(term))
-      );
+      const inId = rel.relationship_id.toLowerCase().includes(term);
+      const inSrc = rel.source.name.toLowerCase().includes(term) || rel.source.entity_id.toLowerCase().includes(term);
+      const inTgt = rel.target.name.toLowerCase().includes(term) || rel.target.entity_id.toLowerCase().includes(term);
+      const inType = rel.relationship_type.toLowerCase().includes(term);
+      const inFiles = rel.source_files.some(f => f.toLowerCase().includes(term));
+      const inEvidence = (rel.evidence || []).some(e => e.toLowerCase().includes(term));
 
-      return inId || inName || inKey || inMethod || inFiles || inRecords;
+      return inId || inSrc || inTgt || inType || inFiles || inEvidence;
     });
-  }, [entities, selectedType, searchTerm, minRecordsFilter]);
+  }, [relationships, selectedType, confidenceFilter, methodFilter, searchTerm]);
 
-  const getDomainIcon = (domain?: string) => {
-    switch (domain?.toLowerCase()) {
-      case 'car':
-      case 'vehicle':
-        return <Car className="w-3.5 h-3.5 text-amber-600" />;
-      case 'student':
-      case 'academic':
-        return <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />;
-      case 'medical':
-        return <Stethoscope className="w-3.5 h-3.5 text-rose-600" />;
-      case 'employee':
-        return <Briefcase className="w-3.5 h-3.5 text-slate-600" />;
-      case 'store':
-        return <Building2 className="w-3.5 h-3.5 text-emerald-600" />;
-      case 'item':
-      case 'product':
-        return <Package className="w-3.5 h-3.5 text-violet-600" />;
+  const getEntityIcon = (type: string) => {
+    switch (type?.toLowerCase()) {
       case 'customer':
-        return <User className="w-3.5 h-3.5 text-blue-600" />;
+        return <User className="w-4 h-4 text-blue-600" />;
+      case 'store':
+        return <Building2 className="w-4 h-4 text-emerald-600" />;
+      case 'product':
+      case 'item':
+        return <Package className="w-4 h-4 text-violet-600" />;
       case 'transaction':
-      case 'invoice':
-        return <CreditCard className="w-3.5 h-3.5 text-emerald-600" />;
+        return <CreditCard className="w-4 h-4 text-amber-600" />;
+      case 'car':
+        return <Car className="w-4 h-4 text-amber-600" />;
+      case 'student':
+        return <GraduationCap className="w-4 h-4 text-indigo-600" />;
+      case 'employee':
+        return <Briefcase className="w-4 h-4 text-slate-600" />;
       default:
-        return <FileText className="w-3.5 h-3.5 text-slate-500" />;
+        return <FileText className="w-4 h-4 text-slate-500" />;
     }
   };
 
   const getConfidenceBadge = (score: number) => {
     const percent = Math.round(score * 100);
-    if (score >= 0.95) {
+    if (score >= 0.90) {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
           <ShieldCheck className="w-3 h-3 text-emerald-600" />
           {percent}% High Confidence
         </span>
       );
-    } else if (score >= 0.88) {
+    } else if (score >= 0.75) {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
           <ShieldCheck className="w-3 h-3 text-blue-600" />
-          {percent}% Strong Match
+          {percent}% Medium Confidence
         </span>
       );
     } else {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
           <ShieldCheck className="w-3 h-3 text-amber-600" />
-          {percent}% Probable Match
+          {percent}% Review
         </span>
       );
     }
   };
 
-  if (!relationshipIndex || entities.length === 0) {
+  const getVerbBadge = (relType: string) => {
+    const v = relType.toUpperCase().replace(/_/g, ' ');
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-8 text-center space-y-3">
+      <div className="flex flex-col items-center justify-center gap-1 px-3 py-1 bg-slate-100/90 rounded-lg border border-slate-200 text-slate-700 shadow-2xs">
+        <span className="text-[10px] font-black tracking-wider text-slate-800 flex items-center gap-1">
+          {v}
+        </span>
+        <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
+      </div>
+    );
+  };
+
+  if (!relationshipIndex || relationships.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-8 text-center space-y-3 shadow-xs">
         <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
           <Network className="w-6 h-6" />
         </div>
-        <h3 className="text-base font-bold text-slate-800">No Cross-File Relationships Detected</h3>
+        <h3 className="text-base font-bold text-slate-800">No Cross-Entity Relationships Detected</h3>
         <p className="text-xs text-slate-500 max-w-md mx-auto">
-          The uploaded datasets do not contain shared entity keys (Phones, Emails, Customer IDs, Store IDs, or VINs).
-          Upload multiple related files to discover cross-file relationship links.
+          The uploaded datasets do not contain common transaction bridges or shared identity keys between different entities.
+          Upload related Customer, Store, Product, or Transaction files to discover relationship edges.
         </p>
       </div>
     );
   }
 
-  const crossFileCount = relationshipIndex.cross_file_entities_count || 0;
-  const avgConfidence = Math.round((relationshipIndex.average_confidence || 0.95) * 100);
+  const avgConfidence = Math.round((summary.average_confidence || 0.95) * 100);
 
   return (
     <div className="space-y-6">
-      {/* Top Banner: Metrics & Batch Export (Light Theme) */}
+      {/* Top Banner: Metrics & Batch Export (Clean Light Theme) */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-1.5">
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2.5">
               <Network className="w-6 h-6 text-blue-600" />
-              <span>Cross-File Entity & Relationship Network</span>
+              <span>Cross-Entity Relationship Network</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-              Discovered and unified records across all uploaded datasets into cohesive business entities using 
-              deterministic phone/email/ID keys and fuzzy string alignment.
+              Discovered distinct business relationship edges linking Customer, Store, Product, and Transaction entities 
+              without merging different domains into a single cluster.
             </p>
           </div>
 
@@ -202,290 +208,296 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
           )}
         </div>
 
-        {/* Metric Cards Ribbon (Light Theme) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-100">
+        {/* 5 Metric Cards Ribbon */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6 pt-5 border-t border-slate-100">
           <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
-            <span className="text-[11px] font-semibold text-slate-500 block">Total Unified Entities</span>
+            <span className="text-[11px] font-semibold text-slate-500 block">Files Uploaded</span>
             <div className="text-2xl font-black text-slate-900 mt-1 flex items-baseline gap-1.5">
-              <span>{relationshipIndex.total_entities_linked}</span>
-              <span className="text-[10px] font-normal text-blue-600 font-bold">clusters</span>
+              <span>{summary.files_uploaded}</span>
+              <span className="text-[10px] font-normal text-slate-500">datasets</span>
             </div>
           </div>
 
           <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
-            <span className="text-[11px] font-semibold text-slate-500 block">Cross-File Linkages</span>
+            <span className="text-[11px] font-semibold text-slate-500 block">Records Scanned</span>
+            <div className="text-2xl font-black text-slate-900 mt-1 flex items-baseline gap-1.5">
+              <span>{summary.records_scanned}</span>
+              <span className="text-[10px] font-normal text-slate-500">rows</span>
+            </div>
+          </div>
+
+          <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block">Relationships Found</span>
+            <div className="text-2xl font-black text-blue-600 mt-1 flex items-baseline gap-1.5">
+              <span>{summary.relationships_found}</span>
+              <span className="text-[10px] font-normal text-blue-600 font-bold">edges</span>
+            </div>
+          </div>
+
+          <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block">Records Connected</span>
             <div className="text-2xl font-black text-emerald-700 mt-1 flex items-baseline gap-1.5">
-              <span>{crossFileCount}</span>
-              <span className="text-[10px] font-normal text-emerald-600 font-bold">spanning files</span>
+              <span>{summary.records_connected}</span>
+              <span className="text-[10px] font-normal text-emerald-600 font-bold">entities</span>
             </div>
           </div>
 
           <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
-            <span className="text-[11px] font-semibold text-slate-500 block">Avg Match Confidence</span>
-            <div className="text-2xl font-black text-blue-700 mt-1 flex items-baseline gap-1.5">
-              <span>{avgConfidence}%</span>
-              <span className="text-[10px] font-normal text-blue-600 font-bold">accuracy</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
-            <span className="text-[11px] font-semibold text-slate-500 block">Total Records Linked</span>
+            <span className="text-[11px] font-semibold text-slate-500 block">Average Confidence</span>
             <div className="text-2xl font-black text-indigo-700 mt-1 flex items-baseline gap-1.5">
-              <span>{relationshipIndex.total_records_processed}</span>
-              <span className="text-[10px] font-normal text-indigo-600 font-bold">rows indexed</span>
+              <span>{avgConfidence}%</span>
+              <span className="text-[10px] font-normal text-indigo-600 font-bold">accuracy</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by Entity ID, Name, Phone, Email, or File..."
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all text-slate-800"
-            />
-          </div>
-
-          {/* Quick expand/collapse actions */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-            <button
-              onClick={expandAll}
-              className="px-2.5 py-1.5 rounded-md hover:bg-slate-100 border border-slate-200 text-slate-700 transition-colors"
-            >
-              Expand All
-            </button>
-            <button
-              onClick={collapseAll}
-              className="px-2.5 py-1.5 rounded-md hover:bg-slate-100 border border-slate-200 text-slate-700 transition-colors"
-            >
-              Collapse All
-            </button>
-          </div>
+      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-4">
+        {/* Search Input */}
+        <div className="relative max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by ID, Name, Action, File, or Evidence..."
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all text-slate-800"
+          />
         </div>
 
-        {/* Match Count Threshold Pills */}
-        <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100">
-          <span className="text-[11px] font-bold text-slate-500 mr-1 flex items-center gap-1">
-            <Link2 className="w-3.5 h-3.5 text-blue-600" /> Matches Count:
-          </span>
-          <button
-            onClick={() => setMinRecordsFilter(3)}
-            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-              minRecordsFilter === 3
-                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-            }`}
-          >
-            3+ Records Matched (Default)
-          </button>
-          <button
-            onClick={() => setMinRecordsFilter(2)}
-            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-              minRecordsFilter === 2
-                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-            }`}
-          >
-            2+ Records Matched
-          </button>
-          <button
-            onClick={() => setMinRecordsFilter(4)}
-            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-              minRecordsFilter === 4
-                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-            }`}
-          >
-            4+ Records Matched
-          </button>
-        </div>
+        {/* Filter Controls Grid */}
+        <div className="space-y-3 pt-2 border-t border-slate-100 text-xs">
+          {/* 1. Relationship Type Filter */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-500 mr-1 flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5 text-blue-600" /> Relationship Type:
+            </span>
+            <button
+              onClick={() => setSelectedType('all')}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                selectedType === 'all'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+              }`}
+            >
+              All Types ({relationships.length})
+            </button>
+            {availableRelTypes.map(t => {
+              const count = relationships.filter(r => getRelationshipTypeLabel(r) === t).length;
+              const isSelected = selectedType === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setSelectedType(t)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <span>{t}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Relationship Type Badges */}
-        <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100">
-          <span className="text-[11px] font-bold text-slate-500 mr-1 flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5" /> Filter Type:
-          </span>
-          <button
-            onClick={() => setSelectedType('all')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-              selectedType === 'all'
-                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-            }`}
-          >
-            All Relationships ({entities.length})
-          </button>
-          {availableTypes.map(t => {
-            const count = entities.filter(e => e.relationship_type === t).length;
-            const isSelected = selectedType === t;
-            return (
+          {/* 2. Confidence & Match Method Filters */}
+          <div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-slate-100">
+            {/* Confidence Filter */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-500 mr-1 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Confidence:
+              </span>
               <button
-                key={t}
-                onClick={() => setSelectedType(t)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                onClick={() => setConfidenceFilter('all')}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
+                  confidenceFilter === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200'
                 }`}
               >
-                <ArrowRightLeft className="w-3 h-3" />
-                <span>{t}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                  {count}
-                </span>
+                All
               </button>
-            );
-          })}
+              <button
+                onClick={() => setConfidenceFilter('high')}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
+                  confidenceFilter === 'high' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                High (90%+)
+              </button>
+              <button
+                onClick={() => setConfidenceFilter('medium')}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
+                  confidenceFilter === 'medium' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                Medium (75–89%)
+              </button>
+              <button
+                onClick={() => setConfidenceFilter('review')}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
+                  confidenceFilter === 'review' ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                Review (&lt;75%)
+              </button>
+            </div>
+
+            {/* Match Method Filter */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-500 mr-1 flex items-center gap-1">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" /> Match Method:
+              </span>
+              <button
+                onClick={() => setMethodFilter('all')}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
+                  methodFilter === 'all' ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setMethodFilter('exact')}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
+                  methodFilter === 'exact' ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                Exact
+              </button>
+              <button
+                onClick={() => setMethodFilter('normalized')}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
+                  methodFilter === 'normalized' ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                Normalized
+              </button>
+              <button
+                onClick={() => setMethodFilter('fuzzy')}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border transition-all ${
+                  methodFilter === 'fuzzy' ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                Fuzzy
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Entity Cards List */}
-      <div className="space-y-4">
-        {filteredEntities.map((entity) => {
-          const isExpanded = expandedEntities[entity.entity_id] !== false; // Default expanded
-          
+      {/* Individual Relationship Cards Grid */}
+      <div className="grid grid-cols-1 gap-4">
+        {filteredRelationships.map((rel) => {
+          const srcIcon = getEntityIcon(rel.source.entity_type);
+          const tgtIcon = getEntityIcon(rel.target.entity_type);
+
           return (
-            <div 
-              key={entity.entity_id}
-              className={`bg-white rounded-xl border transition-all shadow-xs overflow-hidden ${
-                entity.is_cross_file ? 'border-blue-200 hover:border-blue-300 ring-1 ring-blue-500/10' : 'border-slate-200'
-              }`}
+            <div
+              key={rel.relationship_id}
+              className="bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-xs transition-all p-4 sm:p-5 space-y-3.5"
             >
-              {/* Entity Header */}
-              <div 
-                onClick={() => toggleExpand(entity.entity_id)}
-                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/70 transition-colors"
-              >
-                <div className="flex items-start sm:items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0">
-                    {entity.entity_id}
+              {/* Header: ID, Badge, Method */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 font-mono font-bold text-xs flex items-center justify-center border border-blue-200">
+                    {rel.relationship_id.replace('REL-', '#')}
+                  </span>
+                  <span className="text-xs font-bold text-slate-800 font-mono">
+                    {rel.relationship_id}
+                  </span>
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+                    {rel.match_method}
+                  </span>
+                </div>
+
+                {getConfidenceBadge(rel.confidence)}
+              </div>
+
+              {/* Edge Visualizer: Source Entity ──[ Action ]──→ Target Entity */}
+              <div className="grid grid-cols-1 md:grid-cols-11 items-center gap-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/70">
+                {/* Source Entity Node */}
+                <div className="md:col-span-5 flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                    {srcIcon}
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm sm:text-base font-bold text-slate-900">
-                        {entity.display_name}
-                      </h4>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                        <ArrowRightLeft className="w-3 h-3 text-indigo-600" />
-                        {entity.relationship_type}
-                      </span>
-                      {getConfidenceBadge(entity.confidence_score)}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
-                      <span className="font-semibold text-slate-700">Primary Key:</span>
-                      <span className="px-2 py-0.5 rounded bg-slate-100 font-mono text-[11px] text-slate-800 border border-slate-200">
-                        {entity.primary_match_key}
-                      </span>
-                      <span>•</span>
-                      <span className="text-slate-600">{entity.match_method}</span>
-                    </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      {rel.source.entity_type}
+                    </span>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate" title={rel.source.name}>
+                      {rel.source.name}
+                    </h4>
+                    <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded inline-block">
+                      {rel.source.entity_id}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 self-end sm:self-center shrink-0">
-                  {/* File tags */}
-                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                    {entity.files_involved.map((fname, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 max-w-[150px] truncate"
-                        title={fname}
-                      >
-                        <FileText className="w-3 h-3 text-slate-500 shrink-0" />
-                        <span className="truncate">{fname}</span>
-                      </span>
-                    ))}
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                      {entity.records_count} records
+                {/* Directed Verb / Action */}
+                <div className="md:col-span-1 flex justify-center py-1 md:py-0">
+                  {getVerbBadge(rel.relationship_type)}
+                </div>
+
+                {/* Target Entity Node */}
+                <div className="md:col-span-5 flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+                    {tgtIcon}
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      {rel.target.entity_type}
+                    </span>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate" title={rel.target.name}>
+                      {rel.target.name}
+                    </h4>
+                    <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded inline-block">
+                      {rel.target.entity_id}
                     </span>
                   </div>
-
-                  <button 
-                    type="button"
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                  >
-                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </button>
                 </div>
               </div>
 
-              {/* Collapsible Records Breakdown Table / Cards */}
-              {isExpanded && (
-                <div className="border-t border-slate-100 bg-slate-50/50 p-4 sm:p-5 space-y-4">
-                  {/* Match Keys Pill Bar */}
-                  {entity.matched_keys && entity.matched_keys.length > 0 && (
-                    <div className="flex items-center gap-2 flex-wrap text-xs bg-white p-2.5 rounded-lg border border-slate-200">
-                      <span className="font-bold text-slate-700 flex items-center gap-1">
-                        <Link2 className="w-3.5 h-3.5 text-blue-600" /> Linked by Keys:
-                      </span>
-                      {entity.matched_keys.slice(0, 10).map((mk, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-mono text-[11px] font-medium border border-blue-200">
-                          {mk}
-                        </span>
-                      ))}
-                      {entity.matched_keys.length > 10 && (
-                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[11px] font-semibold border border-slate-200">
-                          +{entity.matched_keys.length - 10} more keys
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Connected Records Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {entity.records.map((rec, rIdx) => {
-                      const domain = rec.entity_domain || 'dataset';
-                      const entries = Object.entries(rec.record).filter(([k]) => k !== 'entity_id');
-                      
-                      return (
-                        <div key={rIdx} className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-2xs space-y-2">
-                          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 truncate">
-                              {getDomainIcon(domain)}
-                              <span className="truncate max-w-[140px]" title={rec.filename}>{rec.filename}</span>
-                            </div>
-                            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                              Row #{rec.row_index}
-                            </span>
-                          </div>
-
-                          <div className="space-y-1 text-xs max-h-48 overflow-y-auto pr-1">
-                            {entries.slice(0, 8).map(([k, v]) => (
-                              <div key={k} className="flex items-baseline justify-between gap-2">
-                                <span className="text-slate-500 font-medium capitalize truncate max-w-[110px]">
-                                  {k.replace(/_/g, ' ')}:
-                                </span>
-                                <span className="text-slate-900 font-mono text-[11px] font-semibold text-right truncate max-w-[150px]" title={String(v)}>
-                                  {String(v)}
-                                </span>
-                              </div>
-                            ))}
-                            {entries.length > 8 && (
-                              <div className="text-[10px] text-slate-400 italic pt-1 text-right">
-                                + {entries.length - 8} more fields
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+              {/* Evidence and Files Footer */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 text-xs">
+                {/* Evidence Badges */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-slate-600 text-[11px] mr-1">Evidence:</span>
+                  {rel.evidence && rel.evidence.map((ev, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[11px] font-medium border border-emerald-200"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <span>{ev.replace('✓ ', '')}</span>
+                    </span>
+                  ))}
                 </div>
-              )}
+
+                {/* Source Files */}
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  <span className="text-slate-500 text-[11px]">Files:</span>
+                  {rel.source_files.map((fname, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200 max-w-[150px] truncate"
+                      title={fname}
+                    >
+                      <FileText className="w-3 h-3 text-slate-500 shrink-0" />
+                      <span className="truncate">{fname}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
           );
         })}
 
-        {filteredEntities.length === 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6 text-center text-xs text-slate-500">
-            No entities match your current search query "{searchTerm}".
+        {filteredRelationships.length === 0 && (
+          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500">
+            No relationships match your current filters or search query "{searchTerm}".
           </div>
         )}
       </div>

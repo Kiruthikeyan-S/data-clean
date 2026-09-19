@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table, Users } from 'lucide-react';
 import { ProcessResponse, RelationshipIndexData } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
@@ -7,6 +7,7 @@ import { DataQualityInspector } from '../components/DataQualityInspector';
 import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible';
 import { ProcessDetailsCollapsible } from '../components/ProcessDetailsCollapsible';
 import { RelationshipDashboard } from '../components/RelationshipDashboard';
+import { EntityMatchesView } from '../components/EntityMatchesView';
 
 interface ResultPageProps {
   results: ProcessResponse[];
@@ -25,13 +26,14 @@ export const ResultPage: React.FC<ResultPageProps> = ({
   batchId,
   relationshipIndex
 }) => {
-  const [activeView, setActiveView] = useState<'datasets' | 'relationships'>('datasets');
+  const [activeView, setActiveView] = useState<'datasets' | 'relationships' | 'entity_matches'>('datasets');
   const currentResult = results[activeIndex] || results[0];
   
   if (!currentResult) return null;
 
-  const totalLinked = relationshipIndex?.total_entities_linked || 0;
-  const isBatch = results.length > 1 || totalLinked > 0;
+  const relCount = relationshipIndex?.summary?.relationships_found ?? relationshipIndex?.relationships?.length ?? 0;
+  const matchCount = relationshipIndex?.entity_matches?.length ?? 0;
+  const isBatch = results.length > 1 || relCount > 0 || matchCount > 0;
 
   return (
     <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-[1700px] mx-auto space-y-6 w-full">
@@ -51,48 +53,77 @@ export const ResultPage: React.FC<ResultPageProps> = ({
         )}
       </div>
 
-      {/* Main Mode Switcher for Multi-File Batches */}
+      {/* Main 3-Tab View Switcher for Multi-File Batches */}
       {isBatch && (
-        <div className="flex items-center gap-3 p-1.5 bg-slate-200/80 rounded-xl w-fit">
+        <div className="flex items-center gap-2 p-1.5 bg-slate-200/80 rounded-xl w-fit flex-wrap">
+          {/* Tab 1: Cleaned Datasets */}
           <button
             onClick={() => setActiveView('datasets')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
               activeView === 'datasets'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Table className="w-4 h-4 text-blue-600" />
-            <span>Cleaned Datasets ({results.length} Files)</span>
+            <span>Cleaned Datasets ({results.length})</span>
           </button>
 
+          {/* Tab 2: Cross-Entity Relationships */}
           <button
             onClick={() => setActiveView('relationships')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
               activeView === 'relationships'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
             }`}
           >
             <Network className={`w-4 h-4 ${activeView === 'relationships' ? 'text-white' : 'text-blue-600'}`} />
-            <span>Cross-File Relationships</span>
+            <span>Relationships</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
               activeView === 'relationships' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
             }`}>
-              {totalLinked} Links
+              {relCount} Edges
+            </span>
+          </button>
+
+          {/* Tab 3: Same-Entity Matches */}
+          <button
+            onClick={() => setActiveView('entity_matches')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+              activeView === 'entity_matches'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
+            }`}
+          >
+            <Users className={`w-4 h-4 ${activeView === 'entity_matches' ? 'text-white' : 'text-indigo-600'}`} />
+            <span>Entity Matches</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeView === 'entity_matches' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-800'
+            }`}>
+              {matchCount} Matches
             </span>
           </button>
         </div>
       )}
 
-      {/* View 1: Relationship Dashboard */}
-      {activeView === 'relationships' ? (
+      {/* VIEW 1: Cross-Entity Relationships */}
+      {activeView === 'relationships' && (
         <RelationshipDashboard
           batchId={batchId}
           relationshipIndex={relationshipIndex}
         />
-      ) : (
-        /* View 2: Dataset Views */
+      )}
+
+      {/* VIEW 2: Same-Entity Matches (Identity Resolution) */}
+      {activeView === 'entity_matches' && (
+        <EntityMatchesView
+          entityMatches={relationshipIndex?.entity_matches || []}
+        />
+      )}
+
+      {/* VIEW 3: Cleaned Dataset Views */}
+      {activeView === 'datasets' && (
         <>
           {/* Multi-File Batch Dataset Switcher Tabs */}
           {results.length > 1 && (
