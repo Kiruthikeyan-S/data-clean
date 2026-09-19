@@ -196,11 +196,45 @@ export interface ProcessResponse {
   entity_info?: EntityClassificationInfo;
 }
 
+export interface RelationshipEntityMember {
+  filename: string;
+  file_type: string;
+  entity_domain?: string;
+  row_index: number;
+  record: Record<string, any>;
+}
+
+export interface RelationshipEntity {
+  entity_id: string;
+  primary_match_key: string;
+  display_name: string;
+  relationship_type: string;
+  confidence_score: number;
+  confidence_percent: string;
+  match_method: string;
+  matched_keys: string[];
+  files_involved: string[];
+  records_count: number;
+  is_cross_file: boolean;
+  records: RelationshipEntityMember[];
+}
+
+export interface RelationshipIndexData {
+  total_entities_linked: number;
+  cross_file_entities_count: number;
+  total_records_processed: number;
+  average_confidence: number;
+  relationship_types_breakdown: Record<string, number>;
+  entities: RelationshipEntity[];
+}
+
 export interface BatchProcessResponse {
   batch_id: string;
   total_files: number;
   results: ProcessResponse[];
   processing_time_ms: number;
+  relationship_index?: RelationshipIndexData;
+  total_entities_linked?: number;
 }
 
 export interface HistoryItem {

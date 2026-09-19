@@ -15,6 +15,8 @@ export const App: React.FC = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [results, setResults] = useState<ProcessResponse[]>([]);
   const [activeResultIndex, setActiveResultIndex] = useState<number>(0);
+  const [batchId, setBatchId] = useState<string | undefined>(undefined);
+  const [relationshipIndex, setRelationshipIndex] = useState<any | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleStartProcess = async (files: File[]) => {
@@ -26,6 +28,8 @@ export const App: React.FC = () => {
     setSteps([]);
     setCurrentStepIndex(0);
     setActiveResultIndex(0);
+    setBatchId(undefined);
+    setRelationshipIndex(undefined);
 
     const stageTimer1 = setTimeout(() => setCurrentStepIndex(1), 250);
     const stageTimer2 = setTimeout(() => setCurrentStepIndex(2), 500);
@@ -41,6 +45,8 @@ export const App: React.FC = () => {
         setSteps(response.steps);
         setCurrentStepIndex(response.steps.length);
         setResults([response]);
+        setBatchId(undefined);
+        setRelationshipIndex(undefined);
       } else {
         const batchResponse = await processBatchFiles(files);
         clearTimeout(stageTimer1);
@@ -51,6 +57,8 @@ export const App: React.FC = () => {
           setSteps(batchResponse.results[0].steps);
           setCurrentStepIndex(batchResponse.results[0].steps.length);
           setResults(batchResponse.results);
+          setBatchId(batchResponse.batch_id);
+          setRelationshipIndex(batchResponse.relationship_index);
         }
       }
 
@@ -71,6 +79,8 @@ export const App: React.FC = () => {
   const handleReset = () => {
     setResults([]);
     setActiveResultIndex(0);
+    setBatchId(undefined);
+    setRelationshipIndex(undefined);
     setErrorMessage(null);
     setCurrentPage('upload');
   };
@@ -107,6 +117,8 @@ export const App: React.FC = () => {
             activeIndex={activeResultIndex}
             onSelectIndex={(idx) => setActiveResultIndex(idx)}
             onReset={handleReset}
+            batchId={batchId}
+            relationshipIndex={relationshipIndex}
           />
         )}
       </main>

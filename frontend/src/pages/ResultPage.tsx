@@ -1,27 +1,37 @@
-import React from 'react';
-import { ArrowLeft, AlertTriangle, Files, CheckCircle2 } from 'lucide-react';
-import { ProcessResponse } from '../types';
+import React, { useState } from 'react';
+import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table } from 'lucide-react';
+import { ProcessResponse, RelationshipIndexData } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
 import { DataQualityInspector } from '../components/DataQualityInspector';
 import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible';
 import { ProcessDetailsCollapsible } from '../components/ProcessDetailsCollapsible';
+import { RelationshipDashboard } from '../components/RelationshipDashboard';
 
 interface ResultPageProps {
   results: ProcessResponse[];
   activeIndex: number;
   onSelectIndex: (index: number) => void;
   onReset: () => void;
+  batchId?: string;
+  relationshipIndex?: RelationshipIndexData;
 }
 
 export const ResultPage: React.FC<ResultPageProps> = ({
   results,
   activeIndex,
   onSelectIndex,
-  onReset
+  onReset,
+  batchId,
+  relationshipIndex
 }) => {
+  const [activeView, setActiveView] = useState<'datasets' | 'relationships'>('datasets');
   const currentResult = results[activeIndex] || results[0];
+  
   if (!currentResult) return null;
+
+  const totalLinked = relationshipIndex?.total_entities_linked || 0;
+  const isBatch = results.length > 1 || totalLinked > 0;
 
   return (
     <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-[1700px] mx-auto space-y-6 w-full">
@@ -36,115 +46,162 @@ export const ResultPage: React.FC<ResultPageProps> = ({
           <span>Upload More Files</span>
         </button>
 
-        <ExportButtons taskId={currentResult.id} currentResult={currentResult} />
+        {activeView === 'datasets' && (
+          <ExportButtons taskId={currentResult.id} currentResult={currentResult} />
+        )}
       </div>
 
-      {/* Multi-File Batch Dataset Switcher Tabs */}
-      {results.length > 1 && (
-        <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-xs space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <Files className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-bold text-slate-900">
-                Batch Processed Datasets ({results.length} Files Cleaned)
-              </span>
-            </div>
-            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" />
-              All Files Ready
+      {/* Main Mode Switcher for Multi-File Batches */}
+      {isBatch && (
+        <div className="flex items-center gap-3 p-1.5 bg-slate-200/80 rounded-xl w-fit">
+          <button
+            onClick={() => setActiveView('datasets')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              activeView === 'datasets'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Table className="w-4 h-4 text-blue-600" />
+            <span>Cleaned Datasets ({results.length} Files)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('relationships')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              activeView === 'relationships'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
+            }`}
+          >
+            <Network className={`w-4 h-4 ${activeView === 'relationships' ? 'text-white' : 'text-blue-600'}`} />
+            <span>Cross-File Relationships</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeView === 'relationships' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
+            }`}>
+              {totalLinked} Links
             </span>
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
-            {results.map((res, idx) => {
-              const isSelected = idx === activeIndex;
-              const ext = res.filename.split('.').pop()?.toUpperCase() || res.file_type.toUpperCase();
-              
-              const getEntityIcon = (type?: string) => {
-                switch (type?.toLowerCase()) {
-                  case 'car': return '🚗';
-                  case 'invoice': return '🧾';
-                  case 'employee': return '💼';
-                  case 'student':
-                  case 'academic':
-                  case 'syllabus':
-                  case 'course': return '🎓';
-                  case 'medical': return '🏥';
-                  case 'store': return '🏪';
-                  case 'item': return '📦';
-                  case 'customer': return '👤';
-                  case 'transaction': return '💳';
-                  case 'mixed': return '🔀';
-                  default: return '📁';
-                }
-              };
-
-              const entityIcon = getEntityIcon(res.entity_info?.entity_type);
-
-              return (
-                <button
-                  key={res.id || idx}
-                  onClick={() => onSelectIndex(idx)}
-                  className={`flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium border transition-all whitespace-nowrap ${
-                    isSelected
-                      ? 'bg-blue-50/80 border-blue-300 text-blue-900 shadow-xs font-bold'
-                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
-                  }`}
-                >
-                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${
-                    isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'
-                  }`}>
-                    {idx + 1}
-                  </span>
-                  {entityIcon && <span className="text-xs">{entityIcon}</span>}
-                  <span className="truncate max-w-[180px]">{res.filename}</span>
-                  {res.entity_info && res.entity_info.entity_type !== 'unknown' && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100/70 text-blue-800 font-semibold">
-                      {res.entity_info.entity_type === 'mixed' ? 'Multiple Entity' : res.entity_info.entity_type.charAt(0).toUpperCase() + res.entity_info.entity_type.slice(1)}
-                    </span>
-                  )}
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/80 border border-slate-200 font-mono text-slate-600">
-                    {ext}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          </button>
         </div>
       )}
 
-      {/* Validation Warnings if any */}
-      {currentResult.errors && currentResult.errors.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800">
-          <div className="flex items-center gap-2 font-semibold text-amber-900 mb-1">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <span>Validation Warnings ({currentResult.errors.length})</span>
-          </div>
-          <ul className="list-disc list-inside space-y-0.5 text-amber-700 pl-1">
-            {currentResult.errors.map((err, idx) => (
-              <li key={idx}>
-                <span className="font-medium">{err.field}:</span> {err.message}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* View 1: Relationship Dashboard */}
+      {activeView === 'relationships' ? (
+        <RelationshipDashboard
+          batchId={batchId}
+          relationshipIndex={relationshipIndex}
+        />
+      ) : (
+        /* View 2: Dataset Views */
+        <>
+          {/* Multi-File Batch Dataset Switcher Tabs */}
+          {results.length > 1 && (
+            <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-xs space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <Files className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-bold text-slate-900">
+                    Batch Processed Datasets ({results.length} Files Cleaned)
+                  </span>
+                </div>
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  All Files Ready
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
+                {results.map((res, idx) => {
+                  const isSelected = idx === activeIndex;
+                  const ext = res.filename.split('.').pop()?.toUpperCase() || res.file_type.toUpperCase();
+                  
+                  const getEntityIcon = (type?: string) => {
+                    switch (type?.toLowerCase()) {
+                      case 'car': return '🚗';
+                      case 'invoice': return '🧾';
+                      case 'employee': return '💼';
+                      case 'student':
+                      case 'academic':
+                      case 'syllabus':
+                      case 'course': return '🎓';
+                      case 'medical': return '🏥';
+                      case 'store': return '🏪';
+                      case 'item': return '📦';
+                      case 'customer': return '👤';
+                      case 'transaction': return '💳';
+                      case 'mixed': return '🔀';
+                      default: return '📁';
+                    }
+                  };
+
+                  const entityIcon = getEntityIcon(res.entity_info?.entity_type);
+
+                  return (
+                    <button
+                      key={res.id || idx}
+                      onClick={() => onSelectIndex(idx)}
+                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium border transition-all whitespace-nowrap ${
+                        isSelected
+                          ? 'bg-blue-50/80 border-blue-300 text-blue-900 shadow-xs font-bold'
+                          : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${
+                        isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      {entityIcon && <span className="text-xs">{entityIcon}</span>}
+                      <span className="truncate max-w-[180px]">{res.filename}</span>
+                      {res.entity_info && res.entity_info.entity_type !== 'unknown' && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100/70 text-blue-800 font-semibold">
+                          {res.entity_info.entity_type === 'mixed' ? 'Multiple Entity' : res.entity_info.entity_type.charAt(0).toUpperCase() + res.entity_info.entity_type.slice(1)}
+                        </span>
+                      )}
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/80 border border-slate-200 font-mono text-slate-600">
+                        {ext}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Validation Warnings if any */}
+          {currentResult.errors && currentResult.errors.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800">
+              <div className="flex items-center gap-2 font-semibold text-amber-900 mb-1">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <span>Validation Warnings ({currentResult.errors.length})</span>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-amber-700 pl-1">
+                {currentResult.errors.map((err, idx) => (
+                  <li key={idx}>
+                    <span className="font-medium">{err.field}:</span> {err.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* 6-Dimension Interactive Data Quality Inspector */}
+          {currentResult.cleansing_report?.quality_audit && (
+            <DataQualityInspector audit={currentResult.cleansing_report.quality_audit} />
+          )}
+
+          {/* Structured Result Table with Retained Records count */}
+          <ResultTable result={currentResult} />
+
+          {/* Collapsible Extracted Text for unstructured docs */}
+          {currentResult.classification === 'unstructured' && currentResult.raw_text && (
+            <ExtractedTextCollapsible rawText={currentResult.raw_text} />
+          )}
+
+          {/* Collapsible Process Details */}
+          <ProcessDetailsCollapsible steps={currentResult.steps} summary={currentResult.summary} />
+        </>
       )}
-
-      {/* 6-Dimension Interactive Data Quality Inspector */}
-      {currentResult.cleansing_report?.quality_audit && (
-        <DataQualityInspector audit={currentResult.cleansing_report.quality_audit} />
-      )}
-
-      {/* Structured Result Table with Retained Records count */}
-      <ResultTable result={currentResult} />
-
-      {/* Collapsible Extracted Text for unstructured docs */}
-      {currentResult.classification === 'unstructured' && currentResult.raw_text && (
-        <ExtractedTextCollapsible rawText={currentResult.raw_text} />
-      )}
-
-      {/* Collapsible Process Details */}
-      <ProcessDetailsCollapsible steps={currentResult.steps} summary={currentResult.summary} />
     </div>
   );
 };

@@ -62,6 +62,10 @@ export function getExportUrl(id: string, format: 'pdf' | 'csv' | 'excel' | 'json
   return `${API_BASE}/export/${id}/${format}`;
 }
 
+export function getBatchExportUrl(batchId: string, format: 'excel' | 'json'): string {
+  return `${API_BASE}/batch/${batchId}/export/${format}`;
+}
+
 export async function checkHealth(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/health`);
