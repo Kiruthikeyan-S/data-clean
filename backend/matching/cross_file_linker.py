@@ -100,13 +100,15 @@ def extract_record_keys(record: Dict[str, Any]) -> Dict[str, Any]:
             if "@" in norm_e:
                 keys["email"] = norm_e
 
-        # 5. Primary Identity & Domain Unique Keys
+        # 5. Domain & Universal ID keys
         elif k_clean in (
             "invoice_no", "invoice_num", "invoice_number", "bill_no", "bill_number",
             "emp_id", "employee_id", "staff_id", "worker_id",
             "student_id", "roll_no", "roll_number", "registration_no", "admission_no",
             "patient_id", "mrn", "medical_record_number", "case_id",
-            "customer_id", "cust_id", "user_id", "member_id", "client_id"
+            "customer_id", "cust_id", "user_id", "member_id", "client_id",
+            "store_id", "branch_id", "outlet_id", "warehouse_id",
+            "product_id", "item_id", "sku", "sku_id", "barcode", "upc", "ean"
         ):
             clean_id = normalize_match_val(v_str).upper()
             if len(clean_id) >= 2:
@@ -121,6 +123,10 @@ def extract_record_keys(record: Dict[str, Any]) -> Dict[str, Any]:
                     key_prefix = "patient_id"
                 elif k_clean in ("customer_id", "cust_id", "user_id", "member_id", "client_id"):
                     key_prefix = "customer_id"
+                elif k_clean in ("store_id", "branch_id", "outlet_id", "warehouse_id"):
+                    key_prefix = "store_id"
+                elif k_clean in ("product_id", "item_id", "sku", "sku_id", "barcode", "upc", "ean"):
+                    key_prefix = "product_id"
 
                 keys[f"id_{key_prefix}"] = clean_id
 

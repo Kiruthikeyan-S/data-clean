@@ -418,7 +418,26 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
 
               {/* Collapsible Records Breakdown Table / Cards */}
               {isExpanded && (
-                <div className="border-t border-slate-100 bg-slate-50/50 p-4 sm:p-5 space-y-3">
+                <div className="border-t border-slate-100 bg-slate-50/50 p-4 sm:p-5 space-y-4">
+                  {/* Match Keys Pill Bar */}
+                  {entity.matched_keys && entity.matched_keys.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap text-xs bg-white p-2.5 rounded-lg border border-slate-200">
+                      <span className="font-bold text-slate-700 flex items-center gap-1">
+                        <Link2 className="w-3.5 h-3.5 text-blue-600" /> Linked by Keys:
+                      </span>
+                      {entity.matched_keys.slice(0, 10).map((mk, idx) => (
+                        <span key={idx} className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-mono text-[11px] font-medium border border-blue-200">
+                          {mk}
+                        </span>
+                      ))}
+                      {entity.matched_keys.length > 10 && (
+                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[11px] font-semibold border border-slate-200">
+                          +{entity.matched_keys.length - 10} more keys
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Connected Records Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {entity.records.map((rec, rIdx) => {
