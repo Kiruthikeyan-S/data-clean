@@ -9,7 +9,6 @@ import {
   ChevronUp, 
   FileSpreadsheet, 
   FileCode, 
-  Sparkles,
   ArrowRightLeft,
   Building2,
   Package,
@@ -166,19 +165,15 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner: Metrics & Batch Export */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-md">
+      {/* Top Banner: Metrics & Batch Export (Light Theme) */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-semibold backdrop-blur-sm">
-              <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-              <span>Multi-Source Entity Resolution & Linkage Engine</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
-              <Network className="w-6 h-6 text-blue-400" />
+          <div className="space-y-1.5">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2.5">
+              <Network className="w-6 h-6 text-blue-600" />
               <span>Cross-File Entity & Relationship Network</span>
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
               Discovered and unified records across all uploaded datasets into cohesive business entities using 
               deterministic phone/email/ID keys and fuzzy string alignment.
             </p>
@@ -190,7 +185,7 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
               <a
                 href={getBatchExportUrl(batchId, 'excel')}
                 download
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all hover:scale-102"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all hover:scale-102"
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 <span>Download Multi-Sheet Excel</span>
@@ -198,46 +193,46 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
               <a
                 href={getBatchExportUrl(batchId, 'json')}
                 download
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm shadow-sm transition-all hover:scale-102"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs transition-all hover:scale-102"
               >
-                <FileCode className="w-4 h-4 text-blue-300" />
+                <FileCode className="w-4 h-4 text-slate-600" />
                 <span>Export Linked JSON Graph</span>
               </a>
             </div>
           )}
         </div>
 
-        {/* Metric Cards Ribbon */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10">
-          <div className="bg-white/10 backdrop-blur-xs rounded-xl p-3.5 border border-white/10">
-            <span className="text-[11px] font-medium text-slate-300 block">Total Unified Entities</span>
-            <div className="text-2xl font-black text-white mt-1 flex items-baseline gap-1.5">
+        {/* Metric Cards Ribbon (Light Theme) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-100">
+          <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block">Total Unified Entities</span>
+            <div className="text-2xl font-black text-slate-900 mt-1 flex items-baseline gap-1.5">
               <span>{relationshipIndex.total_entities_linked}</span>
-              <span className="text-[10px] font-normal text-blue-300">clusters</span>
+              <span className="text-[10px] font-normal text-blue-600 font-bold">clusters</span>
             </div>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-xs rounded-xl p-3.5 border border-white/10">
-            <span className="text-[11px] font-medium text-slate-300 block">Cross-File Linkages</span>
-            <div className="text-2xl font-black text-emerald-400 mt-1 flex items-baseline gap-1.5">
+          <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block">Cross-File Linkages</span>
+            <div className="text-2xl font-black text-emerald-700 mt-1 flex items-baseline gap-1.5">
               <span>{crossFileCount}</span>
-              <span className="text-[10px] font-normal text-emerald-300">spanning files</span>
+              <span className="text-[10px] font-normal text-emerald-600 font-bold">spanning files</span>
             </div>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-xs rounded-xl p-3.5 border border-white/10">
-            <span className="text-[11px] font-medium text-slate-300 block">Avg Match Confidence</span>
-            <div className="text-2xl font-black text-blue-300 mt-1 flex items-baseline gap-1.5">
+          <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block">Avg Match Confidence</span>
+            <div className="text-2xl font-black text-blue-700 mt-1 flex items-baseline gap-1.5">
               <span>{avgConfidence}%</span>
-              <span className="text-[10px] font-normal text-blue-200">accuracy</span>
+              <span className="text-[10px] font-normal text-blue-600 font-bold">accuracy</span>
             </div>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-xs rounded-xl p-3.5 border border-white/10">
-            <span className="text-[11px] font-medium text-slate-300 block">Total Records Linked</span>
-            <div className="text-2xl font-black text-violet-300 mt-1 flex items-baseline gap-1.5">
+          <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block">Total Records Linked</span>
+            <div className="text-2xl font-black text-indigo-700 mt-1 flex items-baseline gap-1.5">
               <span>{relationshipIndex.total_records_processed}</span>
-              <span className="text-[10px] font-normal text-violet-200">rows indexed</span>
+              <span className="text-[10px] font-normal text-indigo-600 font-bold">rows indexed</span>
             </div>
           </div>
         </div>
