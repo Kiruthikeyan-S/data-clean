@@ -20,7 +20,11 @@ from backend.extractors import extract_data
 from backend.cleaning.text_cleaner import clean_text_data
 from backend.cleaning.structured_cleaner import read_and_clean_structured_file
 from backend.cleaning.data_auditor import audit_structured_data, audit_unstructured_data
-from backend.extraction.field_extractor import identify_fields, map_to_schema
+from backend.extraction.field_extractor import (
+    identify_fields,
+    map_to_schema,
+    extract_records_from_unstructured_text
+)
 from backend.extraction.ai_extractor import extract_fields_with_llm, classify_columns_with_llm
 from backend.validation.validator import validate_unstructured_fields, validate_structured_records
 from backend.extraction.entity_classifier import (
@@ -249,6 +253,13 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
 
             # Step 6: Identify Fields & Normalize (AI LLM with Rule-based fallback)
             ai_extracted = extract_fields_with_llm(cleaned_text)
+            
+            # If LLM didn't return records, check if unstructured text contains multiple repeating records via rule parser
+            if not (ai_extracted and isinstance(ai_extracted, dict) and ai_extracted.get("data_type") == "records" and len(ai_extracted.get("records", [])) > 0):
+                rule_records = extract_records_from_unstructured_text(cleaned_text)
+                if rule_records and len(rule_records.get("records", [])) > 0:
+                    ai_extracted = rule_records
+
             highlights = [
                 "Normalized Unicode NFKC encoding and line endings",
                 "Removed invisible control characters & extra whitespace"

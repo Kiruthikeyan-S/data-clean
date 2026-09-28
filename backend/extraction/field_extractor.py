@@ -189,3 +189,73 @@ def map_to_schema(extracted_raw: Dict[str, Any]) -> List[Dict[str, Any]]:
             })
 
     return mapped_fields
+
+
+def extract_records_from_unstructured_text(raw_text: str) -> Optional[Dict[str, Any]]:
+    """
+    Rule-based parser that segments unstructured text containing multiple records
+    (e.g., repeating profiles, numbered lists, multi-line blocks, customer rosters)
+    into a standardized tabular records dataset.
+    """
+    if not raw_text or not raw_text.strip():
+        return None
+
+    # 1. Check for multiple occurrences of primary record headers (e.g. at least 2 "Name:", "Record:", or numbered items)
+    name_headers = re.findall(r'(?:^|\n)\s*(?:Name|Full Name|Customer Name|Employee Name|Candidate Name|Contact Name|User Name)\s*[:=\-]', raw_text, flags=re.IGNORECASE)
+    numbered_headers = re.findall(r'(?:^|\n)\s*(?:\d+[\.\)]|\#\d+|\[\d+\]|Record\s+\d+|Item\s+\d+|Profile\s+\d+|Employee\s+\d+)\s+', raw_text, flags=re.IGNORECASE)
+
+    best_blocks: List[str] = []
+
+    # Case A: At least 2 numbered items
+    if len(numbered_headers) >= 2:
+        chunks = [c.strip() for c in re.split(r'\n(?=\s*(?:\d+[\.\)]|\#\d+|\[\d+\]|Record\s+\d+|Item\s+\d+|Profile\s+\d+|Employee\s+\d+)\s+)', raw_text, flags=re.IGNORECASE) if c.strip()]
+        if len(chunks) >= 2:
+            best_blocks = chunks
+
+    # Case B: Explicit horizontal separators (---, ===)
+    elif len(re.findall(r'\n\s*[-=_]{3,}\s*\n', raw_text)) >= 1:
+        chunks = [c.strip() for c in re.split(r'\n\s*[-=_]{3,}\s*\n', raw_text) if c.strip()]
+        if len(chunks) >= 2:
+            best_blocks = chunks
+
+    # Case C: At least 2 repeated "Name:" headers
+    elif len(name_headers) >= 2:
+        chunks = [c.strip() for c in re.split(r'(?=(?:^|\n)\s*(?:Name|Full Name|Customer Name|Employee Name|Candidate Name|Contact Name|User Name)\s*[:=\-])', raw_text, flags=re.IGNORECASE) if c.strip()]
+        if len(chunks) >= 2:
+            best_blocks = chunks
+
+    if len(best_blocks) < 2:
+        return None
+
+    all_records: List[Dict[str, Any]] = []
+    for block in best_blocks:
+        raw_fields = identify_fields(block)
+        mapped = map_to_schema(raw_fields)
+        row = {f["key"]: f["value"] for f in mapped if f["value"] is not None}
+        
+        # Keep row if it has at least 2 non-empty fields or 1 strong identifier (name/email/phone/id_number)
+        if len(row) >= 2 or any(k in row for k in ["name", "email", "phone", "id_number"]):
+            all_records.append(row)
+
+    if len(all_records) >= 2:
+        # Collect all columns in order
+        all_cols: List[str] = []
+        for r in all_records:
+            for k in r.keys():
+                if k not in all_cols:
+                    all_cols.append(k)
+
+        # Filter empty columns
+        valid_cols = [c for c in all_cols if any(r.get(c) for r in all_records)]
+        if not valid_cols:
+            valid_cols = all_cols
+
+        final_records = [{c: r.get(c) for c in valid_cols} for r in all_records]
+        return {
+            "data_type": "records",
+            "columns": valid_cols,
+            "records": final_records
+        }
+
+    return None
+
