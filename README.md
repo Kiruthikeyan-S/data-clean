@@ -1,6 +1,16 @@
-# DataFlow — Clean, Validated Structured Data Engine
+# DataFlow — Intelligent Unstructured Data & Multi-Entity Resolution Engine
 
-A modern, high-performance data processing engine and web application that converts structured, unstructured, and multi-entity business files into clean, standardized, and validated datasets with multi-format export support (JSON, CSV, Excel).
+A modern, dynamic unstructured and multi-file data processing engine that automatically extracts, cleans, identifies entities/schemas, normalizes, validates, and discovers relationships across diverse document types and formats into clean, standardized, database-ready outputs (JSON, CSV, Excel).
+
+---
+
+## 🎯 Problem & Solution Statement
+
+### ❌ Final Problem Statement
+> **Existing systems can extract text from unstructured files, but they often fail to automatically understand the data structure, identify separate records, determine appropriate fields, and convert the extracted information into a clean structured format. Fixed rules and predefined schemas are not flexible enough for documents with different layouts and wording.**
+
+### ✅ Final Solution Statement
+> **Develop a dynamic unstructured-data processing system that extracts content from files, cleans the extracted text, automatically identifies the entity and schema, separates individual records, maps values to standardized fields, normalizes and validates the data, and generates structured JSON, CSV, Excel, or database-ready output. This allows different types of unstructured data to be converted into a consistent table without manually defining the structure for every new document.**
 
 ---
 
