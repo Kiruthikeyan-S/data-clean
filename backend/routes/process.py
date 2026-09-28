@@ -393,22 +393,44 @@ async def export_pdf(task_id: str):
 
 def to_dataframe(res: ProcessResponse) -> pd.DataFrame:
     """Helper to convert result structured data or fields into a clean DataFrame."""
-    if res.classification == "structured" and isinstance(res.structured_data, list):
+    # Case 1: Structured list of records (tabular dataset)
+    if isinstance(res.structured_data, list) and len(res.structured_data) > 0:
         return pd.DataFrame(res.structured_data)
-    elif res.fields:
+    
+    # Case 2: Processed fields list
+    if res.fields and len(res.fields) > 0:
         rows = []
         for f in res.fields:
-            rows.append({
-                "Field": f.label,
-                "Value": f.value if f.value is not None else "",
-                "Raw Value": f.raw_value if f.raw_value is not None else "",
-                "Type": f.field_type
-            })
-        return pd.DataFrame(rows)
-    elif isinstance(res.structured_data, dict):
-        return pd.DataFrame([res.structured_data])
-    else:
-        return pd.DataFrame([{"data": "No structured content"}])
+            if f.value is not None and str(f.value).strip():
+                rows.append({
+                    "Field": f.label or f.key.replace("_", " ").title(),
+                    "Value": f.value,
+                    "Raw Value": f.raw_value if f.raw_value is not None else f.value,
+                    "Type": f.field_type or "text"
+                })
+        if rows:
+            return pd.DataFrame(rows)
+
+    # Case 3: Key-value dictionary
+    if isinstance(res.structured_data, dict) and len(res.structured_data) > 0:
+        rows = []
+        for k, v in res.structured_data.items():
+            if v is not None and str(v).strip():
+                rows.append({
+                    "Field": str(k).replace("_", " ").title(),
+                    "Value": v
+                })
+        if rows:
+            return pd.DataFrame(rows)
+
+    # Case 4: Raw text lines fallback
+    if res.raw_text and res.raw_text.strip():
+        lines = [l.strip() for l in res.raw_text.strip().splitlines() if l.strip()]
+        if lines:
+            return pd.DataFrame([{"Line": idx + 1, "Extracted Content": line} for idx, line in enumerate(lines)])
+
+    return pd.DataFrame([{"Content": "Empty file"}])
+
 
 
 def clean_base_name(filename: str) -> str:

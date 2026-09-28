@@ -406,6 +406,56 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     ))
                     mapped = map_to_schema(extracted_raw)
                     p_fields = [ProcessedField(**f) for f in mapped]
+
+                    # If no predefined domain fields matched, parse key-values or text content
+                    if not p_fields and cleaned_text.strip():
+                        lines = [l.strip() for l in cleaned_text.splitlines() if l.strip()]
+                        generic_fields = []
+                        for line in lines:
+                            if ":" in line:
+                                parts = line.split(":", 1)
+                                k = parts[0].strip().lower().replace(" ", "_")
+                                v = parts[1].strip()
+                                if k and v:
+                                    generic_fields.append({
+                                        "key": k,
+                                        "label": parts[0].strip().title(),
+                                        "value": v,
+                                        "raw_value": v,
+                                        "field_type": "text",
+                                        "confidence": 0.90,
+                                        "is_valid": True,
+                                        "error_message": None
+                                    })
+                            elif "=" in line:
+                                parts = line.split("=", 1)
+                                k = parts[0].strip().lower().replace(" ", "_")
+                                v = parts[1].strip()
+                                if k and v:
+                                    generic_fields.append({
+                                        "key": k,
+                                        "label": parts[0].strip().title(),
+                                        "value": v,
+                                        "raw_value": v,
+                                        "field_type": "text",
+                                        "confidence": 0.90,
+                                        "is_valid": True,
+                                        "error_message": None
+                                    })
+                        if generic_fields:
+                            p_fields = [ProcessedField(**f) for f in generic_fields]
+                        else:
+                            p_fields = [ProcessedField(
+                                key="text_content",
+                                label="Extracted Content",
+                                value=cleaned_text.strip(),
+                                raw_value=raw_text.strip() if raw_text else cleaned_text.strip(),
+                                field_type="text",
+                                confidence=0.90,
+                                is_valid=True,
+                                error_message=None
+                            )]
+
                     steps.append(StepStatus(
                         step_id="data_normalized",
                         name="Data normalized",
