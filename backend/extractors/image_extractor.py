@@ -1,13 +1,9 @@
 import io
-from typing import Dict, Any, List, Optional
+import cv2
 import numpy as np
 from PIL import Image
+from typing import Dict, Any, List, Optional
 from backend.extractors.vision_analyzer import analyze_visual_content
-
-try:
-    import cv2
-except Exception:
-    cv2 = None
 
 # Lazy load OCR engine
 _ocr_engine = None
@@ -36,17 +32,16 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
     Applies robust image decoding (OpenCV with PIL fallback) and preprocessing:
     - Decodes image via cv2.imdecode or PIL.Image.open
     - Converts to RGB/Grayscale
-    - Noise reduction if OpenCV available
+    - Noise reduction (bilateral filter)
     """
     img = None
     
-    # 1. Try OpenCV decode if available
-    if cv2 is not None:
-        try:
-            np_arr = np.frombuffer(image_bytes, np.uint8)
-            img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        except Exception:
-            img = None
+    # 1. Try OpenCV decode
+    try:
+        np_arr = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    except Exception:
+        img = None
 
     # 2. Fallback to PIL decode (handles CMYK, RGBA, WebP, progressive, etc.)
     if img is None:
@@ -55,28 +50,19 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
             if pil_img.mode != "RGB":
                 pil_img = pil_img.convert("RGB")
             img_np = np.array(pil_img)
-            if cv2 is not None:
-                img = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
-            else:
-                img = img_np
+            img = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
         except Exception as e:
             raise ValueError(f"Could not decode image format: {str(e)}")
 
     if img is None:
         raise ValueError("Could not decode image. Supported formats include PNG, JPG, JPEG, WEBP, BMP, TIFF.")
     
-    if cv2 is not None:
-        # Convert to grayscale & noise reduction
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        denoised = cv2.bilateralFilter(gray, 9, 75, 75)
-        return denoised
-    else:
-        # Pure Numpy grayscale conversion
-        if len(img.shape) == 3:
-            gray = (np.dot(img[..., :3], [0.2989, 0.5870, 0.1140])).astype(np.uint8)
-        else:
-            gray = img
-        return gray
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Noise reduction
+    denoised = cv2.bilateralFilter(gray, 9, 75, 75)
+    return denoised
 
 
 def extract_image(image_bytes: bytes) -> Dict[str, Any]:
