@@ -19,7 +19,12 @@ from backend.utils.file_detector import detect_file_type, classify_data_type
 from backend.extractors import extract_data
 from backend.cleaning.text_cleaner import clean_text_data
 from backend.cleaning.structured_cleaner import read_and_clean_structured_file
-from backend.cleaning.data_auditor import audit_structured_data, audit_unstructured_data
+from backend.cleaning.data_auditor import (
+    audit_structured_data, 
+    audit_unstructured_data, 
+    generate_data_profile, 
+    audit_12_fundamentals
+)
 from backend.extraction.field_extractor import (
     identify_fields,
     map_to_schema,
@@ -171,7 +176,11 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 change_highlights=metrics.get("change_highlights", []),
                 removed_samples=metrics.get("removed_samples", []),
                 categories=structured_categories,
-                quality_audit=metrics.get("quality_audit")
+                quality_audit=metrics.get("quality_audit"),
+                pre_cleaning_profile=metrics.get("pre_cleaning_profile"),
+                post_cleaning_profile=metrics.get("post_cleaning_profile"),
+                fundamentals_report=metrics.get("fundamentals_report"),
+                provenance_log=metrics.get("provenance_log")
             )
 
             steps.append(StepStatus(
@@ -360,6 +369,17 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     ),
                 ]
 
+                df_pre = pd.DataFrame(raw_records)
+                pre_prof = generate_data_profile(df_pre)
+                post_prof = generate_data_profile(df_audit)
+                fund_rep = audit_12_fundamentals(
+                    df_pre, 
+                    df_audit, 
+                    quality_audit=struct_audit, 
+                    pre_profile=pre_prof, 
+                    post_profile=post_prof
+                )
+
                 cleansing_report = CleansingReport(
                     initial_rows=len(records),
                     final_rows=len(records),
@@ -369,7 +389,10 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                         "Standardized dates to ISO 8601 and numbers to clean numeric values"
                     ],
                     categories=structured_categories,
-                    quality_audit=struct_audit
+                    quality_audit=struct_audit,
+                    pre_cleaning_profile=pre_prof,
+                    post_cleaning_profile=post_prof,
+                    fundamentals_report=fund_rep
                 )
 
             # Case B: Single-Record Document or Key-Value Fields

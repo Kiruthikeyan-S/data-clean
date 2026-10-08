@@ -336,11 +336,16 @@ def analyze_record_matching(
                 
             matched_fields, conflict_dict, confidence = compare_records(rec_a, rec_b, entity_type)
             
+            # Rule: If all matched fields are weak (e.g. city, state, country <= 0.30), block merging
             is_only_weak = all(get_field_weight(f) <= 0.30 for f in matched_fields)
-            if len(matched_fields) == 2 and is_only_weak:
+            if is_only_weak:
                 continue
-                
-            if len(matched_fields) >= 2:
+
+            # Allow match if >= 2 meaningful fields OR 1 verified strong unique identifier (phone, email, customer_id >= 0.85)
+            is_strong_single_id = len(matched_fields) == 1 and any(get_field_weight(f) >= 0.85 for f in matched_fields) and len(conflict_dict) == 0
+            is_multi_attribute_match = len(matched_fields) >= 2 and not is_only_weak
+
+            if is_multi_attribute_match or is_strong_single_id:
                 if len(conflict_dict) > 0:
                     conflicts.append(RecordMatchConflict(
                         conflict_id=f'conflict_{i}_{j}',

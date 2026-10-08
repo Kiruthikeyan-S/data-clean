@@ -216,9 +216,12 @@ export const ResultPage: React.FC<ResultPageProps> = ({
             </div>
           )}
 
-          {/* 6-Dimension Interactive Data Quality Inspector */}
-          {currentResult.cleansing_report?.quality_audit && (
-            <DataQualityInspector audit={currentResult.cleansing_report.quality_audit} />
+          {/* 12 Fundamentals & Data Quality Diagnostics Inspector */}
+          {currentResult.cleansing_report && (
+            <DataQualityInspector 
+              audit={currentResult.cleansing_report.quality_audit} 
+              cleansingReport={currentResult.cleansing_report}
+            />
           )}
 
           {/* Structured Result Table with Retained Records count */}

@@ -41,7 +41,7 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
     records_scanned: 0,
     relationships_found: 0,
     records_connected: 0,
-    average_confidence: 0.95
+    average_confidence: 0.0
   };
 
   const getRelationshipTypeLabel = (rel: RelationshipEdge) => {
@@ -245,8 +245,10 @@ export const RelationshipDashboard: React.FC<RelationshipDashboardProps> = ({
           <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70">
             <span className="text-[11px] font-semibold text-slate-500 block">Average Confidence</span>
             <div className="text-2xl font-black text-indigo-700 mt-1 flex items-baseline gap-1.5">
-              <span>{avgConfidence}%</span>
-              <span className="text-[10px] font-normal text-indigo-600 font-bold">accuracy</span>
+              <span>{summary.relationships_found > 0 ? `${avgConfidence}%` : 'N/A'}</span>
+              <span className="text-[10px] font-normal text-indigo-600 font-bold">
+                {summary.relationships_found > 0 ? 'accuracy' : 'no edges'}
+              </span>
             </div>
           </div>
         </div>

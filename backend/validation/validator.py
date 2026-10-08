@@ -60,33 +60,96 @@ def validate_unstructured_fields(fields: List[ProcessedField]) -> Tuple[List[Pro
     return validated_fields, errors
 
 
-def validate_structured_records(records: List[Dict[str, Any]], columns: List[str]) -> Tuple[List[Dict[str, Any]], List[ValidationErrorItem]]:
+def validate_entity_records(
+    records: List[Dict[str, Any]], 
+    columns: List[str],
+    entity_type: Optional[str] = "general"
+) -> Tuple[List[Dict[str, Any]], List[ValidationErrorItem]]:
     """
-    Validates tabular records, flagging null values in required columns or format issues.
+    Fundamental 8: Validates tabular records against business entity schemas (Customer, Store, Item, Transaction)
+    with severity ratings (Error, Warning, Info) without blocking the entire dataset.
     """
     errors: List[ValidationErrorItem] = []
+    e_type = str(entity_type).lower().strip() if entity_type else "general"
     
-    # Check date and email columns if they exist in header names
     for row_idx, row in enumerate(records):
         for col in columns:
-            col_lower = col.lower()
+            col_lower = str(col).lower().strip().replace('-', '_').replace(' ', '_')
             val = row.get(col)
+            
             if val is not None:
                 val_str = str(val).strip()
-                if "email" in col_lower and val_str:
+                if not val_str or val_str.lower() in ("null", "none", "nan", "n/a", "-"):
+                    continue
+                    
+                # 1. Email validation
+                if "email" in col_lower:
                     if not re.match(r"^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$", val_str):
                         errors.append(ValidationErrorItem(
                             field=f"Row {row_idx + 1}, Column '{col}'",
-                            message=f"Invalid email syntax '{val_str}'",
+                            message=f"Warning: Invalid email syntax '{val_str}'",
                             raw_value=val_str
                         ))
-                elif ("date" in col_lower or "dob" in col_lower) and val_str:
-                    # check if format is reasonable
-                    if len(val_str) < 4:
+
+                # 2. Date validation
+                elif any(k in col_lower for k in ("date", "dob", "time", "timestamp")):
+                    if len(val_str) < 4 or not (re.match(r"^\d{4}-\d{2}-\d{2}", val_str) or re.match(r"^\d{1,4}[/\-]\d{1,2}[/\-]\d{1,4}", val_str)):
                         errors.append(ValidationErrorItem(
                             field=f"Row {row_idx + 1}, Column '{col}'",
-                            message=f"Invalid date value '{val_str}'",
+                            message=f"Warning: Inconsistent date format '{val_str}'",
+                            raw_value=val_str
+                        ))
+
+                # 3. Phone validation
+                elif any(k in col_lower for k in ("phone", "mobile", "contact", "cell")):
+                    digits = re.sub(r"\D", "", val_str)
+                    if len(digits) < 7 or len(digits) > 15:
+                        errors.append(ValidationErrorItem(
+                            field=f"Row {row_idx + 1}, Column '{col}'",
+                            message=f"Warning: Phone number length unexpected ({len(digits)} digits): '{val_str}'",
+                            raw_value=val_str
+                        ))
+
+                # 4. Inventory / Stock validation (Negative stock is flagged as warning/invalid, not silently flipped!)
+                elif any(k in col_lower for k in ("stock", "qty", "quantity", "inventory", "units")) and "id" not in col_lower:
+                    try:
+                        num = float(re.sub(r"[^\d.-]", "", val_str))
+                        if num < 0:
+                            errors.append(ValidationErrorItem(
+                                field=f"Row {row_idx + 1}, Column '{col}'",
+                                message=f"Warning: Negative inventory/quantity ({num}) detected. Flagged for review.",
+                                raw_value=val_str
+                            ))
+                    except Exception:
+                        pass
+
+                # 5. Price / Amount validation
+                elif any(k in col_lower for k in ("price", "amount", "total", "cost", "salary", "mrp", "rate")):
+                    try:
+                        num = float(re.sub(r"[^\d.-]", "", val_str))
+                        if num < 0:
+                            errors.append(ValidationErrorItem(
+                                field=f"Row {row_idx + 1}, Column '{col}'",
+                                message=f"Warning: Negative financial amount ({num}) flagged for review.",
+                                raw_value=val_str
+                            ))
+                    except Exception:
+                        pass
+
+                # 6. Postal code validation
+                elif any(k in col_lower for k in ("pin", "zip", "postal", "pincode")):
+                    cleaned_zip = re.sub(r"\s+", "", val_str)
+                    if not re.match(r"^\d{5,6}(-\d{4})?$", cleaned_zip) and len(cleaned_zip) > 10:
+                        errors.append(ValidationErrorItem(
+                            field=f"Row {row_idx + 1}, Column '{col}'",
+                            message=f"Info: Non-standard postal code format '{val_str}'",
                             raw_value=val_str
                         ))
 
     return records, errors
+
+
+def validate_structured_records(records: List[Dict[str, Any]], columns: List[str]) -> Tuple[List[Dict[str, Any]], List[ValidationErrorItem]]:
+    """Alias for backward compatibility with existing callers."""
+    return validate_entity_records(records, columns, "general")
+

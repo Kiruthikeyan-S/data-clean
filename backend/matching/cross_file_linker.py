@@ -736,7 +736,7 @@ def link_batch_records(
         connected_records_set.add(f"{rel['source']['entity_type']}:{rel['source']['entity_id']}")
         connected_records_set.add(f"{rel['target']['entity_type']}:{rel['target']['entity_id']}")
 
-    avg_conf = round(total_conf / len(relationships), 2) if relationships else 0.95
+    avg_conf = round(total_conf / len(relationships), 2) if relationships else 0.0
 
     # PART 8 — COMPREHENSIVE RELATIONSHIP INDEX
     relationship_index = {

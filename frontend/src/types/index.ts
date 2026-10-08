@@ -113,6 +113,66 @@ export interface QualityAuditReport {
   record_matching?: RecordMatchingReport;
 }
 
+export interface DataProfileColumnStats {
+  name: string;
+  inferred_type: string;
+  total_count: number;
+  null_count: number;
+  null_percentage: number;
+  unique_count: number;
+  min_value?: any;
+  max_value?: any;
+  mean?: number;
+  median?: number;
+  std_dev?: number;
+  quartiles?: number[];
+  top_frequencies?: Record<string, number>;
+  invalid_count: number;
+  date_range?: { min?: string; max?: string };
+  inconsistent_count: number;
+}
+
+export interface DataProfile {
+  total_rows: number;
+  total_columns: number;
+  column_stats: Record<string, DataProfileColumnStats>;
+  exact_duplicates_count: number;
+  approximate_duplicates_count: number;
+  identified_entity_type?: string;
+  overall_completeness_percentage: number;
+}
+
+export interface ChangeProvenanceItem {
+  row_index: number;
+  column: string;
+  original_value?: any;
+  cleaned_value?: any;
+  operation: string;
+  reason: string;
+  provenance?: string;
+}
+
+export interface FundamentalReportItem {
+  id: string;
+  number: number;
+  title: string;
+  status: 'Passed' | 'Warning' | 'Needs Review' | 'Not Applicable' | string;
+  issues_detected: number;
+  actions_completed: number;
+  remaining_issues: number;
+  before_count?: number;
+  after_count?: number;
+  summary: string;
+  details: string[];
+}
+
+export interface DataCleaningFundamentalsReport {
+  fundamentals: FundamentalReportItem[];
+  total_actions_completed: number;
+  total_issues_detected: number;
+  overall_quality_status: 'Passed' | 'Warning' | 'Failed' | string;
+}
+
 export interface CleansingReport {
   initial_rows?: number;
   final_rows?: number;
@@ -125,6 +185,10 @@ export interface CleansingReport {
   removed_samples?: Array<Record<string, any>>;
   categories?: CleansingCategory[];
   quality_audit?: QualityAuditReport;
+  pre_cleaning_profile?: DataProfile;
+  post_cleaning_profile?: DataProfile;
+  fundamentals_report?: DataCleaningFundamentalsReport;
+  provenance_log?: ChangeProvenanceItem[];
 }
 
 export interface ProcessSummary {

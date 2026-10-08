@@ -107,6 +107,61 @@ class QualityAuditReport(BaseModel):
     total_rows: Optional[int] = None
     record_matching: Optional[RecordMatchingReport] = None
 
+class DataProfileColumnStats(BaseModel):
+    name: str
+    inferred_type: str
+    total_count: int
+    null_count: int
+    null_percentage: float
+    unique_count: int
+    min_value: Optional[Any] = None
+    max_value: Optional[Any] = None
+    mean: Optional[float] = None
+    median: Optional[float] = None
+    std_dev: Optional[float] = None
+    quartiles: Optional[List[float]] = None
+    top_frequencies: Optional[Dict[str, int]] = None
+    invalid_count: int = 0
+    date_range: Optional[Dict[str, str]] = None
+    inconsistent_count: int = 0
+
+class DataProfile(BaseModel):
+    total_rows: int
+    total_columns: int
+    column_stats: Dict[str, DataProfileColumnStats] = {}
+    exact_duplicates_count: int = 0
+    approximate_duplicates_count: int = 0
+    identified_entity_type: Optional[str] = "general"
+    overall_completeness_percentage: float = 100.0
+
+class ChangeProvenanceItem(BaseModel):
+    row_index: int
+    column: str
+    original_value: Optional[Any] = None
+    cleaned_value: Optional[Any] = None
+    operation: str  # e.g. "missing_normalization", "type_correction", "format_standardization", "text_cleaning", "inconsistency_mapping"
+    reason: str
+    provenance: Optional[str] = None  # e.g. "Rule: ISO 8601 Date Formatter", "Rule: Title Case", "Recovered from entity record"
+
+class FundamentalReportItem(BaseModel):
+    id: str  # "data_profiling", "missing_value_handling", "duplicate_removal", "data_type_correction", "format_standardization", "text_cleaning", "outlier_detection", "data_validation", "inconsistency_correction", "data_transformation", "entity_matching", "quality_verification"
+    number: int
+    title: str
+    status: str  # "Passed", "Warning", "Needs Review", "Not Applicable"
+    issues_detected: int = 0
+    actions_completed: int = 0
+    remaining_issues: int = 0
+    before_count: Optional[int] = None
+    after_count: Optional[int] = None
+    summary: str = ""
+    details: List[str] = []
+
+class DataCleaningFundamentalsReport(BaseModel):
+    fundamentals: List[FundamentalReportItem] = []
+    total_actions_completed: int = 0
+    total_issues_detected: int = 0
+    overall_quality_status: str = "Passed"
+
 class CleansingReport(BaseModel):
     initial_rows: Optional[int] = None
     final_rows: Optional[int] = None
@@ -119,6 +174,10 @@ class CleansingReport(BaseModel):
     removed_samples: Optional[List[Dict[str, Any]]] = None
     categories: List[CleansingCategory] = []
     quality_audit: Optional[QualityAuditReport] = None
+    pre_cleaning_profile: Optional[DataProfile] = None
+    post_cleaning_profile: Optional[DataProfile] = None
+    fundamentals_report: Optional[DataCleaningFundamentalsReport] = None
+    provenance_log: Optional[List[ChangeProvenanceItem]] = None
 
 class ProcessSummary(BaseModel):
     total_records: int = 1

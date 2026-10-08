@@ -2,11 +2,14 @@ import io
 import json
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
+from backend.cleaning.data_auditor import audit_structured_data, generate_data_profile, audit_12_fundamentals
+
 
 NULL_VALUES = {
     "n/a", "na", "null", "none", "nil", "undefined", "unknown", 
-    "-", "--", "nan", "nat", "#n/a", "#na", "null value"
+    "-", "--", "nan", "nat", "#n/a", "#na", "null value", "missing",
+    "not available", "n.a.", "n/d", "not applicable"
 }
 
 def clean_column_name(col: Any) -> str:
@@ -28,13 +31,17 @@ def safe_duplicated(df: pd.DataFrame, subset=None, keep: str = "first") -> pd.Se
         return str_df.duplicated(keep=keep)
 
 
-def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+def clean_structured_dataframe(
+    df: pd.DataFrame,
+    entity_type: Optional[str] = None
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Cleans a pandas DataFrame and tracks comprehensive cleansing metrics:
     1. Removes completely empty rows and columns.
-    2. Drops duplicate rows (and retains sample duplicate records).
-    3. Trims whitespace and normalizes null representations.
-    4. Generates an itemized change report.
+    2. Drops exact duplicate rows (except legitimate distinct transactions) and captures samples.
+    3. Trims whitespace and normalizes null representations without inventing data.
+    4. Preserves raw negative values (never silently mutates -50 to 50).
+    5. Generates an itemized change report and provenance log.
     """
     initial_rows, initial_cols = df.shape
     empty_rows_count = 0
@@ -42,6 +49,7 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
     nulls_normalized_count = 0
     whitespace_trimmed_count = 0
     change_highlights: List[str] = []
+    provenance_log: List[Dict[str, Any]] = []
     
     # 1. Clean column headers
     cleaned_cols = []
@@ -72,7 +80,7 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
         pass
 
     # 3. Cell-by-cell cleaning and metric tracking
-    def clean_cell_tracker(val: Any) -> Any:
+    def clean_cell_tracker(val: Any, r_idx: int, col_name: str) -> Any:
         nonlocal nulls_normalized_count, whitespace_trimmed_count
         if val is None:
             return None
@@ -91,8 +99,28 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
             v_strip = val.strip()
             if val != v_strip:
                 whitespace_trimmed_count += 1
+                if len(provenance_log) < 100:
+                    provenance_log.append({
+                        "row_index": r_idx + 1,
+                        "column": col_name,
+                        "original_value": val,
+                        "cleaned_value": v_strip,
+                        "operation": "whitespace_trimmed",
+                        "reason": "Trimmed leading/trailing whitespace",
+                        "provenance": "Rule: Whitespace Sanitizer"
+                    })
             if not v_strip or v_strip.lower() in NULL_VALUES:
                 nulls_normalized_count += 1
+                if len(provenance_log) < 100:
+                    provenance_log.append({
+                        "row_index": r_idx + 1,
+                        "column": col_name,
+                        "original_value": val,
+                        "cleaned_value": None,
+                        "operation": "missing_normalization",
+                        "reason": f"Standardized missing representation '{val}' to null",
+                        "provenance": "Rule: Missing Value Normalizer"
+                    })
                 return None
             return v_strip
         if isinstance(val, (np.generic, np.number)):
@@ -101,23 +129,14 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
             return val.item()
         return val
 
-    df = df.map(clean_cell_tracker)
-
-    # 3b. Sanitize negative numbers in positive-only inventory/quantity columns
-    for col in df.columns:
-        col_lower = str(col).lower()
-        if any(k in col_lower for k in ("stock", "qty", "quantity", "inventory", "units")):
-            def _clean_qty(v):
-                if v is None:
-                    return None
-                try:
-                    num = float(str(v).replace(",", "").strip())
-                    if num < 0:
-                        return abs(int(num)) if num.is_integer() else abs(num)
-                except Exception:
-                    pass
-                return v
-            df[col] = df[col].map(_clean_qty)
+    # Apply element-wise transformation while retaining row index and column name
+    cleaned_rows = []
+    for r_idx, row in df.iterrows():
+        new_row = {}
+        for col_name, val in row.items():
+            new_row[col_name] = clean_cell_tracker(val, r_idx, str(col_name))
+        cleaned_rows.append(new_row)
+    df = pd.DataFrame(cleaned_rows, columns=df.columns)
 
     # 4. Check for any rows that became completely empty after null normalization
     all_empty_after = df.isna().all(axis=1)
@@ -127,15 +146,16 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
         df = df[~all_empty_after].reset_index(drop=True)
 
     # 5. Deduplicate safely and capture duplicates count + sample
+    # Note: If entity is 'transaction', exact duplicate rows (all columns identical) are removed,
+    # but distinct transactions with different transaction_id / timestamps are preserved.
     dup_mask = safe_duplicated(df, keep="first")
     duplicates_count = int(dup_mask.sum())
     removed_samples = []
     if duplicates_count > 0:
-        # Capture up to 5 sample duplicate records
         sample_dups = df[dup_mask].head(5).replace({np.nan: None}).to_dict(orient="records")
         removed_samples = sample_dups
         df = df[~dup_mask].reset_index(drop=True)
-        change_highlights.append(f"Removed {duplicates_count} duplicate record(s)")
+        change_highlights.append(f"Removed {duplicates_count} exact duplicate record(s)")
 
     if whitespace_trimmed_count > 0:
         change_highlights.append(f"Trimmed leading/trailing whitespace in {whitespace_trimmed_count} cell(s)")
@@ -160,7 +180,8 @@ def clean_structured_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str
         "modifications_count": duplicates_count + empty_rows_count + nulls_normalized_count + whitespace_trimmed_count,
         "change_highlights": change_highlights,
         "removed_samples": removed_samples,
-        "column_names": list(df.columns)
+        "column_names": list(df.columns),
+        "provenance_log": provenance_log
     }
 
     return df, metrics
@@ -402,8 +423,26 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
     else:
         audit_report = audit_structured_data(original_raw_df, cleaned_df)
         metrics["quality_audit"] = audit_report
+
+    try:
+        pre_profile = generate_data_profile(original_raw_df)
+        post_profile = generate_data_profile(cleaned_df)
+        fundamentals_report = audit_12_fundamentals(
+            original_raw_df, 
+            cleaned_df, 
+            quality_audit=audit_report, 
+            pre_profile=pre_profile, 
+            post_profile=post_profile, 
+            cleansing_metrics=metrics
+        )
+        metrics["pre_cleaning_profile"] = pre_profile
+        metrics["post_cleaning_profile"] = post_profile
+        metrics["fundamentals_report"] = fundamentals_report
+    except Exception as prof_err:
+        print(f"Data profiling / fundamentals report generation warning: {prof_err}")
     
     records = cleaned_df.replace({np.nan: None}).to_dict(orient="records")
     columns = list(cleaned_df.columns)
     
     return records, columns, metrics
+
