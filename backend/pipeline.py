@@ -215,7 +215,11 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
             ))
 
             # Step 7: Validation
+            h_entity = metrics.get("hybrid_entity_type", "general")
             records, errors = validate_structured_records(records, cols)
+            if metrics.get("validation_errors"):
+                errors.extend(metrics["validation_errors"])
+                
             val_status = "completed" if not errors else "completed"
             steps.append(StepStatus(
                 step_id="data_validated",

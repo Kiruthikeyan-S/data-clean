@@ -5,7 +5,8 @@ import {
   ChevronRight,
   CheckCircle2,
   AlertCircle,
-  Table
+  Table,
+  FileText
 } from 'lucide-react';
 import { ProcessResponse } from '../types';
 
@@ -19,6 +20,8 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEntityTab, setSelectedEntityTab] = useState<number>(-1); // -1 = Full Combined
+
+  const [expandedRawRows, setExpandedRawRows] = useState<Record<number, boolean>>({});
 
   const isTabular = Array.isArray(result.structured_data);
   const splitTables = result.entity_info?.split_tables || [];
@@ -54,7 +57,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
   const processedColumns: string[] = useMemo(() => {
     if (activeTable) {
       const cols = activeTable.columns || (activeTable.records.length > 0 ? Object.keys(activeTable.records[0]) : []);
-      return cols.filter(c => !c.startsWith('_'));
+      return cols.filter(c => !c.startsWith('_') && c !== 'raw_text');
     }
     if (isTabular) {
       let candidateCols: string[] = [];
@@ -62,17 +65,17 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
         const colSet = new Set<string>();
         splitTables.forEach(t => {
           (t.columns || []).forEach(c => {
-            if (!c.startsWith('_')) colSet.add(c);
+            if (!c.startsWith('_') && c !== 'raw_text') colSet.add(c);
           });
         });
         if (colSet.size > 0) {
           candidateCols = Array.from(colSet);
         }
       } else {
-        candidateCols = (result.columns || []).filter(c => !c.startsWith('_'));
+        candidateCols = (result.columns || []).filter(c => !c.startsWith('_') && c !== 'raw_text');
       }
       if (candidateCols.length === 0 && processedRows.length > 0) {
-        candidateCols = Object.keys(processedRows[0]).filter(c => !c.startsWith('_'));
+        candidateCols = Object.keys(processedRows[0]).filter(c => !c.startsWith('_') && c !== 'raw_text');
       }
       const populatedCols = candidateCols.filter(col => {
         return processedRows.some(row => {
@@ -275,39 +278,75 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
                     </td>
                   </tr>
                 ) : (
-                  paginatedRows.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="px-4 py-3 text-xs text-center text-slate-400 font-mono">
-                        {(currentPage - 1) * PAGE_SIZE + idx + 1}
-                      </td>
-                      {isFullCombined && (
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
-                            <span>{row._entity_icon || '📁'}</span>
-                            <span>{row._entity_display || 'Record'}</span>
-                          </span>
-                        </td>
-                      )}
-                      {processedColumns.map(col => {
-                        const val = row[col];
-                        return (
-                          <td key={col} className="px-5 py-3 whitespace-nowrap text-xs text-slate-800">
-                            {val === null || val === undefined ? (
-                              <span className="text-slate-300 italic text-[11px]">null</span>
-                            ) : typeof val === 'boolean' ? (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                val ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
-                              }`}>
-                                {val ? 'true' : 'false'}
-                              </span>
-                            ) : (
-                              <span className="font-mono text-slate-900">{String(val)}</span>
-                            )}
+                  paginatedRows.map((row, idx) => {
+                    const rowGlobalIdx = (currentPage - 1) * PAGE_SIZE + idx;
+                    const isRawExpanded = !!expandedRawRows[rowGlobalIdx];
+
+                    return (
+                      <React.Fragment key={idx}>
+                        <tr className={`hover:bg-slate-50/70 transition-colors ${isRawExpanded ? 'bg-blue-50/30' : ''}`}>
+                          <td className="px-4 py-3 text-xs text-center text-slate-400 font-mono">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span>{rowGlobalIdx + 1}</span>
+                              {row.raw_text && (
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedRawRows(prev => ({ ...prev, [rowGlobalIdx]: !prev[rowGlobalIdx] }))}
+                                  title={isRawExpanded ? "Hide raw text narrative" : "View original raw text narrative"}
+                                  className={`p-0.5 rounded transition-colors ${
+                                    isRawExpanded ? 'bg-blue-100 text-blue-700' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <FileText className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </td>
-                        );
-                      })}
-                    </tr>
-                  ))
+                          {isFullCombined && (
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                                <span>{row._entity_icon || '📁'}</span>
+                                <span>{row._entity_display || 'Record'}</span>
+                              </span>
+                            </td>
+                          )}
+                          {processedColumns.map(col => {
+                            const val = row[col];
+                            return (
+                              <td key={col} className="px-5 py-3 whitespace-nowrap text-xs text-slate-800">
+                                {val === null || val === undefined ? (
+                                  <span className="text-slate-300 italic text-[11px]">null</span>
+                                ) : typeof val === 'boolean' ? (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                    val ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {val ? 'true' : 'false'}
+                                  </span>
+                                ) : (
+                                  <span className="font-mono text-slate-900">{String(val)}</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+
+                        {isRawExpanded && row.raw_text && (
+                          <tr className="bg-blue-50/50 border-b border-blue-100">
+                            <td colSpan={processedColumns.length + (isFullCombined ? 2 : 1)} className="px-6 py-2.5">
+                              <div className="flex items-start gap-2 text-xs text-slate-700">
+                                <span className="font-bold text-blue-900 shrink-0 text-[11px] uppercase tracking-wider bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200">
+                                  Raw Narrative
+                                </span>
+                                <span className="font-mono text-xs text-slate-800 leading-relaxed bg-white px-2.5 py-1 rounded border border-blue-200/70 w-full">
+                                  {String(row.raw_text)}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </tbody>
             </table>

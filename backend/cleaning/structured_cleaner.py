@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Tuple, Optional
 from backend.cleaning.data_auditor import audit_structured_data, generate_data_profile, audit_12_fundamentals
+from backend.extraction.hybrid_json_extractor import is_hybrid_json_dataset, process_hybrid_json
 
 
 NULL_VALUES = {
@@ -326,7 +327,27 @@ def read_and_clean_structured_file(file_type: str, file_bytes: bytes) -> Tuple[L
         
     # Keep copy of raw original dataframe before cleaning for quality auditing
     original_raw_df = df.copy()
-    cleaned_df, metrics = clean_structured_dataframe(df)
+
+    # Check for hybrid structured/unstructured dataset (e.g. JSON with ID and text narrative)
+    hybrid_errors: List[Any] = []
+    hybrid_extracted = False
+    hybrid_entity = None
+    try:
+        records_candidate = df.to_dict(orient="records")
+        if is_hybrid_json_dataset(records_candidate):
+            extracted_recs, ext_cols, hybrid_entity, hybrid_errors, h_highlights = process_hybrid_json(records_candidate)
+            if extracted_recs:
+                hybrid_extracted = True
+                df = pd.DataFrame(extracted_recs)
+    except Exception as h_err:
+        print(f"Hybrid JSON extraction warning: {h_err}")
+
+    cleaned_df, metrics = clean_structured_dataframe(df, entity_type=hybrid_entity)
+    if hybrid_extracted:
+        metrics["hybrid_extracted"] = True
+        metrics["hybrid_entity_type"] = hybrid_entity
+        metrics["validation_errors"] = hybrid_errors
+        metrics["change_highlights"].extend(h_highlights)
     
     # Run comprehensive quality audit
     from backend.cleaning.data_auditor import audit_structured_data

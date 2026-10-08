@@ -420,12 +420,14 @@ def build_cross_entity_relationships(
                 customers_by_email.setdefault(prim["email"], []).append(grec)
 
         elif dom == "store":
-            if "store_id" in foreign:
-                stores_by_id.setdefault(foreign["store_id"], []).append(grec)
+            s_id = prim.get("store_id") or foreign.get("store_id") or grec["record"].get("store_id") or grec["record"].get("id")
+            if s_id:
+                stores_by_id.setdefault(str(s_id).upper(), []).append(grec)
 
         elif dom == "product":
-            if "product_id" in foreign:
-                products_by_id.setdefault(foreign["product_id"], []).append(grec)
+            p_id = prim.get("product_id") or foreign.get("product_id") or grec["record"].get("item_id") or grec["record"].get("product_id") or grec["record"].get("id")
+            if p_id:
+                products_by_id.setdefault(str(p_id).upper(), []).append(grec)
 
         elif dom == "transaction":
             transactions.append(grec)
@@ -650,6 +652,31 @@ def build_cross_entity_relationships(
                     match_method="Direct Foreign Key",
                     matched_fields=["customer_id", "store_id"],
                     source_files=[crec["filename"], s_target["filename"]]
+                )
+
+    # Direct Store ↔ Product links (via seller_id / store_id in Item/Product records)
+    for p_id, p_list in products_by_id.items():
+        for grec in p_list:
+            p_rec = grec["record"]
+            p_name = p_rec.get("product_name") or p_rec.get("item_name") or p_id or "Product"
+            seller_id = p_rec.get("seller_id") or p_rec.get("store_id") or grec["typed_keys"]["foreign"].get("seller_id") or grec["typed_keys"]["foreign"].get("store_id")
+            
+            if seller_id and str(seller_id).upper() in stores_by_id:
+                s_targets = stores_by_id[str(seller_id).upper()]
+                s_target = s_targets[0]
+                s_name = s_target["record"].get("store_name") or s_target["typed_keys"]["descriptive"].get("store_name") or str(seller_id)
+                add_relationship(
+                    source_type="store",
+                    source_id=str(seller_id).upper(),
+                    source_name=s_name,
+                    target_type="product",
+                    target_id=str(p_id),
+                    target_name=p_name,
+                    rel_type="sold",
+                    confidence=0.98,
+                    match_method="Direct Seller ID Linkage",
+                    matched_fields=["seller_id", "store_id", "item_id"],
+                    source_files=[s_target["filename"], grec["filename"]]
                 )
 
     return relationships

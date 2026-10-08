@@ -32,6 +32,19 @@ def normalize_name(name_str: Optional[str]) -> Optional[str]:
     return " ".join(_capitalize_part(w) for w in words)
 
 
+def normalize_city(city_str: Optional[str]) -> Optional[str]:
+    """
+    Normalizes city names to Title Case.
+    Example: 'bengaluru' -> 'Bengaluru', 'NEW DELHI' -> 'New Delhi'
+    """
+    if not city_str or not isinstance(city_str, str):
+        return None
+    clean = " ".join(city_str.strip().split())
+    if not clean or clean.lower() in ("null", "none", "nan", "n/a", "unknown"):
+        return None
+    return " ".join(w.capitalize() for w in clean.split(" "))
+
+
 def normalize_date(date_val: Any) -> Optional[str]:
     """
     Parses various date formats into standard ISO 8601 string 'YYYY-MM-DD'.
