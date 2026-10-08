@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table, Users } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table, Users, ChevronDown, ChevronRight } from 'lucide-react';
 import { ProcessResponse, RelationshipIndexData } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
@@ -27,6 +27,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
   relationshipIndex
 }) => {
   const [activeView, setActiveView] = useState<'datasets' | 'relationships' | 'entity_matches'>('datasets');
+  const [isValidationExpanded, setIsValidationExpanded] = useState(false);
   const currentResult = results[activeIndex] || results[0];
   
   if (!currentResult) return null;
@@ -199,20 +200,65 @@ export const ResultPage: React.FC<ResultPageProps> = ({
             </div>
           )}
 
-          {/* Validation Warnings if any */}
+          {/* Validation Warnings Dropdown / Collapsible */}
           {currentResult.errors && currentResult.errors.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800">
-              <div className="flex items-center gap-2 font-semibold text-amber-900 mb-1">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span>Validation Warnings ({currentResult.errors.length})</span>
-              </div>
-              <ul className="list-disc list-inside space-y-0.5 text-amber-700 pl-1">
-                {currentResult.errors.map((err, idx) => (
-                  <li key={idx}>
-                    <span className="font-medium">{err.field}:</span> {err.message}
-                  </li>
-                ))}
-              </ul>
+            <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl overflow-hidden shadow-2xs transition-all">
+              <button
+                type="button"
+                onClick={() => setIsValidationExpanded(!isValidationExpanded)}
+                className="w-full flex items-center justify-between p-3.5 sm:px-4 text-left hover:bg-amber-100/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center border border-amber-300">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-amber-950">
+                        Validation Warnings ({currentResult.errors.length})
+                      </span>
+                      <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-amber-200/70 text-amber-900 border border-amber-300">
+                        {isValidationExpanded ? 'Expanded' : 'Click to View'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-800/80 mt-0.5">
+                      {isValidationExpanded 
+                        ? 'Items flagged for semantic review (all records preserved intact)'
+                        : `Flagged ${currentResult.errors.length} formatting / value warnings across records`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 text-xs font-semibold text-amber-900 bg-white/80 border border-amber-200 px-2.5 py-1 rounded-md shadow-2xs">
+                  <span>{isValidationExpanded ? 'Collapse' : 'Show Details'}</span>
+                  {isValidationExpanded ? (
+                    <ChevronDown className="w-3.5 h-3.5 text-amber-800" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5 text-amber-800" />
+                  )}
+                </div>
+              </button>
+
+              {isValidationExpanded && (
+                <div className="px-4 pb-4 pt-2 border-t border-amber-200/70 bg-amber-50/40">
+                  <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 divide-y divide-amber-100">
+                    {currentResult.errors.map((err, idx) => (
+                      <div key={idx} className="pt-1.5 first:pt-0 flex items-start gap-2 text-xs text-amber-900">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                        <div>
+                          <span className="font-semibold text-amber-950">{err.field}:</span>{' '}
+                          <span className="text-amber-800">{err.message}</span>
+                          {err.raw_value !== undefined && err.raw_value !== null && (
+                            <span className="ml-1.5 font-mono text-[10px] bg-white text-amber-900 px-1.5 py-0.2 rounded border border-amber-200">
+                              raw: {String(err.raw_value)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

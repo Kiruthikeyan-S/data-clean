@@ -91,14 +91,20 @@ def validate_entity_records(
                             raw_value=val_str
                         ))
 
-                # 2. Date validation
-                elif any(k in col_lower for k in ("date", "dob", "time", "timestamp")):
-                    if len(val_str) < 4 or not (re.match(r"^\d{4}-\d{2}-\d{2}", val_str) or re.match(r"^\d{1,4}[/\-]\d{1,2}[/\-]\d{1,4}", val_str)):
-                        errors.append(ValidationErrorItem(
-                            field=f"Row {row_idx + 1}, Column '{col}'",
-                            message=f"Warning: Inconsistent date format '{val_str}'",
-                            raw_value=val_str
-                        ))
+                # 2. Date validation (exclude numeric durations like prep_time_mins, wait_time, etc.)
+                elif any(k in col_lower for k in ("date", "dob", "birth", "timestamp", "datetime", "created_at", "updated_at")) or (
+                    "time" in col_lower and not any(d in col_lower for d in ("mins", "min", "sec", "second", "hour", "duration", "wait", "prep", "taken", "spent", "elapsed", "avg", "average"))
+                ):
+                    # Skip pure float/int values
+                    try:
+                        float(val_str)
+                    except ValueError:
+                        if len(val_str) < 4 or not (re.match(r"^\d{4}-\d{2}-\d{2}", val_str) or re.match(r"^\d{1,4}[/\-]\d{1,2}[/\-]\d{1,4}", val_str)):
+                            errors.append(ValidationErrorItem(
+                                field=f"Row {row_idx + 1}, Column '{col}'",
+                                message=f"Warning: Inconsistent date format '{val_str}'",
+                                raw_value=val_str
+                            ))
 
                 # 3. Phone validation
                 elif any(k in col_lower for k in ("phone", "mobile", "contact", "cell")):
