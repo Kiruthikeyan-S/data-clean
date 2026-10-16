@@ -1,33 +1,35 @@
-# DataFlow — Intelligent Unstructured Data & Multi-Entity Resolution Engine
+# DataFlow — AI-Powered Data Cleaning, Schema Normalization, Entity Matching & Data Quality Analysis
 
-DataFlow is an advanced, end-to-end data processing system and web application designed to automatically extract, clean, categorize, normalize, and resolve entities across diverse structured and unstructured document formats. It transforms heterogeneous raw files into standardized, database-ready tables and cross-file relationship graphs without requiring manual schema definitions.
+DataFlow is an advanced, end-to-end data engineering platform and web application designed to automatically extract, clean, profile, normalize, and resolve entities across diverse structured and unstructured document formats. It implements **all 12 fundamental data cleaning operations** and audits datasets against the **7 industry data quality dimensions** without requiring manual schema definitions.
 
 ---
 
 ## 🎯 Problem & Solution Statement
 
-### ❌ Final Problem Statement
+### ❌ Problem Statement
 > **Existing systems can extract text from unstructured files, but they often fail to automatically understand the data structure, identify separate records, determine appropriate fields, and convert the extracted information into a clean structured format. Fixed rules and predefined schemas are not flexible enough for documents with different layouts and wording.**
 
-### ✅ Final Solution Statement
+### ✅ Solution Statement
 > **Develop a dynamic unstructured-data processing system that extracts content from files, cleans the extracted text, automatically identifies the entity and schema, separates individual records, maps values to standardized fields, normalizes and validates the data, and generates structured JSON, CSV, Excel, or database-ready output. This allows different types of unstructured data to be converted into a consistent table without manually defining the structure for every new document.**
 
 ---
 
-## 🏗️ 1. Physical Architecture Overview
+## 🏗️ Architecture Overview
 
-The system architecture separates presentation, API routing, pipeline orchestration, multi-entity intelligence, and cloud AI extraction:
+The system architecture cleanly separates presentation, API routing, pipeline orchestration, multi-entity intelligence, and automated data cleaning fundamentals:
 
 ```mermaid
 graph TB
     subgraph Client_Layer ["1. Client & Presentation Layer (Frontend)"]
-        UI["React 19 + TypeScript + Vite SPA<br/>(Port: 5173 / 8000)"]
-        Tabs["3-Tab Results System:<br/>• 📊 Cleaned Datasets (Tables & 6 DQ Dimensions)<br/>• 🔗 Cross-Entity Relationships (Directed Edge Cards)<br/>• 👥 Same-Entity Matches (Identity Clusters)"]
+        UI["React 19 + TypeScript + Vite SPA<br/>(Port: 5173 / 8080)"]
+        Inspector["Data Quality & 12 Fundamentals Inspector:<br/>• 📜 12 Fundamentals (Execution Provenance)<br/>• 🎯 Quality Dimensions (7 Defect Audits)<br/>• 📊 Data Profiling (Pre/Post Statistics & Quartiles)"]
+        Tabs["3-View Results Navigation:<br/>• 🗂️ Cleaned Datasets (Tables & Expandable Raw Text)<br/>• 🕸️ Cross-Entity Relationships (Directed Edge Cards)<br/>• 👥 Same-Entity Matches (Identity Clusters)"]
+        UI --> Inspector
         UI --> Tabs
     end
 
     subgraph API_Gateway ["2. Network & API Gateway Layer"]
-        FastAPI["FastAPI Web Server<br/>(Uvicorn on Port: 8000)"]
+        FastAPI["FastAPI Web Server<br/>(Uvicorn on Port: 8080)"]
         Endpoints["REST Endpoints:<br/>• POST /api/process (Single File Pipeline)<br/>• POST /api/process-batch (Multi-File Linking)<br/>• POST /extract & GET /health (Universal Compatibility)<br/>• GET /api/batch/{batch_id}/export/{format}<br/>• GET /api/export/{task_id}/{format}"]
         FastAPI --> Endpoints
     end
@@ -38,6 +40,7 @@ graph TB
         subgraph Ingestion_Module ["File Ingestion & Detection"]
             FileDetector["utils/file_detector.py<br/>(MIME & Magic Header Sniffer)"]
             StructCleaner["cleaning/structured_cleaner.py<br/>(CSV, Multi-Collection JSON, Excel)"]
+            HybridJSON["extraction/hybrid_json_extractor.py<br/>(Hybrid Structured/Unstructured JSON Parser)"]
             TextCleaner["cleaning/text_cleaner.py<br/>(Unicode NFKC, Regex, Sanitizer)"]
         end
 
@@ -48,13 +51,15 @@ graph TB
             RuleExtract["extraction/field_extractor.py<br/>(Multi-Record & Delimiter Fallback Parser)"]
         end
 
-        subgraph Intelligence_Module ["Classification, Resolution & Normalization"]
+        subgraph Fundamentals_Engine ["12 Fundamentals & Data Intelligence"]
+            Auditor["cleaning/data_auditor.py<br/>(Pre/Post Profiling, Statistical Distribution, 7 Dimensions)"]
             Classifier["extraction/entity_classifier.py<br/>(3-Layer Heuristic & Value Pattern Analyzer)"]
+            Splitter["cleaning/entity_splitter.py<br/>(Mixed Entity Table De-normalization)"]
             Linker["matching/cross_file_linker.py<br/>(Same-Entity Union-Find & Directed Edges)"]
             Matcher["matching/record_matcher.py<br/>(Fuzzy Match & Inverted Hash Indexes)"]
-            Mapper["normalization/schema_mapper.py<br/>(Canonical Alias Merger)"]
-            Auditor["cleaning/data_auditor.py<br/>(6-Dimension DQ Auditor)"]
-            Validator["validation/validator.py<br/>(Semantic Pydantic Validation)"]
+            Mapper["normalization/schema_mapper.py<br/>(Canonical Alias Merger & RAG Schema Matcher)"]
+            Normalizer["normalization/normalizer.py & value_standardizer.py<br/>(ISO 8601 Dates, Phone E.164, Title Case)"]
+            Validator["validation/validator.py<br/>(Semantic Pydantic Validation & Conflict Detection)"]
         end
     end
 
@@ -67,163 +72,176 @@ graph TB
     Endpoints --> Pipeline
     Pipeline --> FileDetector
     Pipeline --> StructCleaner
+    Pipeline --> HybridJSON
     Pipeline --> DocExtract
     Pipeline --> VisionExtract
     DocExtract --> AIExtract
     DocExtract --> RuleExtract
     VisionExtract --> AIExtract
     AIExtract -->|Secure API Requests| GroqAPI
-    Pipeline --> Classifier
-    Pipeline --> Linker
-    Pipeline --> Matcher
-    Pipeline --> Mapper
     Pipeline --> Auditor
+    Pipeline --> Classifier
+    Pipeline --> Splitter
+    Pipeline --> Mapper
+    Pipeline --> Normalizer
     Pipeline --> Validator
+    Pipeline --> Matcher
+    Pipeline --> Linker
     Pipeline -->|JSON ProcessResponse| Endpoints
 ```
 
 ---
 
-## 🔄 2. End-to-End Processing Workflow
+## ⚡ The 12 Fundamental Data Cleaning Operations
 
-```mermaid
-flowchart TD
-    Start([User Uploads Single or Multiple Files]) --> DetectType[1. File Type Sniffing & MIME Detection]
-    
-    DetectType --> IsStruct{Is Structured or<br/>Unstructured?}
+Every dataset processed through DataFlow undergoes all 12 fundamental data cleaning operations with element-level change provenance tracking:
 
-    %% STRUCTURED PATH
-    IsStruct -->|Structured: CSV, Excel, JSON| CleanStruct[Clean Inconsistent Nulls, Whitespace & Deduplicate]
-    CleanStruct --> ClassifyFlat[2. 3-Layer Entity Classification<br/>• Keyword Weights<br/>• Value Pattern Regex<br/>• Co-Occurrence Rules]
-    
-    ClassifyFlat --> IsMixed{Is File Mixed or<br/>Single-Entity?}
-    
-    IsMixed -->|Mixed: Contains 2+ Entities| SplitFlat[Separate Columns into Tables:<br/>🏪 Store | 📦 Product | 👤 Customer | 🧾 Transaction]
-    SplitFlat --> DedupEntities[Deduplicate Master Entities<br/>& Preserve Transaction FKs]
-    DedupEntities --> MapSeparated[Map Each Table to Canonical Schema]
-
-    IsMixed -->|Single-Entity: 1 Entity Type| DirectMapping[Direct Canonical Schema Mapping<br/>• Merge Duplicate Aliases<br/>• Combine Name Parts<br/>• Extract City/State]
-    DirectMapping --> StandardizeSingle[Value Standardization<br/>• ISO 8601 Dates<br/>• Title Case Names<br/>• Clean Numbers]
-
-    %% UNSTRUCTURED PATH
-    IsStruct -->|Unstructured: PDF, DOCX, TXT, OCR Images, EML| ExtractRaw[Extract Raw Text & Computer Vision OCR]
-    ExtractRaw --> CleanUnicode[Clean Unicode NFKC & Strip Artifacts]
-    CleanUnicode --> CheckAI{Is LLM API Available?}
-    
-    CheckAI -->|Yes| BatchChunking[Batch into 10-Item Chunks / Document Synthesis]
-    BatchChunking --> FormatTable[Generate Standardized Records Table]
-    
-    CheckAI -->|No / Offline| RuleFallback[Rule-Based Multi-Record Delimiter Parser<br/>& Line-Level Field Extractor]
-    RuleFallback --> FormatTable
-
-    %% MULTI-FILE LINKING & RESOLUTION
-    MapSeparated --> MultiFileLinking[3. Cross-File Linking & Resolution Engine]
-    StandardizeSingle --> MultiFileLinking
-    FormatTable --> MultiFileLinking
-
-    MultiFileLinking --> SameDomain[Same-Domain Identity Resolution<br/>(Union-Find strictly scoped: Customer ↔ Customer)]
-    MultiFileLinking --> CrossDomain[Cross-Domain Relationship Linker<br/>(Directed Edges: Customer ──purchased──> Product)]
-
-    %% VALIDATION & AUDIT
-    SameDomain --> QualityAudit[4. 6-Dimension Quality Audit & Validation]
-    CrossDomain --> QualityAudit
-    
-    QualityAudit --> ResultsUI([Display in 3-Tab UI & Enable Multi-Sheet Export<br/>Excel / CSV / PDF / JSON])
-```
+| # | Fundamental | Implementation & Behavior |
+|:---:|---|---|
+| **1** | **Data Profiling** | Pre-cleaning and post-cleaning statistical distributions: total rows/cols, detected data types, null counts/percentages, unique value counts, min/max, mean ($\mu$), median ($M$), standard deviation ($\sigma$), quartiles ($Q_1, Q_2, Q_3$), and frequency distributions. |
+| **2** | **Missing Value Handling** | Configurable missing value standardization across `null`, `None`, `NaN`, `N/A`, `Missing`, and whitespace strings. Preserves structural nulls, applies verified constants or safe statistical imputations, and flags records requiring review. |
+| **3** | **Duplicate Removal** | Multi-level deduplication: exact duplicate row elimination, fuzzy duplicate identification via Levenshtein / Jaro-Winkler similarity, and foreign-key preservation for transaction records. |
+| **4** | **Data Type Correction** | Automatic inference and strict casting of numeric values, floating points, booleans, dates, timestamps, emails, and postal codes with fallback preservation of original unparseable text. |
+| **5** | **Format Standardization** | Standardizes dates to ISO 8601 (`YYYY-MM-DD`), names to Title Case (respecting particles and apostrophes like *O'Connor* and *McDonald*), phone numbers to international E.164, and currency values to clean numeric floats. |
+| **6** | **Text Cleaning** | Sanitizes text fields using Unicode NFKC normalization, strips non-printable control characters, trims extra whitespace, standardizes punctuation, and removes repeated consecutive phrases. |
+| **7** | **Outlier Detection** | Identifies numerical outliers using Interquartile Range ($1.5 \times \text{IQR}$) and Z-score thresholds ($\|z\| > 3.0$). Outliers are flagged for verification rather than destructively removed. |
+| **8** | **Data Validation** | Validates records against strict domain schemas (Store, Item, Customer, Transaction, Medical, Academic, Automotive). Flags outer vs. inner ID conflicts, invalid email syntax, negative prices, and anomalous future dates. |
+| **9** | **Inconsistency Correction** | Harmonizes casing variants (e.g. `USA`, `U.S.A.`, `United States`), standardizes status values (`active`, `pending`, `inactive`), and ensures conflicting field values are reconciled without data loss. |
+| **10** | **Data Transformation** | Canonical schema mapping with row-by-row alias coalescing (`first_name` + `last_name` $\rightarrow$ `full_name`), location parsing (`"Miami, FL"` $\rightarrow$ `city: Miami`, `state: FL`), and clear isolation between `selling_price` and `cost_price`. |
+| **11** | **Entity Matching** | Deterministic and probabilistic candidate matching across records using inverted token indexing, TF-IDF scoring, and Union-Find connected components to identify same-entity clusters. |
+| **12** | **Quality Verification & Provenance** | Computes pre/post quality improvement metrics across completeness, validity, uniqueness, and consistency, while recording an audit provenance log for every modification. |
 
 ---
 
-## 🛠️ Core Capabilities & Features
+## 🎯 The 7 Data Quality Dimensions
 
-### 1. 3-Tab Results Interface
-* **`[ 📊 Cleaned Datasets ]`**:
-  * Per-dataset tabular viewer with pagination and column-level sorting.
-  * Comprehensive **6-Dimension Data Quality Auditor**:
-    1. **Completeness**: Missing / null rate assessment.
-    2. **Validity**: Conformance to regex schemas (email, phone, dates).
-    3. **Uniqueness**: Exact and fuzzy duplicate count.
-    4. **Consistency**: Uniform data types across column values.
-    5. **Accuracy**: Out-of-bounds anomaly detection.
-    6. **Timeliness**: Valid timestamp and date verification.
-* **`[ 🔗 Relationships ]`**:
-  * Visual cards for individual directed relationships (`REL-0001`, `REL-0002`...).
-  * Clear connection representation: `Source Entity ──[PURCHASED / SOLD / AT]──> Target Entity`.
-  * Evidence tags (`✓ Customer Id`, `✓ Transaction Id`) and filterable chips by type and match method.
-* **`[ 👥 Entity Matches ]`**:
-  * Same-domain identity resolution clusters (e.g. matching `Customer A` in File 1 with `Customer B` in File 2 via phone, email, or customer ID).
-  * Strict domain isolation prevents cross-entity contamination.
+In addition to the 12 processing fundamentals, DataFlow audits datasets against the 7 industry standard data quality dimensions:
+
+1. **Missing Values**: Evaluates cell-level completeness and null percentage across each column.
+2. **Duplicates**: Detects exact duplicate records and approximate candidate duplicates.
+3. **Wrong Data Types**: Flags mismatches between detected semantic types and raw values.
+4. **Invalid Values**: Tests conformance to format rules (regex email, phone numbers, postal codes).
+5. **Outliers**: Highlights statistical anomalies beyond IQR and Z-score bounds.
+6. **Format Differences**: Identifies inconsistent date representations, casing irregularities, and currency symbols.
+7. **Record Matching**: Evaluates potential duplicate entities that may represent the same real-world identity.
 
 ---
 
-### 2. Multi-Record Unstructured Processing
-* **Dynamic Record Boundary Detection**: Automatically recognizes numbered lists, repeating profiles, horizontal line dividers, and paragraph blocks.
-* **Batch AI Extraction**: Chunks multi-record files into 10-item batches with `max_tokens=8192` to avoid truncation.
-* **Offline Delimiter Fallback**: Fully functional rule-based extractor segments unstructured multi-record text even without external APIs.
-* **Arbitrary Text & Code Handling**: Extracts generic key-values or structured line items from unformatted code and notes (e.g. `code 345`).
+## 📦 Hybrid Structured/Unstructured JSON Extraction
+
+DataFlow natively handles hybrid JSON datasets (such as `amazon_customers.json`, `amazon_items.json`, and `amazon_stores.json`) where records contain an authoritative primary identifier and an unstructured natural language `text` description:
+
+- **Entity Auto-Classification**: Distinguishes **Customer** (`C...`), **Item** (`I...`), and **Store** (`S...`) using multi-layered pattern recognition without relying solely on filename.
+- **Natural Language Parsing**: Extracts structured attributes from pipe-delimited strings (`cust=... | ph=... | id=...`), narrative prose (`Customer C302: Swetha Pillai from Bengaluru...`), parenthesis styles (`Kavitha Pillai (Avadi) id C301`), and hyphenated pricing statements (`Board game - Rs 915`).
+- **Conflict & Sanity Detection**: Compares outer JSON IDs against IDs referenced inside the narrative text (e.g., outer `I210` vs. inner `I209`), flagging mismatches without destructive replacement.
+- **Raw Text Preservation**: Retains the unparsed source string in an expandable row drawer within the Result Table for auditability.
+- **Cross-File Foreign Key Resolution**: Links Item `seller_id` (`S101`) to Store `store_id` (`S101`) via directed `sold` relationships while preventing false customer purchase assumptions.
 
 ---
 
-### 3. Canonical Schema Normalization
-* **Alias Merging**: Automatically consolidates multiple variations of the same attribute (`STORE_ID`, `id`, `store_id` $\rightarrow$ `store_id`).
-* **Name Combiner**: Merges split fields (`first_name`, `last_name`) into a canonical `full_name`.
-* **Price Isolation**: Separates wholesale `cost_price` from retail `selling_price`.
-* **Format Standardization**: Formats dates into ISO 8601 (`YYYY-MM-DD`), names into Title Case, and normalizes phone numbers and numbers.
+## 💻 3-View Results Interface
+
+1. **🗂️ Cleaned Datasets**:
+   - Tabular view with pagination, search, and sorting across all cleaned records.
+   - Expandable raw text view for hybrid and unstructured documents.
+   - Collapsible validation warnings dropdown with severity badges.
+   - Comprehensive pre-cleaning vs. post-cleaning statistical profiling tables.
+2. **🕸️ Relationships (Directed Edges)**:
+   - Visual graph cards for cross-entity connections (`Store ──[SOLD]──> Item`, `Customer ──[PURCHASED]──> Transaction`).
+   - Filterable by relationship type, source file, and match confidence.
+3. **👥 Entity Matches (Identity Resolution)**:
+   - Same-entity candidate clusters grouped using Union-Find connected components.
+   - Match evidence breakdown (shared phone, email, or identifier matches).
 
 ---
 
-## 🚀 How to Run the Application
+## 🚀 Getting Started
 
-### Option 1: Unified Single Command (Recommended)
-From the project root directory (`F:\data clean`):
+### Prerequisites
+
+- **Python**: 3.10 to 3.14
+- **Node.js**: v18+ and **npm**
+- **Git**
+
+### Installation
+
+1. **Clone the repository:**
+   ```powershell
+   git clone https://github.com/Kiruthikeyan-S/data-clean.git
+   cd data-clean
+   ```
+
+2. **Install Python backend dependencies:**
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+3. **Install and build frontend dependencies:**
+   ```powershell
+   cd frontend
+   npm install
+   npm run build
+   cd ..
+   ```
+
+4. **Configure environment variables (Optional for LLM features):**
+   Create a `.env` file in the root directory:
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   PORT=8080
+   HOST=127.0.0.1
+   ```
+
+---
+
+## 🏃 Running the Application
+
+### Option 1: Unified Server (Recommended)
+Runs FastAPI and automatically serves the built React frontend at port **8080**:
 ```powershell
 python run.py
 ```
-* Backend starts at **[http://localhost:8000](http://localhost:8000)**
-* Built frontend UI is automatically served at **[http://localhost:8000](http://localhost:8000)**
-* API Swagger Docs available at **[http://localhost:8000/docs](http://localhost:8000/docs)**
+- **Web Application:** [http://127.0.0.1:8080](http://127.0.0.1:8080)
+- **Interactive Swagger Docs:** [http://127.0.0.1:8080/docs](http://127.0.0.1:8080/docs)
+- **Custom Port:** `python run.py --port 9000` or `python run.py 9000`
 
----
-
-### Option 2: Running from Inside `backend/` Folder
-If your terminal is located in `F:\data clean\backend`:
+### Option 2: Frontend Development Mode (Hot-Reload)
 ```powershell
-python main.py
-```
-*or*
-```powershell
-python -m uvicorn main:app --reload --port 8000
-```
+# Terminal 1: Backend
+python run.py
 
----
-
-### Option 3: Running Frontend in Dev Mode (Hot-Reload)
-To develop or customize frontend components with live reload:
-```powershell
+# Terminal 2: Frontend Dev Server
 cd frontend
 npm run dev
 ```
-Open **[http://localhost:5173](http://localhost:5173)** (or **[http://localhost:5174](http://localhost:5174)**).
+Open [http://localhost:5173](http://localhost:5173).
 
 ---
 
 ## 🧪 Automated Testing Suite
 
-Run the test suite to verify all pipeline components:
+The repository includes a comprehensive automated test suite verifying all pipeline components:
 
 ```powershell
-# 1. Test All 8 Ingestion Formats (CSV, Excel, JSON, TXT, DOCX, EML, PDF, Image OCR)
+# 1. Test All 12 Fundamental Data Cleaning Operations
+python -m pytest test_12_fundamentals.py
+
+# 2. Test Hybrid JSON Extraction & Cross-File Linking
+python -m pytest test_hybrid_json_extraction.py
+
+# 3. Test All 8 Ingestion Formats (CSV, Excel, JSON, TXT, DOCX, EML, PDF, Image OCR)
 python test_all_formats.py
 
-# 2. Test Cross-File Relationships & Same-Entity Resolution
+# 4. Test Cross-File Relationship Linker
 python test_relationship_linker.py
 
-# 3. Test Entity Classifier & 3-Layer Matching
+# 5. Test 3-Layer Entity Classifier
 python test_entity_classifier.py
 
-# 4. Test Schema Mapping & Canonical Normalization
+# 6. Test Schema Mapper & Canonical Normalization
 python test_schema_mapping.py
 
-# 5. Test Multi-Entity Detection
+# 7. Test Multi-Entity Detection
 python test_multi_entity_detection.py
 ```
 
@@ -232,25 +250,25 @@ python test_multi_entity_detection.py
 ## 📡 REST API Reference
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
+|:---:|---|---|
 | `POST` | `/api/process` | Process a single uploaded file (CSV, Excel, JSON, PDF, TXT, DOCX, EML, Image). |
-| `POST` | `/api/process-batch` | Process multiple uploaded files simultaneously with cross-file linking & identity resolution. |
+| `POST` | `/api/process-batch` | Process multiple files simultaneously with cross-file linking, deduplication & entity resolution. |
 | `POST` | `/extract` or `/api/extract` | Universal extraction endpoint accepting multipart files or JSON/text payload. |
-| `GET` | `/health` or `/api/health` | Service health check. |
-| `GET` | `/api/export/{task_id}/{format}` | Export single dataset to `excel`, `csv`, `pdf`, or `json`. |
+| `GET` | `/health` or `/api/health` | Health check endpoint returning system status and version. |
+| `GET` | `/api/export/{task_id}/{format}` | Export processed dataset to `excel`, `csv`, `pdf`, or `json`. |
 | `GET` | `/api/batch/{batch_id}/export/{format}` | Export multi-file batch to multi-sheet `excel` or structured `json`. |
 | `POST` | `/api/rag/match` | Vector RAG lookup & deterministic matching for entity resolution. |
 
 ---
 
-## 📁 Project Structure
+## 📁 Repository Directory Structure
 
 ```
-data clean/
+data-clean/
 ├── backend/
 │   ├── cleaning/              # Structured cleaner, entity splitter, text cleaner, data auditor
 │   ├── extractors/            # Vision OCR, PDF, TXT, DOCX, Email extractors
-│   ├── extraction/            # AI batch extractor, 3-layer entity classifier, field extractor
+│   ├── extraction/            # Hybrid JSON extractor, AI batch extractor, entity classifier
 │   ├── matching/              # Cross-file linker, Union-Find identity resolver, record matcher
 │   ├── normalization/         # Canonical schema mapper, value standardizer, normalizer
 │   ├── models/                # Entity schemas & Pydantic response models
@@ -260,13 +278,20 @@ data clean/
 │   └── main.py                # FastAPI application entrypoint
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # RelationshipDashboard, EntityMatchesView, ResultTable, FileUpload, QualityInspector
+│   │   ├── components/        # DataQualityInspector, ResultTable, RelationshipDashboard, EntityMatchesView
 │   │   ├── pages/             # UploadPage, ProcessingPage, ResultPage
 │   │   ├── services/          # API service client
 │   │   └── types/             # TypeScript interfaces
 │   └── package.json
-├── run.py                     # Single-command application launcher
-├── test_all_formats.py        # Regression test suite for all 8 file formats
-├── test_relationship_linker.py # Test suite for cross-file linking & nested JSON
-└── README.md                  # Project documentation & architecture
+├── run.py                     # Single-command application launcher (Port 8080)
+├── test_12_fundamentals.py    # Regression tests for all 12 cleaning fundamentals
+├── test_hybrid_json_extraction.py # Tests for hybrid JSON extraction & linking
+├── test_all_formats.py        # Verification suite for all 8 supported file formats
+└── README.md                  # Project documentation & architecture guide
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
