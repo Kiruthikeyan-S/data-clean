@@ -426,7 +426,6 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                   <th className="px-4 py-3">Missing (Null %)</th>
                   <th className="px-4 py-3">Unique Values</th>
                   <th className="px-4 py-3">Min / Max</th>
-                  <th className="px-4 py-3">Mean / Median (Std)</th>
                   <th className="px-4 py-3">Quartiles (Q1, Q2, Q3)</th>
                 </tr>
               </thead>
@@ -460,15 +459,8 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                         {colStat.unique_count} distinct
                       </td>
                       <td className="px-4 py-2.5 text-slate-700 font-mono text-[11px]">
-                        {colStat.min_value !== undefined && colStat.max_value !== undefined ? (
+                        {colStat.min_value != null && colStat.max_value != null ? (
                           `${colStat.min_value} → ${colStat.max_value}`
-                        ) : (
-                          <span className="text-slate-400 italic">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 text-slate-700 font-mono text-[11px]">
-                        {colStat.mean !== undefined && colStat.median !== undefined ? (
-                          `μ=${colStat.mean} | M=${colStat.median} (σ=${colStat.std_dev || 0})`
                         ) : (
                           <span className="text-slate-400 italic">—</span>
                         )}

@@ -98,7 +98,7 @@ Every dataset processed through DataFlow undergoes all 12 fundamental data clean
 
 | # | Fundamental | Implementation & Behavior |
 |:---:|---|---|
-| **1** | **Data Profiling** | Pre-cleaning and post-cleaning statistical distributions: total rows/cols, detected data types, null counts/percentages, unique value counts, min/max, mean ($\mu$), median ($M$), standard deviation ($\sigma$), quartiles ($Q_1, Q_2, Q_3$), and frequency distributions. |
+| **1** | **Data Profiling** | Pre-cleaning and post-cleaning statistical distributions: total rows/cols, detected data types, null counts/percentages, unique value counts, min/max, quartiles ($Q_1, Q_2, Q_3$), and frequency distributions. |
 | **2** | **Missing Value Handling** | Configurable missing value standardization across `null`, `None`, `NaN`, `N/A`, `Missing`, and whitespace strings. Preserves structural nulls, applies verified constants or safe statistical imputations, and flags records requiring review. |
 | **3** | **Duplicate Removal** | Multi-level deduplication: exact duplicate row elimination, fuzzy duplicate identification via Levenshtein / Jaro-Winkler similarity, and foreign-key preservation for transaction records. |
 | **4** | **Data Type Correction** | Automatic inference and strict casting of numeric values, floating points, booleans, dates, timestamps, emails, and postal codes with fallback preservation of original unparseable text. |

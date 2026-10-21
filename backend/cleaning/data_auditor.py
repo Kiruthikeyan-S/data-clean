@@ -780,9 +780,6 @@ def generate_data_profile(df: pd.DataFrame, entity_type: Optional[str] = "genera
         
         min_val = None
         max_val = None
-        mean_val = None
-        median_val = None
-        std_val = None
         quartiles_list = None
         top_freqs = None
         date_range_dict = None
@@ -801,9 +798,6 @@ def generate_data_profile(df: pd.DataFrame, entity_type: Optional[str] = "genera
                 num_series = pd.Series(numeric_cleaned)
                 min_val = float(num_series.min())
                 max_val = float(num_series.max())
-                mean_val = round(float(num_series.mean()), 2)
-                median_val = round(float(num_series.median()), 2)
-                std_val = round(float(num_series.std()), 2) if len(num_series) > 1 else 0.0
                 quartiles_list = [
                     round(float(num_series.quantile(0.25)), 2),
                     round(float(num_series.quantile(0.50)), 2),
@@ -837,9 +831,6 @@ def generate_data_profile(df: pd.DataFrame, entity_type: Optional[str] = "genera
             unique_count=unique_cnt,
             min_value=min_val,
             max_value=max_val,
-            mean=mean_val,
-            median=median_val,
-            std_dev=std_val,
             quartiles=quartiles_list,
             top_frequencies=top_freqs,
             invalid_count=0,
