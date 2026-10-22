@@ -733,8 +733,12 @@ def infer_column_type(series: pd.Series, col_name: str) -> str:
             return "integer"
         return "float"
         
-    if len(set(non_null)) < 15 and len(non_null) > 30:
-        return "categorical"
+    # Check categorical by cardinality
+    try:
+        if len(set(non_null.astype(str))) < 15 and len(non_null) > 30:
+            return "categorical"
+    except Exception:
+        pass
         
     return "string"
 
@@ -776,7 +780,10 @@ def generate_data_profile(df: pd.DataFrame, entity_type: Optional[str] = "genera
         
         # Non-null values for statistics
         valid_vals = series[~null_mask]
-        unique_cnt = int(valid_vals.nunique()) if len(valid_vals) > 0 else 0
+        try:
+            unique_cnt = int(valid_vals.nunique()) if len(valid_vals) > 0 else 0
+        except TypeError:
+            unique_cnt = int(valid_vals.astype(str).nunique()) if len(valid_vals) > 0 else 0
         
         min_val = None
         max_val = None
