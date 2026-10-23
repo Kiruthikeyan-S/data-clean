@@ -475,11 +475,14 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {Object.entries(
-                  (profileViewMode === 'pre' ? preProfile : (postProfile || preProfile))?.column_stats || {}
-                ).map(([colName, activeStat]) => {
+                  (profileViewMode === 'pre'
+                    ? preProfile?.column_stats
+                    : profileViewMode === 'post'
+                    ? (postProfile?.column_stats || preProfile?.column_stats)
+                    : (postProfile?.column_stats || preProfile?.column_stats)) || {}
+                ).map(([colName, colStat]) => {
                   const preStat = preProfile?.column_stats?.[colName];
                   const postStat = postProfile?.column_stats?.[colName];
-                  const colStat = profileViewMode === 'pre' ? (preStat || activeStat) : (postStat || activeStat);
 
                   return (
                     <tr key={colName} className="hover:bg-slate-50/80 transition-colors">
@@ -487,7 +490,13 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                         {colName}
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-800 border border-blue-200">
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                          profileViewMode === 'pre'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : profileViewMode === 'post'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-blue-50 text-blue-800 border-blue-200'
+                        }`}>
                           {colStat.inferred_type}
                         </span>
                       </td>

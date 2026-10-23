@@ -836,6 +836,11 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                                 cleansing_report.change_highlights.extend(map_highlights)
                                 cleansing_report.change_highlights.extend(val_highlights)
                                 cleansing_report.modifications_count += total_schema_mods
+                                # Re-generate post-cleaning profile with standardized canonical columns and values
+                                try:
+                                    cleansing_report.post_cleaning_profile = generate_data_profile(std_df, entity_type=entity_result.file_type)
+                                except Exception as post_prof_err:
+                                    print(f"Post-cleaning profile update warning: {post_prof_err}")
 
                             steps.append(StepStatus(
                                 step_id="schema_standardized",
