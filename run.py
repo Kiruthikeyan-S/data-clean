@@ -4,8 +4,15 @@ Starts the backend FastAPI server which serves both the API endpoints and the bu
 """
 import os
 import sys
+from pathlib import Path
 import argparse
 import uvicorn
+
+# Ensure the project root directory is always on sys.path and is current working directory
+PROJECT_ROOT = Path(__file__).resolve().parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+os.chdir(PROJECT_ROOT)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DataFlow Server Runner")

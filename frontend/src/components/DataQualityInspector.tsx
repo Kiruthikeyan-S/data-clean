@@ -383,8 +383,14 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-500 block">Total Rows Profiled</span>
               <div className="text-xl font-bold text-slate-900 mt-0.5 flex items-center gap-2">
-                <span>{preProfile?.total_rows || postProfile?.total_rows || 0}</span>
-                {preProfile && postProfile && preProfile.total_rows !== postProfile.total_rows && (
+                <span>
+                  {profileViewMode === 'pre'
+                    ? (preProfile?.total_rows ?? 0)
+                    : profileViewMode === 'post'
+                    ? (postProfile?.total_rows ?? 0)
+                    : (preProfile?.total_rows || postProfile?.total_rows || 0)}
+                </span>
+                {profileViewMode === 'comparison' && preProfile && postProfile && preProfile.total_rows !== postProfile.total_rows && (
                   <span className="text-xs font-normal text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
                     → {postProfile.total_rows}
                   </span>
@@ -395,23 +401,37 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-500 block">Total Columns</span>
               <div className="text-xl font-bold text-slate-900 mt-0.5">
-                {preProfile?.total_columns || postProfile?.total_columns || 0}
+                {profileViewMode === 'pre'
+                  ? (preProfile?.total_columns ?? 0)
+                  : profileViewMode === 'post'
+                  ? (postProfile?.total_columns ?? 0)
+                  : (postProfile?.total_columns || preProfile?.total_columns || 0)}
               </div>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-500 block">Duplicates (Exact / Approx)</span>
               <div className="text-xl font-bold text-slate-900 mt-0.5 flex items-center gap-1.5">
-                <span className="text-amber-700">{preProfile?.exact_duplicates_count || 0}</span>
+                <span className="text-amber-700">
+                  {profileViewMode === 'post'
+                    ? (postProfile?.exact_duplicates_count ?? 0)
+                    : (preProfile?.exact_duplicates_count ?? 0)}
+                </span>
                 <span className="text-slate-400 font-normal text-xs">/</span>
-                <span className="text-blue-700">{preProfile?.approximate_duplicates_count || 0}</span>
+                <span className="text-blue-700">
+                  {profileViewMode === 'post'
+                    ? (postProfile?.approximate_duplicates_count ?? 0)
+                    : (preProfile?.approximate_duplicates_count ?? 0)}
+                </span>
               </div>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-500 block">Completeness Score</span>
               <div className="text-xl font-bold text-emerald-700 mt-0.5">
-                {postProfile?.overall_completeness_percentage || preProfile?.overall_completeness_percentage || 100}%
+                {profileViewMode === 'pre'
+                  ? (preProfile?.overall_completeness_percentage ?? 100)
+                  : (postProfile?.overall_completeness_percentage ?? preProfile?.overall_completeness_percentage ?? 100)}%
               </div>
             </div>
           </div>
@@ -430,8 +450,12 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
-                {Object.entries((postProfile || preProfile)?.column_stats || {}).map(([colName, colStat]) => {
+                {Object.entries(
+                  (profileViewMode === 'pre' ? preProfile : (postProfile || preProfile))?.column_stats || {}
+                ).map(([colName, activeStat]) => {
                   const preStat = preProfile?.column_stats?.[colName];
+                  const postStat = postProfile?.column_stats?.[colName];
+                  const colStat = profileViewMode === 'pre' ? (preStat || activeStat) : (postStat || activeStat);
 
                   return (
                     <tr key={colName} className="hover:bg-slate-50/80 transition-colors">
@@ -448,7 +472,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                           <span className={`font-semibold ${colStat.null_count > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
                             {colStat.null_count} ({colStat.null_percentage}%)
                           </span>
-                          {preStat && preStat.null_count !== colStat.null_count && (
+                          {profileViewMode === 'comparison' && preStat && postStat && preStat.null_count !== postStat.null_count && (
                             <span className="text-[10px] text-slate-400">
                               (was {preStat.null_count})
                             </span>
@@ -457,6 +481,11 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                       </td>
                       <td className="px-4 py-2.5 text-slate-700">
                         {colStat.unique_count} distinct
+                        {profileViewMode === 'comparison' && preStat && postStat && preStat.unique_count !== postStat.unique_count && (
+                          <span className="text-[10px] text-slate-400 ml-1">
+                            (was {preStat.unique_count})
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-2.5 text-slate-700 font-mono text-[11px]">
                         {colStat.min_value != null && colStat.max_value != null ? (
