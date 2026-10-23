@@ -337,43 +337,67 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
          ───────────────────────────────────────────────────────────── */}
       {activeTab === 'profile' && (preProfile || postProfile) && (
         <div className="p-5 sm:p-6 space-y-5">
-          {/* Profiling Overview Banner */}
+          {/* View Mode Toggle & Mode Indicator Banner */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
             <div>
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
-                <span>Dataset Profile & Statistical Distribution</span>
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Pre-cleaning baseline vs post-cleaning validation metrics across all columns.
+                <h4 className="text-sm font-bold text-slate-900">
+                  {profileViewMode === 'comparison' && 'Side-by-Side Comparison (Before vs After Cleaning)'}
+                  {profileViewMode === 'pre' && 'Pre-Cleaning Profile (Raw Untouched Data)'}
+                  {profileViewMode === 'post' && 'Post-Cleaning Profile (Clean Normalized Data)'}
+                </h4>
+                <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${
+                  profileViewMode === 'pre'
+                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                    : profileViewMode === 'post'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-blue-100 text-blue-800 border border-blue-300'
+                }`}>
+                  {profileViewMode === 'pre' ? 'Raw / Before' : profileViewMode === 'post' ? 'Clean / After' : 'Comparison'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {profileViewMode === 'pre' && 'Displaying metrics for the raw dataset before any deduplication or formatting.'}
+                {profileViewMode === 'post' && 'Displaying metrics for the final sanitized, deduplicated, and validated dataset.'}
+                {profileViewMode === 'comparison' && 'Displaying side-by-side verification comparing baseline raw values against clean outputs.'}
               </p>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg border border-slate-200 self-start sm:self-auto text-xs font-semibold">
+            {/* View Mode Toggle Buttons */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200 self-start sm:self-auto text-xs font-semibold">
               <button
+                type="button"
                 onClick={() => setProfileViewMode('comparison')}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  profileViewMode === 'comparison' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600'
+                className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                  profileViewMode === 'comparison'
+                    ? 'bg-blue-600 text-white shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
               >
-                Side-by-Side Comparison
+                <span>Side-by-Side</span>
               </button>
               <button
+                type="button"
                 onClick={() => setProfileViewMode('pre')}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  profileViewMode === 'pre' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600'
+                className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                  profileViewMode === 'pre'
+                    ? 'bg-amber-600 text-white shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
               >
-                Pre-Cleaning Profile
+                <span>Pre-Cleaning (Before)</span>
               </button>
               <button
+                type="button"
                 onClick={() => setProfileViewMode('post')}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  profileViewMode === 'post' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600'
+                className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                  profileViewMode === 'post'
+                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
               >
-                Post-Cleaning Profile
+                <span>Post-Cleaning (After)</span>
               </button>
             </div>
           </div>
