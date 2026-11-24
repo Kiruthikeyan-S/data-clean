@@ -14,6 +14,7 @@ interface ResultPageProps {
   activeIndex: number;
   onSelectIndex: (index: number) => void;
   onReset: () => void;
+  onReviewSteps?: () => void;
   batchId?: string;
   relationshipIndex?: RelationshipIndexData;
 }
@@ -23,6 +24,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
   activeIndex,
   onSelectIndex,
   onReset,
+  onReviewSteps,
   batchId,
   relationshipIndex
 }) => {
@@ -40,14 +42,26 @@ export const ResultPage: React.FC<ResultPageProps> = ({
     <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-[1700px] mx-auto space-y-6 w-full">
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
-        <button
-          type="button"
-          onClick={onReset}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-300 hover:bg-slate-50 px-3 py-1.5 rounded-md transition-colors w-fit shadow-2xs"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Upload More Files</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-300 hover:bg-slate-50 px-3 py-1.5 rounded-md transition-colors w-fit shadow-2xs"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Upload More Files</span>
+          </button>
+
+          {onReviewSteps && (
+            <button
+              type="button"
+              onClick={onReviewSteps}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-md transition-colors w-fit shadow-2xs"
+            >
+              <span>← Review Pipeline Steps (1 to 8)</span>
+            </button>
+          )}
+        </div>
 
         {activeView === 'datasets' && (
           <ExportButtons taskId={currentResult.id} currentResult={currentResult} />

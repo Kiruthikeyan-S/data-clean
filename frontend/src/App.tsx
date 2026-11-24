@@ -3,12 +3,13 @@ import { Header } from './components/Header';
 import { UploadPage } from './pages/UploadPage';
 import { ProcessingPage } from './pages/ProcessingPage';
 import { ResultPage } from './pages/ResultPage';
+import { PipelineStepWalkthroughPage } from './pages/PipelineStepWalkthroughPage';
 import { ErrorMessage } from './components/ErrorMessage';
 import { ProcessResponse, StepStatus } from './types';
 import { processFile, processBatchFiles } from './services/api';
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'upload' | 'processing' | 'result'>('upload');
+  const [currentPage, setCurrentPage] = useState<'upload' | 'processing' | 'pipeline_steps' | 'result'>('upload');
   
   const [currentFileName, setCurrentFileName] = useState<string>('Files');
   const [steps, setSteps] = useState<StepStatus[]>([]);
@@ -62,8 +63,9 @@ export const App: React.FC = () => {
         }
       }
 
+      // Transition to interactive Step-by-Step Preview after processing completes
       setTimeout(() => {
-        setCurrentPage('result');
+        setCurrentPage('pipeline_steps');
       }, 400);
 
     } catch (err: any) {
@@ -111,12 +113,23 @@ export const App: React.FC = () => {
           />
         )}
 
+        {currentPage === 'pipeline_steps' && results.length > 0 && (
+          <PipelineStepWalkthroughPage
+            results={results}
+            activeResultIndex={activeResultIndex}
+            onSelectResultIndex={(idx) => setActiveResultIndex(idx)}
+            onProceedToResult={() => setCurrentPage('result')}
+            onUploadNew={handleReset}
+          />
+        )}
+
         {currentPage === 'result' && results.length > 0 && (
           <ResultPage
             results={results}
             activeIndex={activeResultIndex}
             onSelectIndex={(idx) => setActiveResultIndex(idx)}
             onReset={handleReset}
+            onReviewSteps={() => setCurrentPage('pipeline_steps')}
             batchId={batchId}
             relationshipIndex={relationshipIndex}
           />
