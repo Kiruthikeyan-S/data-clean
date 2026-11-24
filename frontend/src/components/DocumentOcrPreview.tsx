@@ -28,6 +28,7 @@ interface DocumentOcrPreviewProps {
   file?: File;
   onProceedToCleanedDataset: () => void;
   onUploadNew: () => void;
+  onViewWalkthrough?: () => void;
 }
 
 export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
@@ -35,6 +36,7 @@ export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
   file,
   onProceedToCleanedDataset,
   onUploadNew,
+  onViewWalkthrough,
 }) => {
   const [activeTab, setActiveTab] = useState<'kvp' | 'table' | 'entity' | 'ocr'>('kvp');
   const [filterText, setFilterText] = useState<string>('');
@@ -200,6 +202,18 @@ export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
 
         {/* Right Action Buttons */}
         <div className="flex items-center space-x-2.5">
+          {onViewWalkthrough && (
+            <button
+              type="button"
+              onClick={onViewWalkthrough}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded shadow-2xs transition"
+              title="View Step-by-Step Pipeline Walkthrough"
+            >
+              <Layers className="w-3.5 h-3.5 text-blue-600" />
+              <span>STEP PREVIEW</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onUploadNew}

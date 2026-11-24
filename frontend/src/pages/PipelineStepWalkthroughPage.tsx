@@ -25,6 +25,7 @@ interface PipelineStepWalkthroughPageProps {
   onSelectResultIndex: (index: number) => void;
   onProceedToResult: () => void;
   onUploadNew: () => void;
+  onViewOcr?: () => void;
 }
 
 interface StepMeta {
@@ -52,6 +53,7 @@ export const PipelineStepWalkthroughPage: React.FC<PipelineStepWalkthroughPagePr
   onSelectResultIndex,
   onProceedToResult,
   onUploadNew,
+  onViewOcr,
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [extractionTab, setExtractionTab] = useState<'key_value' | 'raw_table' | 'ocr_text'>('key_value');
@@ -123,6 +125,18 @@ export const PipelineStepWalkthroughPage: React.FC<PipelineStepWalkthroughPagePr
 
         {/* Right CTA: Proceed to Cleaned Dataset */}
         <div className="flex items-center gap-2">
+          {onViewOcr && (
+            <button
+              type="button"
+              onClick={onViewOcr}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition shadow-2xs"
+              title="View Form Parser Document OCR Analysis"
+            >
+              <Scan className="w-3.5 h-3.5 text-blue-600" />
+              <span>Form Parser (OCR)</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onProceedToResult}

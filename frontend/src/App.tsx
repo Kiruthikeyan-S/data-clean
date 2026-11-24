@@ -4,12 +4,13 @@ import { UploadPage } from './pages/UploadPage';
 import { ProcessingPage } from './pages/ProcessingPage';
 import { ResultPage } from './pages/ResultPage';
 import { DocumentOcrPreview } from './components/DocumentOcrPreview';
+import { PipelineStepWalkthroughPage } from './pages/PipelineStepWalkthroughPage';
 import { ErrorMessage } from './components/ErrorMessage';
 import { ProcessResponse, StepStatus } from './types';
 import { processFile, processBatchFiles } from './services/api';
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'upload' | 'processing' | 'ocr_preview' | 'result'>('upload');
+  const [currentPage, setCurrentPage] = useState<'upload' | 'processing' | 'ocr_preview' | 'walkthrough' | 'result'>('upload');
   
   const [currentFileName, setCurrentFileName] = useState<string>('Files');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -122,6 +123,18 @@ export const App: React.FC = () => {
             file={uploadedFiles[activeResultIndex] || uploadedFiles[0]}
             onProceedToCleanedDataset={() => setCurrentPage('result')}
             onUploadNew={handleReset}
+            onViewWalkthrough={() => setCurrentPage('walkthrough')}
+          />
+        )}
+
+        {currentPage === 'walkthrough' && results.length > 0 && (
+          <PipelineStepWalkthroughPage
+            results={results}
+            activeResultIndex={activeResultIndex}
+            onSelectResultIndex={(idx) => setActiveResultIndex(idx)}
+            onProceedToResult={() => setCurrentPage('result')}
+            onUploadNew={handleReset}
+            onViewOcr={() => setCurrentPage('ocr_preview')}
           />
         )}
 

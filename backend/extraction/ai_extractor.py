@@ -194,6 +194,22 @@ def _extract_batch_chunk(
     Reconciles expected_count vs extracted_count, tracks batch status, retries incomplete chunks,
     and returns a structured batch result.
     """
+    # Detect chunk document domain to supply schema-appropriate prompt instructions
+    lower_batch = batch_text.lower()
+    if "tc-" in lower_batch or "test case" in lower_batch or "verification report" in lower_batch:
+        example_cols = ["test_case_id", "category", "description", "input_data", "expected_result", "actual_result", "execution_time", "status"]
+        example_record = {"test_case_id": "TC-001", "category": "Auth", "description": "Empty email", "input_data": "email=''", "expected_result": "Error", "actual_result": "Error", "execution_time": "0.2 ms", "status": "PASS"}
+    elif "inv-" in lower_batch or "invoice" in lower_batch:
+        example_cols = ["item_no", "description", "quantity", "unit_price", "total_amount", "tax_amount"]
+        example_record = {"item_no": "1", "description": "Consulting Services", "quantity": 10, "unit_price": 150.0, "total_amount": 1500.0, "tax_amount": 75.0}
+    else:
+        example_cols = ["id", "name", "category", "details", "date", "status", "value"]
+        example_record = {"id": "REC-001", "name": "Item Name", "category": "Category", "details": "Record info", "date": "2024-01-01", "status": "Active", "value": 100}
+
+    import json
+    cols_json = json.dumps(example_cols)
+    rec_json = json.dumps(example_record)
+
     system_instruction = (
         "You are an expert Data Extraction and Schema Normalization engine.\n"
         "Extract every single item/record from the provided text into structured tabular records JSON.\n"
@@ -205,10 +221,10 @@ def _extract_batch_chunk(
         "- Currencies: Extracted into a separate 'currency' column (e.g. 'USD', 'INR', 'SAR', 'EUR')\n\n"
         "Return JSON format:\n"
         "{\n"
-        '  "data_type": "records",\n'
-        '  "columns": ["id", "name", "job_role", "location", "joining_date", "manager", "salary", "currency"],\n'
-        '  "records": [\n'
-        '    {"id": "EMP-001", "name": "...", "job_role": "...", "location": "...", "joining_date": "YYYY-MM-DD", "manager": "...", "salary": 145000, "currency": "USD"}\n'
+        f'  "data_type": "records",\n'
+        f'  "columns": {cols_json},\n'
+        f'  "records": [\n'
+        f'    {rec_json}\n'
         "  ]\n"
         "}\n\n"
         f"CRITICAL: You MUST extract ALL {expected_count} individual items present in the text into 'records'. "
@@ -619,9 +635,11 @@ def classify_columns_with_llm(
             "- employee: Employee/HR/Staff record (emp_id, name, department, designation, salary, joining_date)\n"
             "- student: Academic/Course Syllabus/Curriculum/Student record (syllabus, course_code, subject_name, semester, credits, student_id, roll_no, cgpa, department)\n"
             "- medical: Medical/Patient record (patient_id, mrn, doctor_name, diagnosis, prescription, blood_group)\n"
+            "- technical_test_report: Technical Test Report / Verification (test_case_id, tc_id, category, description, input_data, expected_result, actual_result, execution_time, status)\n"
             "- mixed: Dataset containing multiple independent entity tables\n"
             "- unknown: Unrecognized general dataset\n\n"
             "Rules:\n"
+            "- If a dataset contains test case IDs (TC-001), test descriptions, expected/actual results, or status PASS/FAIL, classify as 'technical_test_report'. Do NOT classify as 'customer' or 'employee' just because test cases contain emails or names in input payloads.\n"
             "- If a dataset contains course codes, subject titles, semesters, credits, or syllabus modules, classify as 'student' (Academic / Course Syllabus).\n"
             "- If a column like store_id or customer_id appears alongside order_date/quantity, it is a foreign key in a Transaction.\n"
             "- If the file has columns from only one domain, set file_type to that domain.\n\n"
@@ -697,13 +715,16 @@ def classify_domain_with_llm(
             "- employee: Employee/Staff profile (emp_id, department, designation, salary)\n"
             "- student: Academic/Course Syllabus/Curriculum/Student record (syllabus, course_code, semester, credits, subjects, modules, student_id, roll_no, cgpa, department)\n"
             "- medical: Medical/Patient chart (patient_id, mrn, diagnosis, prescription, doctor)\n"
+            "- technical_test_report: Technical Test Report / Verification (test_case_id, tc_id, category, description, input_data, expected_result, actual_result, execution_time, status, test suite)\n"
             "- unknown: General or unrecognized document\n\n"
+            "Rules:\n"
+            "- If the document is a verification report, QA test report, or contains TC-xxx test cases with PASS/FAIL results, classify as 'technical_test_report'. Never classify as customer or employee just because sample test data contains emails or names.\n\n"
             "Return valid JSON:\n"
             "{\n"
-            '  "detected_type": "car|customer|store|item|transaction|invoice|employee|student|medical|unknown",\n'
+            '  "detected_type": "car|customer|store|item|transaction|invoice|employee|student|medical|technical_test_report|unknown",\n'
             '  "confidence": 0.95,\n'
             '  "reasoning": "Explanation why this belongs to the detected domain",\n'
-            '  "primary_match_key": "vin|phone|store_id|product_id|transaction_id|invoice_no|emp_id|student_id|patient_id|course_code",\n'
+            '  "primary_match_key": "vin|phone|store_id|product_id|transaction_id|invoice_no|emp_id|student_id|patient_id|test_case_id|course_code",\n'
             '  "extracted_fields": ["field1", "field2", ...]\n'
             "}"
         )

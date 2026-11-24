@@ -200,6 +200,44 @@ def extract_records_from_unstructured_text(raw_text: str) -> Optional[Dict[str, 
     if not raw_text or not raw_text.strip():
         return None
 
+    # Check if text represents a technical test report (TC-001 ... TC-100)
+    tc_pattern = re.compile(
+        r'(?:^|\n)\s*TC-[\s\n]*(\d{3})\s*\n'
+        r'(.*?)'
+        r'([0-9,.]+\s*(?:ms|s|seconds))'
+        r'[\s\n]+(PASS|FAIL|P|F)\b',
+        re.DOTALL
+    )
+    tc_matches = list(tc_pattern.finditer(raw_text))
+    if len(tc_matches) >= 2:
+        recs = []
+        for m in tc_matches:
+            tc_id = f"TC-{m.group(1)}"
+            body = m.group(2).strip()
+            exec_time = m.group(3).strip().replace('\n', ' ')
+            status = "PASS" if m.group(4).strip() in ("PASS", "P") else "FAIL"
+            lines = [l.strip() for l in body.splitlines() if l.strip()]
+            desc = lines[0] if lines else "Verification Test"
+            inp = lines[1] if len(lines) > 1 else ""
+            exp = lines[2] if len(lines) > 2 else "Pass verification"
+            act = " ".join(lines[3:]) if len(lines) > 3 else exp
+            recs.append({
+                "test_case_id": tc_id,
+                "description": desc,
+                "input_data": inp,
+                "expected_result": exp,
+                "actual_result": act,
+                "execution_time": exec_time,
+                "status": status
+            })
+        if recs:
+            return {
+                "data_type": "records",
+                "columns": ["test_case_id", "description", "input_data", "expected_result", "actual_result", "execution_time", "status"],
+                "records": recs,
+                "document_type": "technical_test_report"
+            }
+
     # 1. Check for multiple occurrences of primary record headers (e.g. at least 2 "Name:", "Record:", or numbered items)
     name_headers = re.findall(r'(?:^|\n)\s*(?:Name|Full Name|Customer Name|Employee Name|Candidate Name|Contact Name|User Name)\s*[:=\-]', raw_text, flags=re.IGNORECASE)
     numbered_headers = re.findall(r'(?:^|\n)\s*(?:\d+[\.\)]|\#\d+|\[\d+\]|Record\s+\d+|Item\s+\d+|Profile\s+\d+|Employee\s+\d+)\s+', raw_text, flags=re.IGNORECASE)

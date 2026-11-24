@@ -266,14 +266,27 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 message="Normalized unicode, stripped control characters, whitespace and OCR artifacts"
             ))
 
-            # Step 6: Identify Fields & Normalize (AI LLM with Rule-based fallback)
-            ai_extracted = extract_fields_with_llm(cleaned_text)
-            
-            # If LLM didn't return records, check if unstructured text contains multiple repeating records via rule parser
-            if not (ai_extracted and isinstance(ai_extracted, dict) and ai_extracted.get("data_type") == "records" and len(ai_extracted.get("records", [])) > 0):
-                rule_records = extract_records_from_unstructured_text(cleaned_text)
-                if rule_records and len(rule_records.get("records", [])) > 0:
-                    ai_extracted = rule_records
+            # Step 6: Identify Fields & Normalize (Prioritizing Extracted Structured Tables)
+            table_records = extract_result.get("table_records") or (document_preview.get("table_records") if document_preview else None)
+            doc_type = extract_result.get("document_type") or (document_preview.get("document_type") if document_preview else None)
+
+            ai_extracted = None
+            if table_records and isinstance(table_records, list) and len(table_records) > 0:
+                cols = list(table_records[0].keys())
+                ai_extracted = {
+                    "data_type": "records",
+                    "columns": cols,
+                    "records": table_records,
+                    "document_type": doc_type or "tabular_document"
+                }
+            else:
+                ai_extracted = extract_fields_with_llm(cleaned_text)
+                
+                # If LLM didn't return records, check if unstructured text contains multiple repeating records via rule parser
+                if not (ai_extracted and isinstance(ai_extracted, dict) and ai_extracted.get("data_type") == "records" and len(ai_extracted.get("records", [])) > 0):
+                    rule_records = extract_records_from_unstructured_text(cleaned_text)
+                    if rule_records and len(rule_records.get("records", [])) > 0:
+                        ai_extracted = rule_records
 
             highlights = [
                 "Normalized Unicode NFKC encoding and line endings",
@@ -871,8 +884,17 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     # ─── Unstructured Document Domain Classification ───
     elif status != "failed" and classification == "unstructured" and (raw_text or structured_data or fields_list):
         try:
-            content_to_classify = structured_data if (isinstance(structured_data, dict) and structured_data) else (cleaned_text if 'cleaned_text' in locals() else (raw_text or ""))
-            entity_info = classify_domain(content_to_classify)
+            if isinstance(structured_data, list) and structured_data:
+                content_to_classify = structured_data
+                cols_to_classify = columns
+            elif isinstance(structured_data, dict) and structured_data:
+                content_to_classify = structured_data
+                cols_to_classify = list(structured_data.keys())
+            else:
+                content_to_classify = cleaned_text if 'cleaned_text' in locals() else (raw_text or "")
+                cols_to_classify = None
+
+            entity_info = classify_domain(content_to_classify, columns=cols_to_classify)
             steps.append(StepStatus(
                 step_id="entity_classified",
                 name="Domain & Entity identified",

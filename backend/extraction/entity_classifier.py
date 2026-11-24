@@ -45,6 +45,7 @@ PRIMARY_MATCH_KEYS: Dict[str, str] = {
     EntityType.EMPLOYEE.value: "emp_id",
     EntityType.STUDENT.value: "student_id",
     EntityType.MEDICAL.value: "patient_id",
+    EntityType.TECHNICAL_TEST_REPORT.value: "test_case_id",
 }
 
 
@@ -420,7 +421,8 @@ def classify_columns(
         "store": any(k in norm_cols for k in ("store_id", "store_name", "branch_id", "outlet_id")),
         "item": any(k in norm_cols for k in ("product_id", "item_id", "sku", "sku_id", "barcode")),
         "customer": any(k in norm_cols for k in ("customer_id", "cust_id", "client_id", "customer_name")),
-        "transaction": any(k in norm_cols for k in ("transaction_id", "order_id", "purchase_id"))
+        "transaction": any(k in norm_cols for k in ("transaction_id", "order_id", "purchase_id")),
+        "technical_test_report": any(k in norm_cols for k in ("test_case_id", "test_id", "tc_id", "test_case", "test_case_description", "expected_result", "actual_result", "execution_time"))
     }
 
     # Entities that have genuine substantial presence (>= 2 columns assigned OR (>= 1 column AND PK present))
@@ -634,6 +636,18 @@ def classify_domain(
         if _VIN_RE.search(text):
             domain_scores["car"] += 2.0
             domain_hits["car"].append("17-char VIN pattern")
+
+        # Check for technical test report signals specifically in text
+        tc_count = len(re.findall(r'TC-?\s*\d{2,4}', text))
+        has_test_summary = bool(re.search(r'(?:test\s*case|verification\s*report|execution\s*summary|passed\s*cases|failed\s*cases|test\s*range)', text_lower))
+        if tc_count >= 2 or (tc_count >= 1 and has_test_summary):
+            domain_scores["technical_test_report"] = domain_scores.get("technical_test_report", 0.0) + 12.0
+            domain_hits["technical_test_report"].extend(["test_case_id", "execution_summary", "test_report"])
+            # Suppress accidental customer/employee fixtures from test data payloads
+            if "customer" in domain_scores:
+                domain_scores["customer"] = max(0.0, domain_scores["customer"] - 10.0)
+            if "employee" in domain_scores:
+                domain_scores["employee"] = max(0.0, domain_scores["employee"] - 10.0)
 
         # Normalize domain scores into confidences
         max_score = max(domain_scores.values()) if domain_scores else 0.0

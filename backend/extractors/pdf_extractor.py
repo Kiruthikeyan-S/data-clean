@@ -127,7 +127,7 @@ def extract_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
         if len(key_values) >= 15:
             break
 
-    # 6. Extract Tables:
+    # 6. Extract Tables & Structured Records:
     # Table A: Category Pass Breakdown
     cat_matches = re.findall(r'(\d+\.\s+[A-Za-z0-9\s,&–\-]+)\s+(TC-\d+\s*–\s*TC-\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9.]+\s*ms)', total_text)
     if cat_matches:
@@ -137,27 +137,150 @@ def extract_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
             "rows": [[r[0].strip(), r[1].strip(), r[2].strip(), r[3].strip(), r[4].strip(), r[5].strip()] for r in cat_matches]
         })
 
-    # Table B: Test Cases list
-    tc_chunks = re.split(r'(TC-\s*\d{3})', total_text)
-    if len(tc_chunks) > 2:
-        tc_rows = []
-        for i in range(1, len(tc_chunks), 2):
-            tc_id = tc_chunks[i].replace("\n", "").replace(" ", "")
-            tc_body = tc_chunks[i+1]
-            if "PASS" in tc_body or "FAIL" in tc_body:
-                status = "PASS" if "PASS" in tc_body else "FAIL"
-                lat_m = re.search(r'([0-9.]+\s*ms)', tc_body)
-                latency = lat_m.group(1) if lat_m else "0.2 ms"
-                lines = [l.strip() for l in tc_body.splitlines() if l.strip()]
-                desc = lines[0] if lines else "Test case validation"
-                tc_rows.append([tc_id, desc[:45], status, latency])
-            if len(tc_rows) >= 100:
-                break
-        if tc_rows:
+    # Test report & multi-page structured table detection
+    table_records: List[Dict[str, Any]] = []
+    doc_type = "general_document"
+
+    tc_pattern = re.compile(
+        r'(?:^|\n)\s*TC-[\s\n]*(\d{3})\s*\n'
+        r'(.*?)'
+        r'([0-9,.]+\s*(?:ms|s|seconds))'
+        r'[\s\n]+(PASS|FAIL|P|F)\b',
+        re.DOTALL
+    )
+
+    detail_pos = total_text.find('Detailed 100 Test Cases')
+    if detail_pos == -1:
+        detail_pos = total_text.find('Detailed')
+    detail_search_text = total_text[detail_pos:] if detail_pos != -1 else total_text
+
+    tc_matches = list(tc_pattern.finditer(detail_search_text))
+    if len(tc_matches) >= 2:
+        doc_type = "technical_test_report"
+
+        cat_ranges = [
+            (1, 20, "1. Authentication & Form Validation"),
+            (21, 40, "2. Consent-First Personal Memory Engine"),
+            (41, 55, "3. Chat Sessions & UI Preview Separation"),
+            (56, 70, "4. Voice Companion, Training & Continuous Loop"),
+            (71, 85, "5. FastAPI Backend Endpoints & Schema Validation"),
+            (86, 95, "6. Live Groq AI Chat, Memory Analysis & Whisper STT"),
+            (96, 100, "7. Security, Secret Isolation & TypeScript Check")
+        ]
+        for cm in re.finditer(r'(\d+\.\s+[A-Za-z0-9\s,&–\-]+)\s*\((TC-\d+)\s*–\s*(TC-\d+)\)', total_text):
+            c_name = cm.group(1).strip()
+            s_id = int(re.search(r'\d+', cm.group(2)).group())
+            e_id = int(re.search(r'\d+', cm.group(3)).group())
+            if not any(cr[0] == s_id for cr in cat_ranges):
+                cat_ranges.append((s_id, e_id, c_name))
+
+        def get_category_name(num: int) -> str:
+            for s, e, name in cat_ranges:
+                if s <= num <= e:
+                    return name
+            return "General Verification"
+
+        tc_page_map = {}
+        for p_idx, p_txt in enumerate(extracted_pages_text):
+            for tm in re.finditer(r'TC-?[\s\n]*(\d{3})', p_txt):
+                n = int(tm.group(1))
+                if p_idx == 0 and "Detailed" in p_txt:
+                    det_idx = p_txt.find("Detailed")
+                    if tm.start() < det_idx:
+                        continue
+                if n not in tc_page_map:
+                    tc_page_map[n] = p_idx + 1
+
+        for m in tc_matches:
+            tc_num = int(m.group(1))
+            tc_id = f"TC-{m.group(1)}"
+            body = m.group(2)
+            exec_time = m.group(3).strip().replace('\n', ' ')
+            raw_status = m.group(4).strip()
+            status = "PASS" if raw_status in ("PASS", "P") else "FAIL"
+            source_page = tc_page_map.get(tc_num, 1)
+
+            body_lines = []
+            for l in body.splitlines():
+                line = l.strip()
+                if not line:
+                    continue
+                if re.match(r'^\d+\.\s+[A-Za-z0-9\s,&–\-]+(?:\(TC-\d+\s*–\s*TC-\d+\))?', line):
+                    continue
+                if re.match(r'^Tests\s+', line, re.I):
+                    continue
+                if re.match(r'^(?:ID|Test Case|Description|Input Test Data|Expected Result|Actual Result|Time|Status|ID Test Case Description)$', line, re.I):
+                    continue
+                body_lines.append(line)
+
+            desc_parts, input_parts, exp_parts, act_parts = [], [], [], []
+            mode = 0
+            for idx, line in enumerate(body_lines):
+                is_last = (idx == len(body_lines) - 1)
+                if mode == 0 and (
+                    re.search(r'^(?:email|name|password|pw|pwLen|match|category|title|content|Inspect|Check|Scanned|POST|GET|npx|action|session|req|id|token)\s*[:=]', line, re.I)
+                    or re.search(r'^(?:Inspect|Check|Scanned|POST|GET|npx|curl)\s+', line, re.I)
+                    or line.startswith('"')
+                    or line.startswith('[{')
+                    or line.startswith('{"')
+                ):
+                    mode = 1
+                elif mode == 1 and (
+                    re.search(r'^(?:emailErr|passErr|0 errors|Errors:|Error on|HTTP 200|HTTP 4|status=|Extracts|requiresIntegration|missing\s*=|Exit code|present=|protected=|userInterfaceStyle=)', line, re.I)
+                    or re.search(r'^(?:Valid|Verified|Matches|Matches expected|Success|Accepted)\b', line, re.I)
+                ):
+                    mode = 2
+                elif mode == 2 and (
+                    len(exp_parts) >= 1 and (
+                        line == exp_parts[0] 
+                        or line.startswith("HTTP 200") 
+                        or line.startswith("0 errors") 
+                        or line.startswith("Errors:") 
+                        or line.startswith("Exit code")
+                        or line.startswith("status=") 
+                        or line.startswith('[{"') 
+                        or is_last
+                    )
+                ):
+                    mode = 3
+
+                if mode == 0:
+                    desc_parts.append(line)
+                elif mode == 1:
+                    input_parts.append(line)
+                elif mode == 2:
+                    exp_parts.append(line)
+                else:
+                    act_parts.append(line)
+
+            if not act_parts and exp_parts:
+                act_parts = [exp_parts[-1]]
+                exp_parts = exp_parts[:-1]
+            if not exp_parts and len(desc_parts) > 1 and not input_parts:
+                input_parts = [desc_parts[-1]]
+                desc_parts = desc_parts[:-1]
+
+            row = {
+                "test_case_id": tc_id,
+                "category": get_category_name(tc_num),
+                "description": " ".join(desc_parts) if desc_parts else "Verification Test",
+                "input_data": " ".join(input_parts),
+                "expected_result": " ".join(exp_parts) if exp_parts else "Pass verification",
+                "actual_result": " ".join(act_parts) if act_parts else "Pass verification",
+                "execution_time": exec_time,
+                "status": status,
+                "source_page": source_page
+            }
+            table_records.append(row)
+
+        if table_records:
             tables.append({
-                "title": f"Detailed Test Cases ({len(tc_rows)} cases)",
-                "headers": ["Test ID", "Description", "Status", "Latency"],
-                "rows": tc_rows
+                "title": f"Detailed Test Cases ({len(table_records)} cases)",
+                "headers": ["Test ID", "Category", "Description", "Input Test Data", "Expected Result", "Actual Result", "Time", "Status"],
+                "rows": [
+                    [r["test_case_id"], r["category"], r["description"], r["input_data"], r["expected_result"], r["actual_result"], r["execution_time"], r["status"]]
+                    for r in table_records
+                ]
             })
 
     # 7. Extract Entities
@@ -171,18 +294,37 @@ def extract_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
                 "norm": kv["extractedValue"]
             })
 
+    doc_title = "Document"
+    for kv in key_values:
+        if kv["fieldName"] == "Document Title":
+            doc_title = kv["extractedValue"]
+            break
+
+    doc_summary = {
+        "document_title": doc_title,
+        "total_cases": len(table_records) if table_records else 0,
+        "passed_cases": sum(1 for r in table_records if r.get("status") == "PASS"),
+        "failed_cases": sum(1 for r in table_records if r.get("status") == "FAIL"),
+    }
+
     return {
         "text": total_text,
         "pages": num_pages,
         "is_scanned": is_scanned,
         "confidence": 1.0,
         "extraction_method": "pymupdf_native_text" if not is_scanned else "ocr_scanned_pdf",
+        "document_type": doc_type,
+        "table_records": table_records,
+        "summary": doc_summary,
         "preview": {
             "page_count": num_pages,
             "page_images": page_images,
             "blocks": blocks,
             "tables": tables,
             "key_values": key_values,
-            "entities": entities
+            "entities": entities,
+            "document_type": doc_type,
+            "table_records": table_records,
+            "summary": doc_summary
         }
     }

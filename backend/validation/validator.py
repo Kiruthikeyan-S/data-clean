@@ -91,9 +91,9 @@ def validate_entity_records(
                             raw_value=val_str
                         ))
 
-                # 2. Date validation (exclude numeric durations like prep_time_mins, wait_time, etc.)
+                # 2. Date validation (exclude numeric durations like prep_time_mins, wait_time, execution_time, etc.)
                 elif any(k in col_lower for k in ("date", "dob", "birth", "timestamp", "datetime", "created_at", "updated_at")) or (
-                    "time" in col_lower and not any(d in col_lower for d in ("mins", "min", "sec", "second", "hour", "duration", "wait", "prep", "taken", "spent", "elapsed", "avg", "average"))
+                    "time" in col_lower and not any(d in col_lower for d in ("mins", "min", "sec", "second", "hour", "duration", "wait", "prep", "taken", "spent", "elapsed", "avg", "average", "execution", "latency", "runtime"))
                 ):
                     # Skip pure float/int values
                     try:

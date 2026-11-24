@@ -14,6 +14,7 @@ class EntityType(str, Enum):
     EMPLOYEE = "employee"
     STUDENT = "student"
     MEDICAL = "medical"
+    TECHNICAL_TEST_REPORT = "technical_test_report"
 
 CONFIDENCE_THRESHOLD = 0.70
 
@@ -412,6 +413,60 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
         foreign_key_columns={"patient_id"}
     )
 
+    technical_test_report_schema = EntitySchema(
+        name=EntityType.TECHNICAL_TEST_REPORT.value,
+        display_name="Technical Test Report / Verification",
+        icon="clipboard-check",
+        strong_keywords={
+            "test_case_id", "test_id", "tc_id", "test_case", "test_description",
+            "test_case_description", "expected_result", "actual_result", "test_range",
+            "passed_cases", "failed_cases", "execution_summary", "verification_report",
+            "test_report", "execution_time"
+        },
+        medium_keywords={
+            "test", "tests", "latency", "duration", "runtime", "passed", "failed",
+            "status", "test_suite", "test_data", "input_data", "input_test_data",
+            "test_results", "test_run", "pass_fail", "assertion"
+        },
+        weak_keywords={"result", "input", "output", "time", "id", "case", "status", "category"},
+        aliases={
+            "tc_id": "test_case_id",
+            "test_id": "test_case_id",
+            "case_id": "test_case_id",
+            "id": "test_case_id",
+            "test_case_description": "description",
+            "test_description": "description",
+            "desc": "description",
+            "input_test_data": "input_data",
+            "test_data": "input_data",
+            "payload": "input_data",
+            "expected": "expected_result",
+            "expected_output": "expected_result",
+            "actual": "actual_result",
+            "actual_output": "actual_result",
+            "time": "execution_time",
+            "latency": "execution_time",
+            "runtime": "execution_time",
+            "duration": "execution_time",
+            "test_status": "status",
+            "pass_fail": "status",
+            "suite": "category",
+            "module": "category"
+        },
+        value_patterns=[
+            re.compile(r"^TC-?\s*\d{2,4}$", re.IGNORECASE),
+            re.compile(r"^(?:PASS|FAIL|ERROR|SKIP|PASSED|FAILED)$", re.IGNORECASE),
+            re.compile(r"^\d+(?:\.\d+)?\s*(?:ms|s|seconds)$", re.IGNORECASE)
+        ],
+        co_occurrence_rules=[
+            {"test_case_id", "description", "status"},
+            {"test_case_id", "expected_result", "actual_result"},
+            {"test_case_id", "input_data", "execution_time"},
+            {"description", "expected_result", "status"}
+        ],
+        foreign_key_columns={"test_case_id"}
+    )
+
     return {
         EntityType.STORE.value: store_schema,
         EntityType.ITEM.value: item_schema,
@@ -422,6 +477,7 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
         EntityType.EMPLOYEE.value: employee_schema,
         EntityType.STUDENT.value: student_schema,
         EntityType.MEDICAL.value: medical_schema,
+        EntityType.TECHNICAL_TEST_REPORT.value: technical_test_report_schema,
     }
 
 
@@ -1011,6 +1067,64 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             field_type="text_title",
             aliases={"hospital", "clinic", "facility", "health_center", "medical_center"},
             description="Treating hospital or medical center"
+        )
+    },
+
+    EntityType.TECHNICAL_TEST_REPORT.value: {
+        "test_case_id": CanonicalField(
+            name="test_case_id",
+            field_type="id",
+            aliases={"test_case_id", "test_id", "tc_id", "id", "case_id", "testcase_id"},
+            description="Unique test case identifier (e.g. TC-001)",
+            is_primary_key=True
+        ),
+        "category": CanonicalField(
+            name="category",
+            field_type="text",
+            aliases={"category", "suite", "module", "component", "test_suite", "section"},
+            description="Functional test module or category"
+        ),
+        "description": CanonicalField(
+            name="description",
+            field_type="text",
+            aliases={"description", "test_description", "test_case_description", "desc", "title", "test_name"},
+            description="Detailed test case specification and objective"
+        ),
+        "input_data": CanonicalField(
+            name="input_data",
+            field_type="text",
+            aliases={"input_data", "input_test_data", "test_data", "inputs", "payload", "input"},
+            description="Input test data, parameters or payload"
+        ),
+        "expected_result": CanonicalField(
+            name="expected_result",
+            field_type="text",
+            aliases={"expected_result", "expected", "expected_output", "exp_result"},
+            description="Expected system outcome or validation assertion"
+        ),
+        "actual_result": CanonicalField(
+            name="actual_result",
+            field_type="text",
+            aliases={"actual_result", "actual", "actual_output", "result", "act_result"},
+            description="Actual system response observed during execution"
+        ),
+        "execution_time": CanonicalField(
+            name="execution_time",
+            field_type="text",
+            aliases={"execution_time", "time", "latency", "duration", "runtime"},
+            description="Execution latency or execution duration"
+        ),
+        "status": CanonicalField(
+            name="status",
+            field_type="text",
+            aliases={"status", "test_status", "result_status", "pass_fail", "state"},
+            description="Execution outcome status (PASS / FAIL)"
+        ),
+        "source_page": CanonicalField(
+            name="source_page",
+            field_type="numeric",
+            aliases={"source_page", "page", "page_no", "page_number"},
+            description="Source document page number"
         )
     }
 }
