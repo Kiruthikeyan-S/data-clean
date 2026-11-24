@@ -97,6 +97,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     status = "completed"
     is_multi_collection = False
     multi_collections = {}
+    document_preview: Optional[Any] = None
 
     if classification == "structured":
         try:
@@ -247,6 +248,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
             # Step 4: Extract Data
             extract_result = extract_data(file_type, file_bytes)
             raw_text = extract_result.get("text", "")
+            document_preview = extract_result.get("preview")
             method = extract_result.get("extraction_method", "text_extraction")
             steps.append(StepStatus(
                 step_id="data_extracted",
@@ -911,7 +913,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         data_quality_score=data_quality_score,
         raw_text=raw_text,
         errors=errors if errors else None,
-        entity_info=entity_info
+        entity_info=entity_info,
+        document_preview=document_preview
     )
 
     # Store in memory for export retrieval

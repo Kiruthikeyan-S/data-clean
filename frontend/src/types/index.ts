@@ -234,6 +234,30 @@ export interface EntityClassificationInfo {
   split_tables?: EntityTableInfo[];
 }
 
+export interface DocumentPageBlock {
+  page: number;
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface DocumentTableItem {
+  title: string;
+  headers: string[];
+  rows: string[][];
+}
+
+export interface DocumentPreviewData {
+  page_count: number;
+  page_images: string[];
+  blocks: DocumentPageBlock[];
+  tables: DocumentTableItem[];
+  key_values: Array<{ fieldName: string; extractedValue: string; confidence: number }>;
+  entities: Array<{ type: string; mention: string; conf: string; norm: string }>;
+}
+
 export interface ProcessResponse {
   id: string;
   filename: string;
@@ -255,6 +279,7 @@ export interface ProcessResponse {
   raw_text?: string;
   errors?: ValidationErrorItem[];
   entity_info?: EntityClassificationInfo;
+  document_preview?: DocumentPreviewData;
 }
 
 export interface RelationshipNode {

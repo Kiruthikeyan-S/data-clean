@@ -12,6 +12,7 @@ export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<'upload' | 'processing' | 'ocr_preview' | 'result'>('upload');
   
   const [currentFileName, setCurrentFileName] = useState<string>('Files');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [steps, setSteps] = useState<StepStatus[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [results, setResults] = useState<ProcessResponse[]>([]);
@@ -24,6 +25,7 @@ export const App: React.FC = () => {
     if (files.length === 0) return;
 
     setCurrentFileName(files.length > 1 ? `${files.length} Files (${files.map(f => f.name).join(', ')})` : files[0].name);
+    setUploadedFiles(files);
     setErrorMessage(null);
     setCurrentPage('processing');
     setSteps([]);
@@ -80,6 +82,7 @@ export const App: React.FC = () => {
 
   const handleReset = () => {
     setResults([]);
+    setUploadedFiles([]);
     setActiveResultIndex(0);
     setBatchId(undefined);
     setRelationshipIndex(undefined);
@@ -116,6 +119,7 @@ export const App: React.FC = () => {
         {currentPage === 'ocr_preview' && results.length > 0 && (
           <DocumentOcrPreview
             result={results[activeResultIndex] || results[0]}
+            file={uploadedFiles[activeResultIndex] || uploadedFiles[0]}
             onProceedToCleanedDataset={() => setCurrentPage('result')}
             onUploadNew={handleReset}
           />

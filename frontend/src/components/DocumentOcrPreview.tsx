@@ -4,7 +4,6 @@ import {
   ArrowRight, 
   FileText, 
   Download, 
-  Search, 
   Filter, 
   X, 
   Copy, 
@@ -18,87 +17,110 @@ import {
   Table as TableIcon, 
   RefreshCw, 
   CheckCircle2,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
-import { ProcessResponse } from '../types';
+import { ProcessResponse, DocumentPageBlock } from '../types';
 
 interface DocumentOcrPreviewProps {
   result: ProcessResponse;
+  file?: File;
   onProceedToCleanedDataset: () => void;
   onUploadNew: () => void;
 }
 
-interface BoundingBoxItem {
-  id: string;
-  fieldKey: string;
-  fieldName: string;
-  extractedValue: string;
-  confidence: number;
-  x: number; // percentage
-  y: number; // percentage
-  width: number; // percentage
-  height: number; // percentage
-}
-
-// Default standard invoice extraction data
-const DEFAULT_KEY_VALUES: BoundingBoxItem[] = [
-  { id: '1', fieldKey: 'premise_number', fieldName: 'Premise Number', extractedValue: '4002721150', confidence: 0.998, x: 54, y: 22, width: 22, height: 3.2 },
-  { id: '2', fieldKey: 'consumption_amount', fieldName: 'Consumption Amount', extractedValue: '7,630.00', confidence: 0.994, x: 54, y: 27, width: 18, height: 3.2 },
-  { id: '3', fieldKey: 'meter_rent', fieldName: 'Meter Rent', extractedValue: '25.00', confidence: 0.985, x: 54, y: 32, width: 15, height: 3.2 },
-  { id: '4', fieldKey: 'vat_amount', fieldName: 'VAT Amount 5%', extractedValue: '382.75', confidence: 0.991, x: 54, y: 37, width: 16, height: 3.2 },
-  { id: '5', fieldKey: 'current_period_total', fieldName: 'Current Period Total', extractedValue: '8,037.75', confidence: 0.997, x: 54, y: 42, width: 20, height: 3.5 },
-  { id: '6', fieldKey: 'invoice_no', fieldName: 'Invoice No', extractedValue: '213000368285', confidence: 0.995, x: 54, y: 48, width: 24, height: 3.2 },
-  { id: '7', fieldKey: 'bill_type', fieldName: 'Bill Type', extractedValue: 'Periodic Billing (01)', confidence: 0.996, x: 54, y: 53, width: 26, height: 3.2 },
-  { id: '8', fieldKey: 'invoice_date', fieldName: 'Invoice Date', extractedValue: 'Feb 16, 2019', confidence: 0.985, x: 54, y: 58, width: 20, height: 3.2 },
-  { id: '9', fieldKey: 'invoice_amount', fieldName: 'Invoice Amount', extractedValue: '8,037.75', confidence: 0.998, x: 54, y: 63, width: 19, height: 3.2 },
-  { id: '10', fieldKey: 'customer_name', fieldName: 'Customer Name', extractedValue: 'Ahmed Al-Mansoor', confidence: 0.995, x: 54, y: 17, width: 28, height: 3.5 },
-  { id: '11', fieldKey: 'due_date', fieldName: 'Due Date', extractedValue: 'Mar 10, 2019', confidence: 0.982, x: 54, y: 68, width: 20, height: 3.2 },
-  { id: '12', fieldKey: 'account_number', fieldName: 'Account Number', extractedValue: '10038491029', confidence: 0.997, x: 54, y: 73, width: 24, height: 3.2 },
-];
-
-const DEFAULT_ENTITIES = [
-  { type: 'INVOICE_ID', mention: '213000368285', conf: '99.9%', norm: '213000368285' },
-  { type: 'INVOICE_DATE', mention: 'Feb 16, 2019', conf: '98.5%', norm: '2019-02-16' },
-  { type: 'DUE_DATE', mention: 'Mar 10, 2019', conf: '98.2%', norm: '2019-03-10' },
-  { type: 'TOTAL_AMOUNT', mention: '8,037.75', conf: '99.8%', norm: '8037.75 SAR' },
-  { type: 'VAT_TAX_AMOUNT', mention: '382.75', conf: '99.1%', norm: '382.75 SAR' },
-  { type: 'CUSTOMER_NAME', mention: 'Ahmed Al-Mansoor', conf: '99.3%', norm: 'Ahmed Al-Mansoor' },
-  { type: 'SUPPLIER_NAME', mention: 'Saudi Electricity Company', conf: '99.9%', norm: 'Saudi Electricity Company (SEC)' },
-];
-
 export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
   result,
+  file,
   onProceedToCleanedDataset,
   onUploadNew,
 }) => {
   const [activeTab, setActiveTab] = useState<'kvp' | 'table' | 'entity' | 'ocr'>('kvp');
   const [filterText, setFilterText] = useState<string>('');
-  const [selectedFieldKey, setSelectedFieldKey] = useState<string>('customer_name');
-  const [hoveredBox, setHoveredBox] = useState<BoundingBoxItem | null>(null);
+  const [selectedFieldKey, setSelectedFieldKey] = useState<string>('');
+  const [hoveredBox, setHoveredBox] = useState<DocumentPageBlock | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [rotationAngle, setRotationAngle] = useState<number>(0);
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(true);
   const [copiedOcr, setCopiedOcr] = useState<boolean>(false);
+  const [currentPageNum, setCurrentPageNum] = useState<number>(1);
 
-  // Dynamic or fallback key-value pairs
-  const keyValues: BoundingBoxItem[] = useMemo(() => {
+  // Direct object URL for uploaded file if available
+  const fileObjectUrl = useMemo(() => {
+    if (file) {
+      return URL.createObjectURL(file);
+    }
+    return null;
+  }, [file]);
+
+  const docPreview = result.document_preview;
+  const pageCount = docPreview?.page_count || 1;
+  const pageImages = docPreview?.page_images || [];
+  const currentImage = pageImages[currentPageNum - 1] || null;
+
+  // Real extracted Key-Value Pairs
+  const keyValues = useMemo(() => {
+    if (docPreview?.key_values && docPreview.key_values.length > 0) {
+      return docPreview.key_values.map((kv, idx) => ({
+        id: String(idx + 1),
+        fieldKey: kv.fieldName.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+        fieldName: kv.fieldName,
+        extractedValue: kv.extractedValue,
+        confidence: kv.confidence || 0.99
+      }));
+    }
     if (result.fields && result.fields.length > 0) {
       return result.fields.map((f, idx) => ({
         id: String(idx + 1),
         fieldKey: f.key,
         fieldName: f.label || f.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        extractedValue: f.value !== null && f.value !== undefined ? String(f.value) : (String(f.raw_value || '—')),
-        confidence: f.confidence || 0.985,
-        x: 52,
-        y: Math.min(15 + idx * 5.2, 85),
-        width: 32,
-        height: 3.4
+        extractedValue: f.value !== null && f.value !== undefined ? String(f.value) : String(f.raw_value || '—'),
+        confidence: f.confidence || 0.985
       }));
     }
-    return DEFAULT_KEY_VALUES;
-  }, [result.fields]);
+    return [
+      { id: '1', fieldKey: 'filename', fieldName: 'File Name', extractedValue: result.filename, confidence: 1.0 },
+      { id: '2', fieldKey: 'file_type', fieldName: 'Detected Format', extractedValue: result.file_type.toUpperCase(), confidence: 1.0 },
+      { id: '3', fieldKey: 'classification', fieldName: 'Classification', extractedValue: result.classification, confidence: 1.0 },
+      { id: '4', fieldKey: 'status', fieldName: 'Extraction Status', extractedValue: 'Extracted Successfully', confidence: 0.995 }
+    ];
+  }, [docPreview, result]);
 
-  // Filtered key-value pairs
+  // Real extracted Tables
+  const tables = useMemo(() => {
+    if (docPreview?.tables && docPreview.tables.length > 0) {
+      return docPreview.tables;
+    }
+    // Fallback if tabular records exist in result
+    if (result.structured_data && Array.isArray(result.structured_data) && result.structured_data.length > 0) {
+      const cols = result.columns || Object.keys(result.structured_data[0]);
+      return [{
+        title: `Extracted Records (${result.structured_data.length} rows)`,
+        headers: cols,
+        rows: result.structured_data.map(r => cols.map(c => r[c] !== null && r[c] !== undefined ? String(r[c]) : '—'))
+      }];
+    }
+    return [];
+  }, [docPreview, result]);
+
+  // Real extracted Entities
+  const entities = useMemo(() => {
+    if (docPreview?.entities && docPreview.entities.length > 0) {
+      return docPreview.entities;
+    }
+    if (result.entity_info) {
+      return [{
+        type: 'BUSINESS_DOMAIN',
+        mention: result.entity_info.entity_type,
+        conf: `${Math.round(result.entity_info.confidence * 100)}%`,
+        norm: result.entity_info.entity_type.toUpperCase()
+      }];
+    }
+    return [];
+  }, [docPreview, result]);
+
+  // Filtered Key-Values
   const filteredKeyValues = useMemo(() => {
     if (!filterText.trim()) return keyValues;
     const q = filterText.toLowerCase();
@@ -108,44 +130,14 @@ export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
     );
   }, [keyValues, filterText]);
 
-  // Raw OCR text
-  const rawOcrText = useMemo(() => {
-    if (result.raw_text && result.raw_text.trim()) {
-      return result.raw_text;
-    }
-    return `================================================================================
-                         SAUDI ELECTRICITY COMPANY (SEC)
-                          ELECTRICITY SERVICE INVOICE
-================================================================================
-Invoice No: 213000368285                     Invoice Date: 16/02/2019
-Account Number: 10038491029                  Due Date: 10/03/2019
-Premise Number: 4002721150                   Bill Type: Periodic Billing (01)
-Customer Name: Ahmed Al-Mansoor              Tariff Category: Residential
-
---------------------------------------------------------------------------------
-METER READINGS & CONSUMPTION
---------------------------------------------------------------------------------
-Meter Number: SEC-4890281
-Read Date (Prev): 15/01/2019                 Previous Read: 112,450 kWh
-Read Date (Pres): 15/02/2019                 Present Read:  137,883 kWh
-Multiplier: 1.00                             Total Consumption: 25,433 kWh
-
---------------------------------------------------------------------------------
-BILLING BREAKDOWN & CHARGES
---------------------------------------------------------------------------------
-Description                           Slab / Rate                  Amount (SAR)
-Consumption Amount (Tier 1 & 2)       0.18 / 0.30 SAR/kWh              7,630.00
-Meter Rent Service Fee                Standard Monthly                    25.00
-VAT Tax Amount (5%)                   KSA Standard Tax                   382.75
---------------------------------------------------------------------------------
-CURRENT PERIOD TOTAL (NET PAYABLE):                                    8,037.75 SAR
-================================================================================
-SADAD Payment Code: 008                      Biller Reference: 10038491029
-================================================================================`;
-  }, [result.raw_text]);
+  // Real Blocks for the current page
+  const currentPageBlocks = useMemo(() => {
+    if (!docPreview?.blocks) return [];
+    return docPreview.blocks.filter(b => b.page === currentPageNum);
+  }, [docPreview, currentPageNum]);
 
   const handleCopyOcr = () => {
-    navigator.clipboard.writeText(rawOcrText);
+    navigator.clipboard.writeText(result.raw_text || '');
     setCopiedOcr(true);
     setTimeout(() => setCopiedOcr(false), 2000);
   };
@@ -154,13 +146,10 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
     const dataToExport = {
       fileId: result.id,
       fileName: result.filename,
-      extractedKeyValues: keyValues.map(kv => ({
-        key: kv.fieldName,
-        value: kv.extractedValue,
-        confidence: kv.confidence
-      })),
-      entities: DEFAULT_ENTITIES,
-      rawOcrText: rawOcrText
+      extractedKeyValues: keyValues,
+      extractedTables: tables,
+      entities: entities,
+      rawOcrText: result.raw_text
     };
     const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -198,13 +187,13 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
           </div>
 
           <div className="hidden lg:flex items-center pl-4 text-xs text-slate-500 border-l border-slate-200 ml-3">
-            <span className="truncate max-w-[220px] font-medium text-slate-700">
-              {result.filename || 'document.pdf'}
+            <span className="truncate max-w-[240px] font-medium text-slate-700" title={result.filename}>
+              {result.filename}
             </span>
             <span className="mx-2 text-slate-300">•</span>
             <span className="text-emerald-700 font-medium flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              Processed in {result.summary?.processing_time_ms ? `${result.summary.processing_time_ms.toFixed(1)}ms` : '1.2s'}
+              Processed in {result.summary?.processing_time_ms ? `${result.summary.processing_time_ms.toFixed(1)}ms` : '1.1s'}
             </span>
           </div>
         </div>
@@ -228,6 +217,7 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
             <span>EXPORT JSON</span>
           </button>
 
+          {/* User Permission Action: Move to Cleaned Dataset */}
           <button
             type="button"
             onClick={onProceedToCleanedDataset}
@@ -276,7 +266,7 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
                 <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
                   activeTab === 'table' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
                 }`}>
-                  2
+                  {tables.length}
                 </span>
               </button>
 
@@ -293,7 +283,7 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
                 <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
                   activeTab === 'entity' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
                 }`}>
-                  7
+                  {entities.length}
                 </span>
               </button>
 
@@ -313,9 +303,12 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
             <div className="flex items-center space-x-1 text-slate-400">
               <button
                 type="button"
-                onClick={() => setSelectedFieldKey('customer_name')}
+                onClick={() => {
+                  setSelectedFieldKey('');
+                  setFilterText('');
+                }}
                 className="p-1 hover:bg-slate-100 rounded"
-                title="Refresh Extractions"
+                title="Reset Selection"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -380,12 +373,12 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
                         isSelected ? 'text-blue-700 font-semibold' : 'text-slate-800 font-medium'
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-blue-600' : 'bg-transparent group-hover:bg-blue-300'}`} />
-                        <span className="truncate">{kv.fieldName}</span>
+                        <span className="truncate" title={kv.fieldName}>{kv.fieldName}</span>
                       </div>
 
                       <div className={`col-span-5 font-mono text-[12px] truncate pr-2 ${
                         isSelected ? 'text-blue-700 font-medium' : 'text-slate-800'
-                      }`}>
+                      }`} title={kv.extractedValue}>
                         {kv.extractedValue}
                       </div>
 
@@ -410,91 +403,50 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
               <div className="text-xs text-slate-600 bg-blue-50/60 p-2.5 rounded border border-blue-100 flex items-center space-x-2">
                 <TableIcon className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Document AI Form Parser extracted <strong>2 tables</strong> with structured cells.</span>
+                <span>Extracted <strong>{tables.length} tables</strong> from {result.filename}.</span>
               </div>
 
-              {/* Table 1: Meter Readings */}
-              <div className="border border-slate-200 rounded-md overflow-hidden bg-white shadow-2xs">
-                <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
-                    <TableIcon className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Table 1: Meter Readings & Monthly Consumption</span>
-                  </span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded">
-                    99.5% Conf
-                  </span>
+              {tables.map((tbl, tIdx) => (
+                <div key={tIdx} className="border border-slate-200 rounded-md overflow-hidden bg-white shadow-2xs">
+                  <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
+                      <TableIcon className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{tbl.title}</span>
+                    </span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded">
+                      {tbl.rows.length} Rows
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto max-h-[300px]">
+                    <table className="w-full text-left border-collapse text-xs font-mono">
+                      <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-600 font-medium text-[11px]">
+                        <tr>
+                          {tbl.headers.map((h, hIdx) => (
+                            <th key={hIdx} className="p-2 whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-[11px]">
+                        {tbl.rows.map((row, rIdx) => (
+                          <tr key={rIdx} className="hover:bg-slate-50">
+                            {row.map((cell, cIdx) => (
+                              <td key={cIdx} className="p-2 whitespace-nowrap font-sans text-slate-800">
+                                {cell === 'PASS' ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">PASS</span>
+                                ) : cell === 'FAIL' ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-bold text-[10px]">FAIL</span>
+                                ) : (
+                                  cell
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs font-mono">
-                    <thead>
-                      <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-medium text-[11px]">
-                        <th className="p-2">Read Date (Prev)</th>
-                        <th className="p-2">Read Date (Pres)</th>
-                        <th className="p-2">Previous Read</th>
-                        <th className="p-2">Present Read</th>
-                        <th className="p-2">Multiplier</th>
-                        <th className="p-2 text-right">Consumption (kWh)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-[11px]">
-                      <tr>
-                        <td className="p-2">15/01/2019</td>
-                        <td className="p-2">15/02/2019</td>
-                        <td className="p-2">112,450</td>
-                        <td className="p-2">137,883</td>
-                        <td className="p-2">1.00</td>
-                        <td className="p-2 text-right font-bold text-slate-900">25,433</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Table 2: Billing Breakdown */}
-              <div className="border border-slate-200 rounded-md overflow-hidden bg-white shadow-2xs">
-                <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
-                    <TableIcon className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Table 2: Billing Breakdown & Charges</span>
-                  </span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded">
-                    99.6% Conf
-                  </span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs font-mono">
-                    <thead>
-                      <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-medium text-[11px]">
-                        <th className="p-2">Description</th>
-                        <th className="p-2">Slab / Rate</th>
-                        <th className="p-2 text-right">Amount (SAR)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-[11px]">
-                      <tr>
-                        <td className="p-2 font-sans font-medium text-slate-800">Consumption Amount</td>
-                        <td className="p-2 text-slate-500">Tier 1 & 2 Rates</td>
-                        <td className="p-2 text-right font-bold">7,630.00</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-sans font-medium text-slate-800">Meter Rent</td>
-                        <td className="p-2 text-slate-500">Monthly Standard</td>
-                        <td className="p-2 text-right font-bold">25.00</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-sans font-medium text-slate-800">VAT Amount 5%</td>
-                        <td className="p-2 text-slate-500">Standard Rate (5%)</td>
-                        <td className="p-2 text-right font-bold">382.75</td>
-                      </tr>
-                      <tr className="bg-blue-50/50 font-bold text-blue-900 border-t border-blue-200">
-                        <td className="p-2 font-sans">Current Period Total</td>
-                        <td className="p-2 font-sans text-slate-600">Net Payable</td>
-                        <td className="p-2 text-right">8,037.75</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              ))}
             </div>
           )}
 
@@ -503,11 +455,11 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               <div className="text-xs text-slate-600 bg-purple-50/60 p-2.5 rounded border border-purple-100 flex items-center space-x-2">
                 <Layers className="w-4 h-4 text-purple-600 shrink-0" />
-                <span>Named Entity Recognition (NER) classified <strong>7 standardized entities</strong>.</span>
+                <span>Named Entity Recognition (NER) classified <strong>{entities.length} standardized entities</strong>.</span>
               </div>
 
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-md overflow-hidden bg-white">
-                {DEFAULT_ENTITIES.map((ent, idx) => (
+                {entities.map((ent, idx) => (
                   <div key={idx} className="p-3 text-xs flex items-center justify-between hover:bg-slate-50 transition">
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
@@ -534,7 +486,7 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
               <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded border border-slate-200">
                 <div className="flex items-center space-x-2 text-xs text-slate-600">
                   <FileText className="w-4 h-4 text-blue-600" />
-                  <span>Full Raw Optical Character Recognition stream</span>
+                  <span>Full Raw Optical Character Recognition stream ({result.raw_text?.length || 0} characters)</span>
                 </div>
                 <button
                   type="button"
@@ -547,7 +499,7 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
               </div>
 
               <div className="border border-slate-200 rounded-md p-3 bg-slate-900 text-emerald-400 font-mono text-xs overflow-x-auto whitespace-pre leading-relaxed max-h-[460px]">
-                {rawOcrText}
+                {result.raw_text || 'No text extracted'}
               </div>
             </div>
           )}
@@ -559,19 +511,19 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
               <span>Target confidence threshold: <strong>90%</strong></span>
             </div>
             <div className="flex items-center space-x-1">
-              <span className="text-[11px]">Selected: <strong className="text-slate-800 font-mono">{selectedFieldKey}</strong></span>
+              <span className="text-[11px]">Selected: <strong className="text-slate-800 font-mono">{selectedFieldKey || 'None'}</strong></span>
             </div>
           </div>
         </section>
 
-        {/* RIGHT COLUMN: DOCUMENT VIEWER WITH BOUNDING BOXES */}
+        {/* RIGHT COLUMN: DOCUMENT VIEWER WITH REAL FILE / PAGE RENDERING & BOUNDING BOXES */}
         <section className="w-[52%] flex flex-col bg-[#F0F2F5] h-full relative overflow-hidden">
           {/* Document Viewer Toolbar */}
           <div className="h-11 bg-white border-b border-slate-200 px-4 flex items-center justify-between z-20 shrink-0 shadow-2xs">
             <div className="flex items-center space-x-1 text-slate-500">
               <button
                 type="button"
-                onClick={() => setZoomLevel(prev => Math.max(prev - 10, 60))}
+                onClick={() => setZoomLevel(prev => Math.max(prev - 10, 50))}
                 className="p-1.5 hover:bg-slate-100 rounded text-slate-700"
                 title="Zoom Out"
               >
@@ -582,7 +534,7 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
               </span>
               <button
                 type="button"
-                onClick={() => setZoomLevel(prev => Math.min(prev + 10, 180))}
+                onClick={() => setZoomLevel(prev => Math.min(prev + 10, 200))}
                 className="p-1.5 hover:bg-slate-100 rounded text-slate-700"
                 title="Zoom In"
               >
@@ -607,10 +559,29 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
               </button>
             </div>
 
-            <div className="flex items-center space-x-1.5 text-xs text-slate-700">
+            {/* Page Navigation */}
+            <div className="flex items-center space-x-2 text-xs text-slate-700">
+              <button
+                type="button"
+                onClick={() => setCurrentPageNum(prev => Math.max(prev - 1, 1))}
+                disabled={currentPageNum <= 1}
+                className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
               <span>Page</span>
-              <span className="font-mono bg-white border border-slate-300 rounded px-1.5 py-0.5 font-medium shadow-2xs">1</span>
-              <span className="text-slate-400">of 1</span>
+              <span className="font-mono bg-white border border-slate-300 rounded px-1.5 py-0.5 font-medium shadow-2xs">
+                {currentPageNum}
+              </span>
+              <span className="text-slate-400">of {pageCount}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPageNum(prev => Math.min(prev + 1, pageCount))}
+                disabled={currentPageNum >= pageCount}
+                className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -627,17 +598,10 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
                 <Scan className={`w-3.5 h-3.5 ${showBoundingBoxes ? 'text-blue-600' : 'text-slate-400'}`} />
                 <span>Bounding boxes</span>
               </button>
-              <button
-                type="button"
-                className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-700"
-                title="Search in document"
-              >
-                <Search className="w-4 h-4" />
-              </button>
             </div>
           </div>
 
-          {/* Document Canvas Area with Bounding Boxes */}
+          {/* Document Canvas Area with Real Document Rendering */}
           <div className="flex-1 flex overflow-hidden relative">
             <div className="flex-1 overflow-auto p-6 flex justify-center items-start bg-[#E9ECEF]">
               <div
@@ -646,208 +610,124 @@ SADAD Payment Code: 008                      Biller Reference: 10038491029
                   transformOrigin: 'top center',
                   transition: 'transform 0.15s ease-out'
                 }}
-                className="relative bg-white shadow-xl rounded border border-slate-300 max-w-[700px] w-full min-h-[920px] select-none p-6"
+                className="relative bg-white shadow-xl rounded border border-slate-300 max-w-[760px] w-full min-h-[960px] select-none p-0 overflow-hidden"
               >
-                {/* Visual Document Layout Mockup resembling Saudi Electricity Company Invoice */}
-                <div className="w-full h-full flex flex-col justify-between text-slate-800 text-[11px] leading-tight space-y-4 font-sans">
-                  {/* Document Header */}
-                  <div className="border-b-2 border-blue-900 pb-3 flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 rounded bg-blue-900 text-white flex items-center justify-center font-bold text-xs">
-                          SEC
-                        </div>
-                        <h2 className="text-sm font-extrabold text-blue-950 uppercase tracking-wide">
-                          الشركة السعودية للكهرباء • Saudi Electricity Company
-                        </h2>
-                      </div>
-                      <p className="text-[10px] text-slate-500 mt-1">Tax Invoice • فاتورة ضريبية (VAT Registration: 300000000000003)</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-blue-900">VAT INVOICE</span>
-                      <p className="text-[10px] text-slate-500">Period: JAN-FEB 2019</p>
-                    </div>
-                  </div>
+                {/* 1. If backend rendered page image is available, render real page image */}
+                {currentImage ? (
+                  <div className="relative w-full h-auto">
+                    <img 
+                      src={currentImage} 
+                      alt={`Page ${currentPageNum}`}
+                      className="w-full h-auto block select-none pointer-events-none"
+                    />
 
-                  {/* Customer & Account Details Grid */}
-                  <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded text-[11px]">
-                    <div className="space-y-1.5">
-                      <div>
-                        <span className="text-[10px] text-slate-500 block">Customer Name / اسم المشترك:</span>
-                        <strong className="text-slate-900 text-xs">Ahmed Al-Mansoor</strong>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-500 block">Account Number / رقم الحساب:</span>
-                        <span className="font-mono text-slate-800">10038491029</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-500 block">Premise Number / رقم المشترك:</span>
-                        <span className="font-mono text-slate-800">4002721150</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 text-right">
-                      <div>
-                        <span className="text-[10px] text-slate-500 block">Invoice Number / رقم الفاتورة:</span>
-                        <strong className="font-mono text-slate-900 text-xs">213000368285</strong>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-500 block">Invoice Date / تاريخ الإصدار:</span>
-                        <span className="font-mono text-slate-800">Feb 16, 2019</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-500 block">Due Date / تاريخ الاستحقاق:</span>
-                        <strong className="font-mono text-red-700">Mar 10, 2019</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Meter Reading Summary Box */}
-                  <div className="border border-slate-200 rounded overflow-hidden">
-                    <div className="bg-slate-100 px-3 py-1.5 text-[10px] font-bold text-slate-700 uppercase">
-                      Meter Readings & Consumption / قراءة العداد والاستهلاك
-                    </div>
-                    <table className="w-full text-left text-[10px] font-mono">
-                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                        <tr>
-                          <th className="p-1.5">Prev Date</th>
-                          <th className="p-1.5">Pres Date</th>
-                          <th className="p-1.5">Previous Read</th>
-                          <th className="p-1.5">Present Read</th>
-                          <th className="p-1.5 text-right">Total Consumption</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="p-1.5">15/01/2019</td>
-                          <td className="p-1.5">15/02/2019</td>
-                          <td className="p-1.5">112,450</td>
-                          <td className="p-1.5">137,883</td>
-                          <td className="p-1.5 text-right font-bold text-slate-900">25,433 kWh</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Billing Breakdown Details */}
-                  <div className="border border-slate-200 rounded overflow-hidden">
-                    <div className="bg-slate-100 px-3 py-1.5 text-[10px] font-bold text-slate-700 uppercase">
-                      Billing Charges Breakdown / تفاصيل المبلغ المطلوب
-                    </div>
-                    <table className="w-full text-left text-[11px]">
-                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[10px]">
-                        <tr>
-                          <th className="p-2">Description / البيان</th>
-                          <th className="p-2">Rate / التعرفة</th>
-                          <th className="p-2 text-right">Amount (SAR) / المبلغ</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        <tr>
-                          <td className="p-2 font-medium">Consumption Amount / قيمة الاستهلاك</td>
-                          <td className="p-2 text-slate-500 font-mono text-[10px]">Tier 1 & 2 Rates</td>
-                          <td className="p-2 text-right font-mono font-bold">7,630.00</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 font-medium">Meter Rent / خدمة العداد</td>
-                          <td className="p-2 text-slate-500 font-mono text-[10px]">Monthly Standard</td>
-                          <td className="p-2 text-right font-mono font-bold">25.00</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 font-medium">VAT Amount 5% / ضريبة القيمة المضافة</td>
-                          <td className="p-2 text-slate-500 font-mono text-[10px]">5.00%</td>
-                          <td className="p-2 text-right font-mono font-bold">382.75</td>
-                        </tr>
-                        <tr className="bg-blue-50 font-bold text-blue-950 border-t-2 border-blue-900">
-                          <td className="p-2 text-xs">Current Period Total / المبلغ المطلوب سداده</td>
-                          <td className="p-2 text-[10px] text-blue-800">Net Payable Amount</td>
-                          <td className="p-2 text-right font-mono text-sm">8,037.75 SAR</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* SADAD Payment Footer */}
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded flex items-center justify-between text-[10px]">
-                    <div>
-                      <span className="font-bold text-amber-900 block">SADAD Payment / نظام سداد للمدفوعات:</span>
-                      <span className="text-amber-800">Biller Code: <strong>008</strong> • Bill Ref: <strong>10038491029</strong></span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-mono text-xs font-bold text-slate-900">8,037.75 SAR</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* OVERLAID BOUNDING BOXES */}
-                {showBoundingBoxes && (
-                  <div className="absolute inset-0 pointer-events-none">
-                    {keyValues.map((kv) => {
-                      const isSelected = selectedFieldKey === kv.fieldKey;
-                      const isHovered = hoveredBox?.id === kv.id;
-                      return (
-                        <div
-                          key={kv.id}
-                          onClick={() => setSelectedFieldKey(kv.fieldKey)}
-                          onMouseEnter={() => setHoveredBox(kv)}
-                          onMouseLeave={() => setHoveredBox(null)}
-                          style={{
-                            left: `${kv.x}%`,
-                            top: `${kv.y}%`,
-                            width: `${kv.width}%`,
-                            height: `${kv.height}%`,
-                          }}
-                          className={`absolute pointer-events-auto cursor-pointer transition-all ${
-                            isSelected
-                              ? 'border-2 border-blue-600 bg-blue-500/25 ring-2 ring-blue-400/50 z-20'
-                              : isHovered
-                              ? 'border-2 border-blue-600 bg-blue-500/20 z-10'
-                              : 'border border-blue-400/90 bg-blue-500/12 hover:bg-blue-500/25'
-                          }`}
-                          title={`${kv.fieldName}: ${kv.extractedValue}`}
-                        >
-                          {isSelected && (
-                            <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white text-slate-900 rounded px-3 py-1.5 shadow-xl border border-blue-200 text-center whitespace-nowrap pointer-events-none z-30 flex flex-col items-center">
-                              <span className="text-[10px] text-slate-500 font-medium leading-tight">
-                                {kv.fieldName}
-                              </span>
-                              <span className="text-[11px] font-bold text-slate-900 font-mono mt-0.5 leading-tight">
-                                {kv.extractedValue}
-                              </span>
-                              <div className="w-2.5 h-2.5 bg-white border-r border-b border-blue-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2" />
+                    {/* OVERLAID REAL BOUNDING BOXES FOR CURRENT PAGE */}
+                    {showBoundingBoxes && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        {currentPageBlocks.map((block, bIdx) => {
+                          const isHovered = hoveredBox === block;
+                          return (
+                            <div
+                              key={bIdx}
+                              onMouseEnter={() => setHoveredBox(block)}
+                              onMouseLeave={() => setHoveredBox(null)}
+                              style={{
+                                left: `${block.x}%`,
+                                top: `${block.y}%`,
+                                width: `${block.width}%`,
+                                height: `${block.height}%`,
+                              }}
+                              className={`absolute pointer-events-auto cursor-pointer transition-all ${
+                                isHovered
+                                  ? 'border-2 border-blue-600 bg-blue-500/25 ring-2 ring-blue-400/50 z-20'
+                                  : 'border border-blue-400/70 bg-blue-500/10 hover:bg-blue-500/20'
+                              }`}
+                              title={block.text}
+                            >
+                              {isHovered && (
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-slate-900 rounded px-2.5 py-1 shadow-xl border border-blue-200 text-center whitespace-nowrap pointer-events-none z-30 flex flex-col items-center">
+                                  <span className="text-[10px] font-mono text-slate-900 leading-tight truncate max-w-xs">
+                                    {block.text}
+                                  </span>
+                                  <div className="w-2 h-2 bg-white border-r border-b border-blue-200 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2" />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : fileObjectUrl && (result.file_type === 'pdf' || file?.type === 'application/pdf') ? (
+                  /* 2. Embedded Native PDF Viewer */
+                  <div className="w-full h-[960px]">
+                    <iframe
+                      src={`${fileObjectUrl}#page=${currentPageNum}`}
+                      className="w-full h-full border-0"
+                      title="PDF Document Preview"
+                    />
+                  </div>
+                ) : fileObjectUrl && (result.file_type === 'png' || result.file_type === 'jpg' || result.file_type === 'jpeg' || file?.type.startsWith('image/')) ? (
+                  /* 3. Image file viewer */
+                  <div className="relative w-full h-auto p-4 flex justify-center">
+                    <img
+                      src={fileObjectUrl}
+                      alt="Uploaded Document"
+                      className="max-w-full h-auto object-contain shadow-md rounded"
+                    />
+                  </div>
+                ) : (
+                  /* 4. Text Document Flow */
+                  <div className="p-8 font-mono text-xs text-slate-800 whitespace-pre-wrap leading-relaxed max-h-[960px] overflow-y-auto">
+                    {result.raw_text || 'No preview content available'}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right Thumbnail Sidebar */}
-            <aside className="w-24 bg-white border-l border-slate-200 flex flex-col items-center py-4 space-y-4 shrink-0 shadow-2xs z-10">
+            {/* Right Thumbnail Sidebar with REAL Page Thumbnails */}
+            <aside className="w-24 bg-white border-l border-slate-200 flex flex-col items-center py-4 space-y-4 shrink-0 shadow-2xs z-10 overflow-y-auto max-h-full">
               <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                Pages
+                Pages ({pageCount})
               </div>
-              <div className="flex flex-col items-center group cursor-pointer">
-                <div className="w-16 h-22 bg-slate-50 border-2 border-blue-600 rounded shadow-xs p-1 relative flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div className="space-y-1">
-                    <div className="h-1 bg-blue-900 rounded-xs w-3/4" />
-                    <div className="h-0.5 bg-slate-300 rounded-xs w-full" />
-                    <div className="h-0.5 bg-slate-200 rounded-xs w-5/6" />
-                  </div>
-                  <div className="h-5 bg-blue-100/60 rounded-xs border border-blue-200 flex items-center justify-center">
-                    <div className="w-8 h-2 bg-blue-500/30 rounded-xs" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="h-0.5 bg-slate-300 rounded-xs w-full" />
-                    <div className="h-0.5 bg-slate-300 rounded-xs w-2/3" />
-                  </div>
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-blue-600 text-white rounded-full text-[9px] flex items-center justify-center font-bold">
-                    {keyValues.length}
-                  </span>
-                </div>
-                <span className="text-xs font-medium text-blue-600 mt-1.5 font-mono">1</span>
+
+              <div className="space-y-3 w-full px-2 flex flex-col items-center">
+                {Array.from({ length: pageCount }).map((_, pIdx) => {
+                  const pNum = pIdx + 1;
+                  const isCurrent = pNum === currentPageNum;
+                  const thumbImg = pageImages[pIdx];
+
+                  return (
+                    <div
+                      key={pNum}
+                      onClick={() => setCurrentPageNum(pNum)}
+                      className="flex flex-col items-center group cursor-pointer w-full"
+                    >
+                      <div className={`w-16 h-22 rounded border-2 transition-all overflow-hidden relative shadow-xs ${
+                        isCurrent
+                          ? 'border-blue-600 ring-2 ring-blue-400/40'
+                          : 'border-slate-300 hover:border-slate-400 bg-slate-50'
+                      }`}>
+                        {thumbImg ? (
+                          <img src={thumbImg} alt={`Page ${pNum}`} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full p-1 flex flex-col justify-between text-[8px] text-slate-400">
+                            <div className="h-1 bg-slate-300 w-3/4 rounded-xs" />
+                            <div className="h-1 bg-slate-200 w-full rounded-xs" />
+                            <div className="h-1 bg-slate-200 w-5/6 rounded-xs" />
+                            <div className="h-1 bg-slate-300 w-2/3 rounded-xs" />
+                          </div>
+                        )}
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white rounded-full text-[9px] flex items-center justify-center font-bold">
+                          {pNum}
+                        </span>
+                      </div>
+                      <span className={`text-[11px] font-mono mt-1 ${isCurrent ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>
+                        {pNum}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </aside>
           </div>

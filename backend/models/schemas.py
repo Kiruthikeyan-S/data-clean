@@ -221,6 +221,27 @@ class EntityClassificationInfo(BaseModel):
     column_assignments: Dict[str, str] = {}
     split_tables: Optional[List[EntityTableInfo]] = None
 
+class DocumentPageBlock(BaseModel):
+    page: int
+    text: str
+    x: float
+    y: float
+    width: float
+    height: float
+
+class DocumentTableItem(BaseModel):
+    title: str
+    headers: List[str]
+    rows: List[List[str]]
+
+class DocumentPreviewData(BaseModel):
+    page_count: int = 1
+    page_images: List[str] = []
+    blocks: List[DocumentPageBlock] = []
+    tables: List[DocumentTableItem] = []
+    key_values: List[Dict[str, Any]] = []
+    entities: List[Dict[str, Any]] = []
+
 class ProcessResponse(BaseModel):
     id: str
     filename: str
@@ -242,6 +263,7 @@ class ProcessResponse(BaseModel):
     raw_text: Optional[str] = None
     errors: Optional[List[ValidationErrorItem]] = None
     entity_info: Optional[EntityClassificationInfo] = None
+    document_preview: Optional[DocumentPreviewData] = None
 
 class BatchProcessResponse(BaseModel):
     batch_id: str
