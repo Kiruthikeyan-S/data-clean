@@ -98,6 +98,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     is_multi_collection = False
     multi_collections = {}
     document_preview: Optional[Any] = None
+    barcodes: Optional[List[Any]] = None
+    page_stats: Optional[Dict[str, Any]] = None
 
     if classification == "structured":
         try:
@@ -249,6 +251,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
             extract_result = extract_data(file_type, file_bytes)
             raw_text = extract_result.get("text", "")
             document_preview = extract_result.get("preview")
+            barcodes = extract_result.get("barcodes") or (document_preview.get("barcodes") if document_preview else None)
+            page_stats = extract_result.get("page_stats") or (document_preview.get("page_stats") if document_preview else None)
             method = extract_result.get("extraction_method", "text_extraction")
             steps.append(StepStatus(
                 step_id="data_extracted",
@@ -448,6 +452,44 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     ))
                     mapped = map_to_schema(extracted_raw)
                     p_fields = [ProcessedField(**f) for f in mapped]
+
+                    # Enrich with preview key-values (e.g. from OCR image or PDF analysis)
+                    preview_kvs = (document_preview.get("key_values") if isinstance(document_preview, dict) else (getattr(document_preview, "key_values", None) if document_preview else None)) or []
+                    existing_keys = {f.key.lower() for f in p_fields}
+                    for kv in preview_kvs:
+                        k_name = kv.get("fieldName", "") if isinstance(kv, dict) else getattr(kv, "fieldName", "")
+                        v_val = kv.get("extractedValue", "") if isinstance(kv, dict) else getattr(kv, "extractedValue", "")
+                        k_clean = k_name.lower().replace(" ", "_").replace("#", "no")
+                        if k_clean and v_val and k_clean not in existing_keys:
+                            p_fields.append(ProcessedField(
+                                key=k_clean,
+                                label=k_name,
+                                value=v_val,
+                                raw_value=v_val,
+                                field_type="text",
+                                confidence=float(kv.get("confidence", 0.95) if isinstance(kv, dict) else 0.95),
+                                is_valid=True,
+                                error_message=None
+                            ))
+                            existing_keys.add(k_clean)
+
+                    # Enrich with detected Barcodes / QR codes
+                    if barcodes:
+                        for b in barcodes:
+                            b_data = b.get("data") if isinstance(b, dict) else getattr(b, "data", None)
+                            b_type = b.get("type", "barcode") if isinstance(b, dict) else getattr(b, "type", "barcode")
+                            if b_data and f"{b_type}_payload" not in existing_keys:
+                                p_fields.append(ProcessedField(
+                                    key=f"{b_type}_payload",
+                                    label=f"{b_type.upper()} Data",
+                                    value=b_data,
+                                    raw_value=b_data,
+                                    field_type="text",
+                                    confidence=0.99,
+                                    is_valid=True,
+                                    error_message=None
+                                ))
+                                existing_keys.add(f"{b_type}_payload")
 
                     # If no predefined domain fields matched, parse key-values or text content
                     if not p_fields and cleaned_text.strip():
@@ -1023,6 +1065,8 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         errors=errors if errors else None,
         entity_info=entity_info,
         document_preview=document_preview,
+        barcodes=barcodes,
+        page_stats=page_stats,
         quality_profile=quality_profile_dict,
         relationship_validation=relationship_validation_dict,
         business_analytics=business_analytics_dict,

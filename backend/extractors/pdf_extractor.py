@@ -19,65 +19,107 @@ def extract_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
     extracted_pages_text: List[str] = []
     page_images: List[str] = []
     blocks: List[Dict[str, Any]] = []
-    is_scanned = False
-    
-    # Render page images and extract blocks for each page
-    max_render_pages = min(num_pages, 10)
+    per_page_method: Dict[int, str] = {}
+    page_warnings: List[str] = []
+    pages_requiring_ocr = 0
+    pages_extracted = 0
+
+    # Max preview thumbnail images to keep memory bounded on 100+ page books
+    max_preview_render = min(num_pages, 50)
+
     for page_num in range(num_pages):
+        page_idx_1 = page_num + 1
         page = doc[page_num]
-        text = page.get_text("text").strip()
-        extracted_pages_text.append(text)
-        
-        # Render page preview
-        if page_num < max_render_pages:
+        w, h = page.rect.width, page.rect.height
+
+        # Render page preview image for canvas and thumbnail viewer
+        if page_num < max_preview_render:
             try:
-                pix = page.get_pixmap(dpi=110)
+                pix = page.get_pixmap(dpi=100)
                 img_b64 = "data:image/png;base64," + base64.b64encode(pix.tobytes("png")).decode("utf-8")
                 page_images.append(img_b64)
-            except Exception:
-                pass
-            
+            except Exception as render_err:
+                page_warnings.append(f"Page {page_idx_1} preview render error: {render_err}")
+
+        # Step 1: Attempt native selectable text extraction
+        native_text = page.get_text("text").strip()
+
+        # Step 2: Evaluate whether usable selectable text exists
+        # If at least 30 characters or 5 words, native digital text is usable
+        has_usable_native_text = len(native_text) >= 30 or len(native_text.split()) >= 5
+
+        if has_usable_native_text:
+            extracted_pages_text.append(native_text)
+            per_page_method[page_idx_1] = "pymupdf_native_text"
+            pages_extracted += 1
+
             # Extract spatial bounding boxes for selectable text
-            w, h = page.rect.width, page.rect.height
             if w > 0 and h > 0:
                 raw_blocks = page.get_text("blocks")
                 for b in raw_blocks:
                     b_text = b[4].strip()
                     if b_text:
                         blocks.append({
-                            "page": page_num + 1,
+                            "page": page_idx_1,
                             "text": b_text,
                             "x": round((b[0] / w) * 100, 2),
                             "y": round((b[1] / h) * 100, 2),
                             "width": round(((b[2] - b[0]) / w) * 100, 2),
                             "height": round(((b[3] - b[1]) / h) * 100, 2),
                         })
-    
-    total_text = "\n\n".join([t for t in extracted_pages_text if t])
-    
-    # Fallback to OCR if scanned / image-only
-    if len(total_text.strip()) < 20 and num_pages > 0:
-        is_scanned = True
-        ocr_pages_text: List[str] = []
-        confidences = []
-        
-        for page_num in range(num_pages):
-            page = doc[page_num]
-            pix = page.get_pixmap(dpi=150)
-            img_bytes = pix.tobytes("png")
-            
-            ocr_res = extract_image(img_bytes)
-            if ocr_res["text"]:
-                ocr_pages_text.append(ocr_res["text"])
-            if ocr_res["confidence"] > 0:
-                confidences.append(ocr_res["confidence"])
+
+        else:
+            # Step 3: Page is scanned or image-based — render page image and run OCR specifically on this page
+            pages_requiring_ocr += 1
+            try:
+                pix = page.get_pixmap(dpi=130)
+                img_bytes = pix.tobytes("png")
+                ocr_res = extract_image(img_bytes)
+                ocr_text = ocr_res.get("ocr_text") or ocr_res.get("text", "")
                 
-        doc.close()
-        full_text = "\n\n".join(ocr_pages_text)
-        avg_conf = sum(confidences) / len(confidences) if confidences else 0.85
-        total_text = full_text
+                if ocr_text.strip():
+                    extracted_pages_text.append(ocr_text.strip())
+                    per_page_method[page_idx_1] = f"ocr_scanned_page ({ocr_res.get('extraction_method', 'ocr')})"
+                    pages_extracted += 1
+                else:
+                    extracted_pages_text.append(native_text)
+                    per_page_method[page_idx_1] = "sparse_text_page"
+                    page_warnings.append(f"Page {page_idx_1} contains sparse text after OCR.")
+
+                # Incorporate OCR bounding boxes
+                ocr_preview = ocr_res.get("preview", {})
+                for b in ocr_preview.get("blocks", []):
+                    blocks.append({
+                        "page": page_idx_1,
+                        "text": b.get("text", ""),
+                        "x": b.get("x", 0.0),
+                        "y": b.get("y", 0.0),
+                        "width": b.get("width", 0.0),
+                        "height": b.get("height", 0.0),
+                    })
+
+            except Exception as ocr_err:
+                extracted_pages_text.append(native_text)
+                per_page_method[page_idx_1] = "ocr_fallback_failed"
+                page_warnings.append(f"Page {page_idx_1} OCR error: {ocr_err}")
 
     doc.close()
+
+    total_text = "\n\n".join([t for t in extracted_pages_text if t])
+    is_scanned = pages_requiring_ocr == num_pages and num_pages > 0
+    is_mixed = pages_requiring_ocr > 0 and pages_requiring_ocr < num_pages
+
+    page_stats = {
+        "total_pages": num_pages,
+        "pages_attempted": num_pages,
+        "pages_extracted": pages_extracted,
+        "pages_requiring_ocr": pages_requiring_ocr,
+        "is_scanned": is_scanned,
+        "is_mixed": is_mixed,
+        "failed_pages": num_pages - pages_extracted,
+        "per_page_method": per_page_method,
+        "warnings": page_warnings
+    }
 
     # Dynamic extraction of Key-Values, Tables and Entities
     key_values: List[Dict[str, Any]] = []
@@ -307,15 +349,19 @@ def extract_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
         "failed_cases": sum(1 for r in table_records if r.get("status") == "FAIL"),
     }
 
+    method_summary = "mixed_digital_and_ocr" if is_mixed else ("ocr_scanned_pdf" if is_scanned else "pymupdf_native_text")
+
     return {
         "text": total_text,
         "pages": num_pages,
         "is_scanned": is_scanned,
+        "is_mixed": is_mixed,
         "confidence": 1.0,
-        "extraction_method": "pymupdf_native_text" if not is_scanned else "ocr_scanned_pdf",
+        "extraction_method": method_summary,
         "document_type": doc_type,
         "table_records": table_records,
         "summary": doc_summary,
+        "page_stats": page_stats,
         "preview": {
             "page_count": num_pages,
             "page_images": page_images,
@@ -325,6 +371,7 @@ def extract_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
             "entities": entities,
             "document_type": doc_type,
             "table_records": table_records,
-            "summary": doc_summary
+            "summary": doc_summary,
+            "page_stats": page_stats
         }
     }

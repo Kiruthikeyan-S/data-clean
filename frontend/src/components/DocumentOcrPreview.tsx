@@ -25,6 +25,9 @@ import { ProcessResponse, DocumentPageBlock } from '../types';
 
 interface DocumentOcrPreviewProps {
   result: ProcessResponse;
+  batchResults?: ProcessResponse[];
+  activeResultIndex?: number;
+  onSelectResultIndex?: (idx: number) => void;
   file?: File;
   onProceedToCleanedDataset: () => void;
   onUploadNew: () => void;
@@ -33,6 +36,9 @@ interface DocumentOcrPreviewProps {
 
 export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
   result,
+  batchResults,
+  activeResultIndex = 0,
+  onSelectResultIndex,
   file,
   onProceedToCleanedDataset,
   onUploadNew,
@@ -242,6 +248,39 @@ export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
           </button>
         </div>
       </header>
+
+      {/* Multi-Document Batch Switcher Tabs */}
+      {batchResults && batchResults.length > 1 && (
+        <div className="bg-slate-100 border-b border-slate-200 px-6 py-2 flex items-center gap-2 overflow-x-auto shrink-0 z-20">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1">
+            Batch Files ({batchResults.length}):
+          </span>
+          {batchResults.map((bRes, idx) => {
+            const isActive = idx === (activeResultIndex || 0);
+            return (
+              <button
+                key={bRes.id || idx}
+                onClick={() => onSelectResultIndex && onSelectResultIndex(idx)}
+                className={`px-3 py-1 rounded text-xs font-medium border flex items-center gap-1.5 transition ${
+                  isActive
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <FileText className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                <span className="truncate max-w-[160px]">{bRes.filename}</span>
+                {bRes.status === 'failed' ? (
+                  <span className="text-[9px] bg-red-100 text-red-700 px-1 rounded font-bold">FAILED</span>
+                ) : (
+                  <span className={`text-[9px] px-1 rounded font-mono ${isActive ? 'bg-blue-700 text-blue-100' : 'bg-slate-100 text-slate-500'}`}>
+                    {(bRes.document_preview?.page_count || 1)}p
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Main Split Layout: Left Data Panels (48%) + Right Document Viewer (52%) */}
       <main className="flex-1 flex overflow-hidden">

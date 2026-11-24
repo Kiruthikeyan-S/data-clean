@@ -431,46 +431,134 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                     }
                 }
 
-        # ─── CASE 2: Single-Record or Short Multi-Record Document ───
+        # ─── CASE 2: Single-Record or Multi-Chunk Document ───
         system_instruction = (
-            "You are an expert Data Extraction, Computer Vision Synthesis, and Schema Intelligence AI engine.\n"
-            "Analyze the unstructured document text or computer vision scene analysis and determine its structural category:\n\n"
-            "CATEGORY A: Multi-Record Dataset\n"
-            "(Use this if the text contains multiple people, employees, transactions, line items, products, student records, logs, or tabular entries)\n"
-            "Extract a list of records with clean standardized column headers and normalized cell values.\n"
-            "Standardization rules:\n"
-            "- Dates: Format as ISO 8601 (YYYY-MM-DD or YYYY-MM)\n"
-            "- Names & Roles: Format in Title Case\n"
-            "- Identifiers & Emails: Preserve exact casing, do NOT Title Case codes or IDs\n"
-            "- Numbers: Clean numbers without currency symbols ($/₹/€/£/INR/USD) or commas\n"
-            "- Currencies: Standardized into separate columns (e.g. currency: 'USD')\n"
-            "CRITICAL: You MUST extract ALL individual items/records described in the text into 'records'. Never truncate or sample.\n"
+            "You are an expert Data Extraction, Computer Vision Synthesis, and Universal Schema Intelligence AI engine.\n"
+            "Analyze the document text, OCR stream, or scene analysis and extract structured records or domain fields:\n\n"
+            "CATEGORY A: Multi-Record Dataset or Book Chapter Structure\n"
+            "(Use this if the text contains multiple entries, people, items, test cases, chapters, sections, transactions, or logs)\n"
+            "Extract clean standardized records. For books/educational texts: chapter_number, chapter_title, section_heading, author, isbn, content, page_number.\n"
+            "For technical test reports: test_case_id, category, description, input_data, expected_result, actual_result, execution_time, status, source_page.\n"
             "Return JSON:\n"
             "{\n"
             '  "data_type": "records",\n'
-            '  "columns": ["id", "name", "job_role", "location", "joining_date", "manager", "salary", "currency"],\n'
-            '  "records": [\n'
-            '    {"id": "EMP-001", "name": "Marcus Vance", "job_role": "Senior Backend Architect", "location": "Austin", "joining_date": "2021-03-14", "manager": "Clara Oswald", "salary": 145000, "currency": "USD"}\n'
-            "  ]\n"
+            '  "columns": ["id", "title", "description", "status"],\n'
+            '  "records": [{"id": "1", "title": "...", "description": "...", "status": "Active"}]\n'
             "}\n\n"
-            "CATEGORY B: Single-Record Document or Visual Photo Analysis\n"
-            "(Use this if the input is a single invoice, receipt, personal profile, certificate, OR visual photo analysis of food, objects, products, vehicles, scenes)\n"
-            "Extract all relevant domain fields and properties into clean, informative key-values:\n"
-            "- For Invoices/Receipts: invoice_no, invoice_date, customer_name, vendor_name, total_amount, currency, vat_amount, due_date\n"
-            "- For Food/Dining images: main_item, side_items, category, sauce, container, visible_contents, food_counts, dominant_colors\n"
-            "- For Products/Objects: product_name, category, detected_objects, colors, features\n"
-            "CRITICAL: Preserve original raw_value. For monetary fields, separate numeric amount and currency code.\n"
+            "CATEGORY B: Single-Record Document or Logistics / Billing Label\n"
+            "(Use this for Shipping Labels, Invoices, Receipts, Business Cards, Certificates, ID Profiles)\n"
+            "- For Shipping Labels: carrier, service_type, sender_name, sender_address, receiver_name, receiver_company, receiver_address, postal_code, tracking_number, postage, delivery_instructions, barcode_data\n"
+            "- For Invoices/Receipts: invoice_no, invoice_date, merchant, subtotal, tax, total, payment_method\n"
+            "- For Business Cards: person_name, job_title, company_name, email, phone, website, address\n"
             "Return JSON:\n"
             "{\n"
             '  "data_type": "key_value",\n'
             '  "fields": [\n'
-            '    {"key": "invoice_no", "label": "Invoice No", "value": "INV-2024-001", "raw_value": "INV-2024-001", "field_type": "identifier"},\n'
-            '    {"key": "total_amount", "label": "Total Amount", "value": 8037.75, "raw_value": "8,037.75 SAR", "currency": "SAR", "field_type": "currency"}\n'
+            '    {"key": "carrier", "label": "Carrier", "value": "USPS", "raw_value": "USPS", "field_type": "text"},\n'
+            '    {"key": "tracking_number", "label": "Tracking Number", "value": "9400111899223197428490", "raw_value": "9400 1118 9922 3197 4284 90", "field_type": "identifier"}\n'
             '  ]\n'
             "}"
         )
 
-        user_content = f"Extract and structure this document or visual image data. Return valid JSON:\n\n{raw_text[:20000]}"
+        # Chunk large document text without truncation (e.g. 104-page books or large text)
+        max_chunk_chars = 15000
+        if len(raw_text) <= max_chunk_chars:
+            text_chunks = [raw_text]
+        else:
+            # Split along page breaks, double newlines, or paragraphs
+            raw_parts = re.split(r'(?:\n\s*--- PAGE \d+ ---\s*\n|\n{2,})', raw_text)
+            text_chunks = []
+            curr_chunk = []
+            curr_len = 0
+            for part in raw_parts:
+                p_len = len(part)
+                if curr_len + p_len > max_chunk_chars and curr_chunk:
+                    text_chunks.append("\n\n".join(curr_chunk))
+                    curr_chunk = [part]
+                    curr_len = p_len
+                else:
+                    curr_chunk.append(part)
+                    curr_len += p_len
+            if curr_chunk:
+                text_chunks.append("\n\n".join(curr_chunk))
+
+        all_chunk_records = []
+        all_chunk_fields = []
+        all_columns = []
+
+        for c_idx, chunk_text in enumerate(text_chunks):
+            user_content = f"Extract and structure document chunk #{c_idx + 1} of {len(text_chunks)}. Return valid JSON:\n\n{chunk_text}"
+            chunk_parsed = None
+
+            for model_name in GROQ_MODELS:
+                try:
+                    response = client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "system", "content": system_instruction},
+                            {"role": "user", "content": user_content}
+                        ],
+                        response_format={"type": "json_object"},
+                        max_tokens=8192,
+                        temperature=0.1
+                    )
+                    content = response.choices[0].message.content
+                    parsed = repair_and_parse_json(content)
+                    if parsed and isinstance(parsed, dict):
+                        chunk_parsed = parsed
+                        break
+                except Exception as model_err:
+                    print(f"Model {model_name} failed on chunk #{c_idx + 1}: {model_err}")
+                    continue
+
+            if chunk_parsed:
+                # Accumulate records if chunk returned records
+                recs = chunk_parsed.get("records")
+                if recs and isinstance(recs, list):
+                    cols = chunk_parsed.get("columns") or (list(recs[0].keys()) if recs else [])
+                    for col in cols:
+                        if col not in all_columns:
+                            all_columns.append(col)
+                    for r in recs:
+                        if isinstance(r, dict):
+                            all_chunk_records.append(r)
+
+                # Accumulate key-values if chunk returned fields
+                flds = chunk_parsed.get("fields")
+                if flds and isinstance(flds, list):
+                    for f in flds:
+                        if isinstance(f, dict) and not any(ef.get("key") == f.get("key") for ef in all_chunk_fields):
+                            all_chunk_fields.append(f)
+
+        if all_chunk_records:
+            sanitized_records = []
+            for r in all_chunk_records:
+                rec_clean = {}
+                for k in all_columns:
+                    rec_clean[k] = normalize_field_casing(k, r.get(k))
+                sanitized_records.append(rec_clean)
+
+            return {
+                "data_type": "records",
+                "columns": all_columns,
+                "records": sanitized_records,
+                "audit": {
+                    "total_chunks_processed": len(text_chunks),
+                    "total_records": len(sanitized_records),
+                    "status": "complete"
+                }
+            }
+
+        if all_chunk_fields:
+            return {
+                "data_type": "key_value",
+                "fields": all_chunk_fields,
+                "audit": {
+                    "total_chunks_processed": len(text_chunks),
+                    "total_fields": len(all_chunk_fields),
+                    "status": "complete"
+                }
+            }
 
         for model_name in GROQ_MODELS:
             try:

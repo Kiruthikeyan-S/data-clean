@@ -14,11 +14,14 @@ from backend.normalization.normalizer import (
 PATTERNS = {
     "email": r"[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}",
     "phone": r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,5}\)?[-.\s]?\d{3,5}[-.\s]?\d{3,5}",
-    "postal_code": r"\b\d{5,6}\b",
-    "amount": r"(?:₹|\$|€|£|INR|USD|EUR|GBP|Rs\.?|Total|Amount|Price)\s*[:=]?\s*([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)",
+    "postal_code": r"\b\d{5}(?:-\d{4})?\b|\b\d{6}\b",
+    "amount": r"(?:₹|\$|€|£|INR|USD|EUR|GBP|Rs\.?|Total|Amount|Price|Postage)\s*[:=]?\s*([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)",
     "dob": r"(?:DOB|Date of Birth|Birth Date|D\.O\.B\.?)\s*[:=\-]\s*([0-9]{1,4}[/\-\.][0-9]{1,2}[/\-\.][0-9]{1,4}|[A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+[A-Za-z]+\s+\d{4})",
-    "date": r"(?:Date|Dated|Invoice Date|Created Date|Issued)\s*[:=\-]\s*([0-9]{1,4}[/\-\.][0-9]{1,2}[/\-\.][0-9]{1,4}|[A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+    "date": r"(?:Date|Dated|Invoice Date|Created Date|Issued|Ship Date)\s*[:=\-]\s*([0-9]{1,4}[/\-\.][0-9]{1,2}[/\-\.][0-9]{1,4}|[A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+[A-Za-z]+\s+\d{4})",
     "id_number": r"(?:ID|ID No|ID Number|Aadhaar|PAN|Passport|SSN|License No|Reg No|Account No|Invoice No)\s*[:=\-#]\s*([A-Za-z0-9\-\/]{4,25})",
+    "tracking_number": r"\b(9[1-5]\d{20,24}|1Z[0-9A-Z]{16}|\d{12}|\d{20,26})\b",
+    "carrier": r"\b(USPS|FEDEX|UPS|DHL|AMAZON LOGISTICS|ONTRAC|PUROLATOR)\b",
+    "service_type": r"\b(PRIORITY\s+MAIL(?:\s+2-DAY|\s+3-DAY|\s+EXPRESS)?|FIRST-CLASS\s+PACKAGE|GROUND\s+ADVANTAGE|STANDARD\s+OVERNIGHT|PRIORITY\s+OVERNIGHT|2DAY|GROUND|EXPRESS)\b",
 }
 
 # Line-level label matchers
@@ -41,6 +44,24 @@ LABEL_PATTERNS = {
     ],
     "amount": [
         r"^(?:Total Amount|Grand Total|Net Amount|Total|Amount Paid|Subtotal|Fee|Price)\s*[:=\-]\s*(.+)$"
+    ],
+    "carrier": [
+        r"^(?:Carrier|Shipping Carrier|Delivery Service)\s*[:=\-]\s*(.+)$"
+    ],
+    "service_type": [
+        r"^(?:Service Type|Service|Class of Mail)\s*[:=\-]\s*(.+)$"
+    ],
+    "tracking_number": [
+        r"^(?:Tracking\s*(?:#|No|Number)?|Tracking|Waybill|AWB|Package ID)\s*[:=\-#]\s*([A-Za-z0-9\s]{10,35})$"
+    ],
+    "recipient_name": [
+        r"^(?:Recipient\s+Name|Deliver\s+To|Ship\s+To|Recipient|Consignee|Addressee)\s*(?:\([^)]*\))?\s*[:=\-]\s*(.+)$"
+    ],
+    "sender_name": [
+        r"^(?:Sender\s+Name|Ship\s+From|Sender|Shipper|Return\s+To)\s*(?:\([^)]*\))?\s*[:=\-]\s*(.+)$"
+    ],
+    "postage_amount": [
+        r"^(?:Postage|Postage\s+Paid|Shipping\s+Fee|Total\s+Postage)\s*[:=\-]\s*(.+)$"
     ]
 }
 
@@ -70,10 +91,34 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
         "amount": None,
         "organization": None,
         "city": None,
-        "postal_code": None
+        "postal_code": None,
+        "carrier": None,
+        "service_type": None,
+        "tracking_number": None,
+        "recipient_name": None,
+        "recipient_address": None,
+        "sender_name": None,
+        "sender_address": None,
+        "postage_amount": None,
+        "delivery_instructions": None
     }
 
     # 1. Regex pattern scans across full text
+    # Carrier
+    carrier_m = re.search(PATTERNS["carrier"], raw_text, re.IGNORECASE)
+    if carrier_m:
+        extracted_raw["carrier"] = carrier_m.group(1).upper()
+
+    # Service Type
+    service_m = re.search(PATTERNS["service_type"], raw_text, re.IGNORECASE)
+    if service_m:
+        extracted_raw["service_type"] = service_m.group(1).title()
+
+    # Tracking Number
+    track_m = re.search(PATTERNS["tracking_number"], raw_text)
+    if track_m:
+        extracted_raw["tracking_number"] = track_m.group(1).replace(" ", "")
+
     # Email
     email_match = re.search(PATTERNS["email"], raw_text, re.IGNORECASE)
     if email_match:
@@ -98,6 +143,39 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
     if id_match:
         extracted_raw["id_number"] = id_match.group(1).strip()
 
+    # Shipping Label Multi-line Ship To / Deliver To
+    ship_to_m = re.search(r'(?:SHIP\s+TO|DELIVER\s+TO)\s*(?:\([^)]*\))?\s*[:=\-]?\s*\n([^\n]+(?:\n[^\n]+){1,4})', raw_text, re.IGNORECASE)
+    if ship_to_m:
+        to_lines = [l.strip() for l in ship_to_m.group(1).splitlines() if l.strip()]
+        clean_lines = []
+        for tl in to_lines:
+            sub = re.sub(r'^(?:Recipient\s+Name|Name|Company|Address|Delivery\s+Address)\s*[:=\-]\s*', '', tl, flags=re.I).strip()
+            if sub and not sub.startswith('('):
+                clean_lines.append(sub)
+        if clean_lines:
+            extracted_raw["recipient_name"] = clean_lines[0]
+            if len(clean_lines) > 1:
+                extracted_raw["recipient_address"] = ", ".join(clean_lines[1:])
+
+    # Shipping Label Multi-line Ship From / Sender
+    ship_from_m = re.search(r'(?:SHIP\s+FROM|FROM|RETURN\s+TO)\s*(?:\([^)]*\))?\s*[:=\-]?\s*\n([^\n]+(?:\n[^\n]+){1,3})', raw_text, re.IGNORECASE)
+    if ship_from_m:
+        from_lines = [l.strip() for l in ship_from_m.group(1).splitlines() if l.strip()]
+        clean_lines = []
+        for fl in from_lines:
+            sub = re.sub(r'^(?:Sender\s+Name|Name|Address|Contact\s+Phone)\s*[:=\-]\s*', '', fl, flags=re.I).strip()
+            if sub and not sub.startswith('('):
+                clean_lines.append(sub)
+        if clean_lines:
+            extracted_raw["sender_name"] = clean_lines[0]
+            if len(clean_lines) > 1:
+                extracted_raw["sender_address"] = ", ".join(clean_lines[1:])
+
+    # Postage amount specifically
+    postage_m = re.search(r'(?:Postage|Paid)\s*[:=]?\s*\$([0-9]+\.[0-9]{2})', raw_text, re.IGNORECASE)
+    if postage_m:
+        extracted_raw["postage_amount"] = postage_m.group(1)
+
     # 2. First pass: Line-by-line explicit label matching
     for i, line in enumerate(lines):
         for field, patterns in LABEL_PATTERNS.items():
@@ -111,16 +189,18 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
                         extracted_raw[field] = val
                         break
 
-        # Phone matching per line if explicit Phone: header
+        # Phone matching per line if explicit Phone: header (MUST be 7-15 digits to avoid tracking numbers)
         if extracted_raw["phone"] is None:
             if re.search(r"(?:Phone|Mobile|Tel|Cell|Contact)\s*[:=\-]?\s*(.+)", line, re.IGNORECASE):
                 pm = re.search(PATTERNS["phone"], line)
                 if pm:
-                    extracted_raw["phone"] = pm.group(0).strip()
+                    digits = re.sub(r"\D", "", pm.group(0))
+                    if 7 <= len(digits) <= 15:
+                        extracted_raw["phone"] = pm.group(0).strip()
 
         # Postal code in address lines
         if extracted_raw["postal_code"] is None and ("PIN" in line.upper() or "ZIP" in line.upper()):
-            pin_m = re.search(r"\b\d{5,6}\b", line)
+            pin_m = re.search(r"\b\d{5}(?:-\d{4})?\b|\b\d{6}\b", line)
             if pin_m:
                 extracted_raw["postal_code"] = pin_m.group(0)
 
@@ -131,20 +211,22 @@ def identify_fields(raw_text: str) -> Dict[str, Any]:
                 extracted_raw["amount"] = amt_m.group(1)
 
     # 3. Second pass: Fallbacks only if explicit labels didn't find the entity
-    # Fallback Phone
+    # Fallback Phone (strictly 10-15 digits, ignoring 16+ barcode/tracking numbers)
     if extracted_raw["phone"] is None:
         for line in lines:
             pm = re.search(PATTERNS["phone"], line)
-            if pm and len(re.sub(r"\D", "", pm.group(0))) >= 10:
-                extracted_raw["phone"] = pm.group(0).strip()
-                break
+            if pm:
+                digits = re.sub(r"\D", "", pm.group(0))
+                if 10 <= len(digits) <= 15:
+                    extracted_raw["phone"] = pm.group(0).strip()
+                    break
 
     # Fallback Name heuristics: first line if looks like a person's name (2-4 capitalized words, no punctuation/numbers)
     if extracted_raw["name"] is None and len(lines) > 0:
         for line in lines[:3]:
             if line.upper() in HEADER_STOPWORDS:
                 continue
-            if any(sw in line.upper() for sw in ["PROFILE", "INVOICE", "RECEIPT", "STATEMENT", "REPORT", "SUMMARY"]):
+            if any(sw in line.upper() for sw in ["PROFILE", "INVOICE", "RECEIPT", "STATEMENT", "REPORT", "SUMMARY", "PRIORITY", "USPS", "FEDEX", "UPS", "MAIL"]):
                 continue
             if re.match(r"^[A-Z][a-zA-Z\.\']+(\s+[A-Z][a-zA-Z\.\']+){1,3}$", line) and len(line) < 35:
                 extracted_raw["name"] = line
@@ -159,6 +241,16 @@ def map_to_schema(extracted_raw: Dict[str, Any]) -> List[Dict[str, Any]]:
     ONLY includes fields that actually have extracted data in the document.
     """
     field_configs = [
+        ("carrier", "Carrier", "text", normalize_text),
+        ("service_type", "Service Type", "text", normalize_text),
+        ("tracking_number", "Tracking Number", "text", normalize_text),
+        ("recipient_name", "Recipient Name", "text", normalize_name),
+        ("recipient_company", "Recipient Company", "text", normalize_text),
+        ("recipient_address", "Recipient Address", "text", normalize_text),
+        ("sender_name", "Sender Name", "text", normalize_name),
+        ("sender_address", "Sender Address", "text", normalize_text),
+        ("postage_amount", "Postage Paid", "number", normalize_number),
+        ("delivery_instructions", "Delivery Instructions", "text", normalize_text),
         ("name", "Name", "text", normalize_name),
         ("dob", "Date of Birth", "date", normalize_date),
         ("date", "Document Date", "date", normalize_date),
@@ -236,6 +328,36 @@ def extract_records_from_unstructured_text(raw_text: str) -> Optional[Dict[str, 
                 "columns": ["test_case_id", "description", "input_data", "expected_result", "actual_result", "execution_time", "status"],
                 "records": recs,
                 "document_type": "technical_test_report"
+            }
+
+    # Check if text represents a Book or Educational Document (Chapters / Sections)
+    chapter_pattern = re.compile(
+        r'(?:^|\n)\s*(?:Chapter\s+(\d+|[IVXLCDM]+)|Section\s+(\d+(?:\.\d+)*))\s*[:\-–—]?\s*([^\n]+)',
+        re.IGNORECASE
+    )
+    chap_matches = list(chapter_pattern.finditer(raw_text))
+    if len(chap_matches) >= 2:
+        recs = []
+        for idx, m in enumerate(chap_matches):
+            chap_num = m.group(1) or m.group(2)
+            chap_title = m.group(3).strip()
+            start_pos = m.end()
+            end_pos = chap_matches[idx + 1].start() if idx + 1 < len(chap_matches) else len(raw_text)
+            body = raw_text[start_pos:end_pos].strip()
+            summary = (body[:200] + "...") if len(body) > 200 else body
+            summary = re.sub(r'\s+', ' ', summary).strip()
+            recs.append({
+                "chapter_number": f"Chapter {chap_num}" if not chap_num.lower().startswith("section") else chap_num,
+                "chapter_title": chap_title,
+                "summary": summary,
+                "character_count": len(body)
+            })
+        if len(recs) >= 2:
+            return {
+                "data_type": "records",
+                "columns": ["chapter_number", "chapter_title", "summary", "character_count"],
+                "records": recs,
+                "document_type": "book_educational"
             }
 
     # 1. Check for multiple occurrences of primary record headers (e.g. at least 2 "Name:", "Record:", or numbered items)

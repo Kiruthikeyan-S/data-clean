@@ -234,6 +234,13 @@ class DocumentTableItem(BaseModel):
     headers: List[str]
     rows: List[List[str]]
 
+class BarcodeItem(BaseModel):
+    type: str  # "qr_code" | "barcode"
+    data: Optional[str] = None
+    status: str = "Decoded"  # "Decoded" | "Barcode Present but Not Decoded"
+    format: Optional[str] = None
+    bbox: Optional[List[float]] = None
+
 class DocumentPreviewData(BaseModel):
     page_count: int = 1
     page_images: List[str] = []
@@ -241,6 +248,11 @@ class DocumentPreviewData(BaseModel):
     tables: List[DocumentTableItem] = []
     key_values: List[Dict[str, Any]] = []
     entities: List[Dict[str, Any]] = []
+    barcodes: List[BarcodeItem] = []
+    page_stats: Optional[Dict[str, Any]] = None
+    document_type: Optional[str] = None
+    table_records: Optional[List[Dict[str, Any]]] = None
+    summary: Optional[Dict[str, Any]] = None
 
 class ProcessResponse(BaseModel):
     id: str
@@ -269,10 +281,18 @@ class ProcessResponse(BaseModel):
     business_analytics: Optional[Dict[str, Any]] = None
     demand_prediction: Optional[Dict[str, Any]] = None
     merge_history: Optional[List[Dict[str, Any]]] = None
+    barcodes: Optional[List[BarcodeItem]] = None
+    page_stats: Optional[Dict[str, Any]] = None
 
 class BatchProcessResponse(BaseModel):
     batch_id: str
     total_files: int
+    successful_files: int = 0
+    failed_files: int = 0
+    total_pages: int = 0
+    processed_pages: int = 0
+    total_extracted_records: int = 0
+    failed_file_details: Optional[List[Dict[str, Any]]] = None
     results: List[ProcessResponse]
     processing_time_ms: float
     relationship_index: Optional[Dict[str, Any]] = None

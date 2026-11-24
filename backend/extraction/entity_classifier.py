@@ -46,6 +46,10 @@ PRIMARY_MATCH_KEYS: Dict[str, str] = {
     EntityType.STUDENT.value: "student_id",
     EntityType.MEDICAL.value: "patient_id",
     EntityType.TECHNICAL_TEST_REPORT.value: "test_case_id",
+    EntityType.SHIPPING_LABEL.value: "tracking_number",
+    EntityType.BOOK_EDUCATIONAL.value: "chapter_number",
+    EntityType.RECEIPT.value: "receipt_no",
+    EntityType.BUSINESS_CARD.value: "person_name",
 }
 
 
@@ -422,7 +426,11 @@ def classify_columns(
         "item": any(k in norm_cols for k in ("product_id", "item_id", "sku", "sku_id", "barcode")),
         "customer": any(k in norm_cols for k in ("customer_id", "cust_id", "client_id", "customer_name")),
         "transaction": any(k in norm_cols for k in ("transaction_id", "order_id", "purchase_id")),
-        "technical_test_report": any(k in norm_cols for k in ("test_case_id", "test_id", "tc_id", "test_case", "test_case_description", "expected_result", "actual_result", "execution_time"))
+        "technical_test_report": any(k in norm_cols for k in ("test_case_id", "test_id", "tc_id", "test_case", "test_case_description", "expected_result", "actual_result", "execution_time")),
+        "shipping_label": any(k in norm_cols for k in ("tracking_number", "tracking_no", "tracking", "usps", "fedex", "ship_to", "ship_from")),
+        "book_educational": any(k in norm_cols for k in ("chapter", "chapter_number", "chapter_title", "isbn", "author", "section_heading")),
+        "receipt": any(k in norm_cols for k in ("receipt_no", "receipt_number", "merchant", "subtotal")),
+        "business_card": any(k in norm_cols for k in ("job_title", "company_name", "designation", "business_email"))
     }
 
     # Entities that have genuine substantial presence (>= 2 columns assigned OR (>= 1 column AND PK present))
@@ -643,11 +651,40 @@ def classify_domain(
         if tc_count >= 2 or (tc_count >= 1 and has_test_summary):
             domain_scores["technical_test_report"] = domain_scores.get("technical_test_report", 0.0) + 12.0
             domain_hits["technical_test_report"].extend(["test_case_id", "execution_summary", "test_report"])
-            # Suppress accidental customer/employee fixtures from test data payloads
             if "customer" in domain_scores:
                 domain_scores["customer"] = max(0.0, domain_scores["customer"] - 10.0)
             if "employee" in domain_scores:
                 domain_scores["employee"] = max(0.0, domain_scores["employee"] - 10.0)
+
+        # Check for shipping label signals (USPS, Tracking, Ship To, Priority Mail, etc.)
+        has_carrier = bool(re.search(r'\b(?:USPS|FEDEX|UPS|DHL|PRIORITY\s+MAIL|EXPRESS\s+MAIL|PARCEL\s+SELECT|GROUND\s+ADVANTAGE)\b', text, re.I))
+        has_tracking = bool(re.search(r'\b(?:tracking\s*(?:number|no|#)?|usps\s+tracking)\b', text_lower) or re.search(r'\b\d{4}\s*\d{4}\s*\d{4}\s*\d{4}\s*\d{4}\s*\d{2}\b', text))
+        has_shipping_addresses = bool(re.search(r'\b(?:ship\s*to|ship\s*from|recipient|delivery\s+address)\b', text_lower))
+        if (has_carrier and (has_tracking or has_shipping_addresses)) or (has_tracking and has_shipping_addresses):
+            domain_scores["shipping_label"] = domain_scores.get("shipping_label", 0.0) + 15.0
+            domain_hits["shipping_label"].extend(["carrier", "tracking_number", "ship_to_address"])
+            # Suppress accidental customer classification from sender/receiver names and addresses
+            if "customer" in domain_scores:
+                domain_scores["customer"] = 0.0
+            if "employee" in domain_scores:
+                domain_scores["employee"] = 0.0
+
+        # Check for book / educational publication signals (Chapter, ISBN, Preface, Table of Contents, Section headings)
+        has_chapters = len(re.findall(r'\bChapter\s+\d+\b', text, re.I)) >= 1
+        has_isbn = bool(re.search(r'\bISBN(?:-1[03])?:?\s*[0-9X\-]{10,17}\b', text, re.I))
+        has_book_markers = bool(re.search(r'\b(?:table\s+of\s+contents|preface|bibliography|about\s+the\s+author|textbook|first\s+edition|second\s+edition)\b', text_lower))
+        if has_chapters or has_isbn or has_book_markers:
+            domain_scores["book_educational"] = domain_scores.get("book_educational", 0.0) + 14.0
+            domain_hits["book_educational"].extend(["chapter_structure", "book_content"])
+            # Suppress accidental item classification from chapter headings
+            if "item" in domain_scores:
+                domain_scores["item"] = 0.0
+
+        # Check for receipt signals (Cashier, Subtotal, Change Due, Tender)
+        has_receipt_markers = bool(re.search(r'\b(?:subtotal|change\s+due|tender|cashier|receipt\s*#?|auth\s*code)\b', text_lower))
+        if has_receipt_markers and not has_carrier:
+            domain_scores["receipt"] = domain_scores.get("receipt", 0.0) + 8.0
+            domain_hits["receipt"].append("receipt_markers")
 
         # Normalize domain scores into confidences
         max_score = max(domain_scores.values()) if domain_scores else 0.0

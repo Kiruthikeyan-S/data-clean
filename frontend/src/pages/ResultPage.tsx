@@ -232,6 +232,13 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                     switch (type?.toLowerCase()) {
                       case 'car': return '🚗';
                       case 'invoice': return '🧾';
+                      case 'receipt': return '🧾';
+                      case 'shipping_label': return '🏷️';
+                      case 'book_educational': return '📚';
+                      case 'technical_test_report': return '🧪';
+                      case 'business_card': return '🪪';
+                      case 'utility_bill': return '💡';
+                      case 'bank_statement': return '🏦';
                       case 'employee': return '💼';
                       case 'student':
                       case 'academic':
@@ -266,6 +273,11 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                       </span>
                       {entityIcon && <span className="text-xs">{entityIcon}</span>}
                       <span className="truncate max-w-[180px]">{res.filename}</span>
+                      {res.status === 'failed' && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-bold">
+                          FAILED
+                        </span>
+                      )}
                       {res.entity_info && res.entity_info.entity_type !== 'unknown' && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100/70 text-blue-800 font-semibold">
                           {res.entity_info.entity_type === 'mixed' ? 'Multiple Entity' : res.entity_info.entity_type.charAt(0).toUpperCase() + res.entity_info.entity_type.slice(1)}

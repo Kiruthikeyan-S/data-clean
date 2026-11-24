@@ -249,6 +249,14 @@ export interface DocumentTableItem {
   rows: string[][];
 }
 
+export interface BarcodeItem {
+  type: string;
+  data: string;
+  status: string;
+  format?: string;
+  bbox?: number[][];
+}
+
 export interface DocumentPreviewData {
   page_count: number;
   page_images: string[];
@@ -256,6 +264,11 @@ export interface DocumentPreviewData {
   tables: DocumentTableItem[];
   key_values: Array<{ fieldName: string; extractedValue: string; confidence: number }>;
   entities: Array<{ type: string; mention: string; conf: string; norm: string }>;
+  barcodes?: BarcodeItem[];
+  page_stats?: Record<string, any>;
+  document_type?: string;
+  table_records?: Array<Record<string, any>>;
+  summary?: string;
 }
 
 export interface QualityProfileReport {
@@ -407,6 +420,8 @@ export interface ProcessResponse {
   errors?: ValidationErrorItem[];
   entity_info?: EntityClassificationInfo;
   document_preview?: DocumentPreviewData;
+  barcodes?: BarcodeItem[];
+  page_stats?: Record<string, any>;
   quality_profile?: QualityProfileReport;
   relationship_validation?: RelationshipValidationReport;
   business_analytics?: BusinessAnalyticsReport;
@@ -472,6 +487,12 @@ export interface RelationshipIndexData {
 export interface BatchProcessResponse {
   batch_id: string;
   total_files: number;
+  successful_files?: number;
+  failed_files?: number;
+  total_pages?: number;
+  processed_pages?: number;
+  total_extracted_records?: number;
+  failed_file_details?: Array<{ filename: string; error: string }>;
   results: ProcessResponse[];
   processing_time_ms: number;
   relationship_index?: RelationshipIndexData;

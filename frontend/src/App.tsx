@@ -121,6 +121,9 @@ export const App: React.FC = () => {
           <DocumentOcrPreview
             result={results[activeResultIndex] || results[0]}
             file={uploadedFiles[activeResultIndex] || uploadedFiles[0]}
+            batchResults={results}
+            activeResultIndex={activeResultIndex}
+            onSelectResultIndex={(idx) => setActiveResultIndex(idx)}
             onProceedToCleanedDataset={() => setCurrentPage('result')}
             onUploadNew={handleReset}
             onViewWalkthrough={() => setCurrentPage('walkthrough')}

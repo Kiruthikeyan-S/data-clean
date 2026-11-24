@@ -1,0 +1,1348 @@
+======================================================================
+SHIPPING LABEL #01 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: GROUND ADVANTAGE
+TRACKING NUMBER: 9400111899562541100001
+POSTAGE PAID: $6.20
+DATE ISSUED: 2026-11-02
+
+SHIP FROM (SENDER):
+  Name: Global Tech Direct
+  Address: 450 Technology Way, Austin, TX 78701
+  Contact Phone: +1-555-101-4001
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Robert Davis
+  Company: Starlight Media
+  Delivery Address: 120 Maple Ave, Apt 4B, Boston, MA 02115
+  Postal Code: 02115
+
+PACKAGE DETAILS:
+  Weight: 1.25 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Signature required upon delivery
+  Barcode Checksum: 9400111899562541100001*CHK001
+
+
+======================================================================
+SHIPPING LABEL #02 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: EXPRESS MAIL
+TRACKING NUMBER: 9400111899562541100002
+POSTAGE PAID: $28.75
+DATE ISSUED: 2026-11-03
+
+SHIP FROM (SENDER):
+  Name: Nordic Apparel LLC
+  Address: 88 Market St, Seattle, WA 98101
+  Contact Phone: +1-555-102-4002
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Samantha Patel
+  Company: Quantum Innovations
+  Delivery Address: 890 Pine Rd, San Jose, CA 95112
+  Postal Code: 95112
+
+PACKAGE DETAILS:
+  Weight: 1.70 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Fragile - handle with care
+  Barcode Checksum: 9400111899562541100002*CHK002
+
+
+======================================================================
+SHIPPING LABEL #03 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: STANDARD OVERNIGHT
+TRACKING NUMBER: 79498214200003
+POSTAGE PAID: $34.50
+DATE ISSUED: 2026-11-04
+
+SHIP FROM (SENDER):
+  Name: Pacific Books & Media
+  Address: 1200 Sunset Blvd, Los Angeles, CA 90028
+  Contact Phone: +1-555-103-4003
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: David Miller
+  Company: Evergreen Consulting
+  Delivery Address: 345 Elm St, Portland, OR 97201
+  Postal Code: 97201
+
+PACKAGE DETAILS:
+  Weight: 2.15 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver to building reception / loading dock
+  Barcode Checksum: 79498214200003*CHK003
+
+
+======================================================================
+SHIPPING LABEL #04 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: 2DAY
+TRACKING NUMBER: 79498214200004
+POSTAGE PAID: $18.90
+DATE ISSUED: 2026-11-05
+
+SHIP FROM (SENDER):
+  Name: Sunrise Health Products
+  Address: 300 Sunshine Way, Miami, FL 33101
+  Contact Phone: +1-555-104-4004
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Elena Rostova
+  Company: BioDynamics Corp
+  Delivery Address: 550 Lakeview Dr, Minneapolis, MN 55401
+  Postal Code: 55401
+
+PACKAGE DETAILS:
+  Weight: 2.60 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Do not bend or crush
+  Barcode Checksum: 79498214200004*CHK004
+
+
+======================================================================
+SHIPPING LABEL #05 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: GROUND
+TRACKING NUMBER: 1Z999999910000005
+POSTAGE PAID: $12.30
+DATE ISSUED: 2026-11-06
+
+SHIP FROM (SENDER):
+  Name: Metro Electronics
+  Address: 75 5th Ave, New York, NY 10003
+  Contact Phone: +1-555-105-4005
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Marcus Johnson
+  Company: Apex Financial
+  Delivery Address: 901 Peachtree St, Atlanta, GA 30309
+  Postal Code: 30309
+
+PACKAGE DETAILS:
+  Weight: 3.05 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Keep dry - sensitive electronic components
+  Barcode Checksum: 1Z999999910000005*CHK005
+
+
+======================================================================
+SHIPPING LABEL #06 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: NEXT DAY AIR
+TRACKING NUMBER: 1Z999999910000006
+POSTAGE PAID: $42.10
+DATE ISSUED: 2026-11-07
+
+SHIP FROM (SENDER):
+  Name: Peak Gear Outfitters
+  Address: 1400 Mountain Rd, Denver, CO 80202
+  Contact Phone: +1-555-106-4006
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Chloe Dupont
+  Company: Studio Designworks
+  Delivery Address: 670 Broadway, New York, NY 10012
+  Postal Code: 10012
+
+PACKAGE DETAILS:
+  Weight: 3.50 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver between 9 AM and 5 PM weekdays
+  Barcode Checksum: 1Z999999910000006*CHK006
+
+
+======================================================================
+SHIPPING LABEL #07 - DHL LOGISTICS MANIFEST
+======================================================================
+CARRIER: DHL
+SERVICE TYPE: EXPRESS WORLDWIDE
+TRACKING NUMBER: DHL884910210007
+POSTAGE PAID: $55.00
+DATE ISSUED: 2026-11-08
+
+SHIP FROM (SENDER):
+  Name: Precision Tools Inc.
+  Address: 22 Factory Lane, Detroit, MI 48201
+  Contact Phone: +1-555-107-4007
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Liam O'Connor
+  Company: Emerald Logistics
+  Delivery Address: 210 Riverfront Ave, Chicago, IL 60601
+  Postal Code: 60601
+
+PACKAGE DETAILS:
+  Weight: 3.95 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Leave at front door if no response
+  Barcode Checksum: DHL884910210007*CHK007
+
+
+======================================================================
+SHIPPING LABEL #08 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: PRIORITY MAIL 2-DAY
+TRACKING NUMBER: 9400111899562541100008
+POSTAGE PAID: $8.45
+DATE ISSUED: 2026-11-09
+
+SHIP FROM (SENDER):
+  Name: Apex Supply Co.
+  Address: 100 Industrial Pkwy, Cleveland, OH 44101
+  Contact Phone: +1-555-108-4008
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Sophia Zhang
+  Company: Nexus Cloud Solutions
+  Delivery Address: 404 Silicon Way, San Diego, CA 92101
+  Postal Code: 92101
+
+PACKAGE DETAILS:
+  Weight: 4.40 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Signature required upon delivery
+  Barcode Checksum: 9400111899562541100008*CHK008
+
+
+======================================================================
+SHIPPING LABEL #09 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: GROUND ADVANTAGE
+TRACKING NUMBER: 9400111899562541100009
+POSTAGE PAID: $6.20
+DATE ISSUED: 2026-11-10
+
+SHIP FROM (SENDER):
+  Name: Global Tech Direct
+  Address: 450 Technology Way, Austin, TX 78701
+  Contact Phone: +1-555-109-4009
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Carlos Mendoza
+  Company: Solaris Energy
+  Delivery Address: 180 Desert Palm Way, Phoenix, AZ 85001
+  Postal Code: 85001
+
+PACKAGE DETAILS:
+  Weight: 4.85 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Fragile - handle with care
+  Barcode Checksum: 9400111899562541100009*CHK009
+
+
+======================================================================
+SHIPPING LABEL #10 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: EXPRESS MAIL
+TRACKING NUMBER: 9400111899562541100010
+POSTAGE PAID: $28.75
+DATE ISSUED: 2026-11-11
+
+SHIP FROM (SENDER):
+  Name: Nordic Apparel LLC
+  Address: 88 Market St, Seattle, WA 98101
+  Contact Phone: +1-555-110-4010
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Alice Walker
+  Company: Horizon Labs
+  Delivery Address: 742 Evergreen Terrace, Springfield, IL 62704
+  Postal Code: 62704
+
+PACKAGE DETAILS:
+  Weight: 5.30 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver to building reception / loading dock
+  Barcode Checksum: 9400111899562541100010*CHK010
+
+
+======================================================================
+SHIPPING LABEL #11 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: STANDARD OVERNIGHT
+TRACKING NUMBER: 79498214200011
+POSTAGE PAID: $34.50
+DATE ISSUED: 2026-11-12
+
+SHIP FROM (SENDER):
+  Name: Pacific Books & Media
+  Address: 1200 Sunset Blvd, Los Angeles, CA 90028
+  Contact Phone: +1-555-111-4011
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Robert Davis
+  Company: Starlight Media
+  Delivery Address: 120 Maple Ave, Apt 4B, Boston, MA 02115
+  Postal Code: 02115
+
+PACKAGE DETAILS:
+  Weight: 5.75 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Do not bend or crush
+  Barcode Checksum: 79498214200011*CHK011
+
+
+======================================================================
+SHIPPING LABEL #12 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: 2DAY
+TRACKING NUMBER: 79498214200012
+POSTAGE PAID: $18.90
+DATE ISSUED: 2026-11-13
+
+SHIP FROM (SENDER):
+  Name: Sunrise Health Products
+  Address: 300 Sunshine Way, Miami, FL 33101
+  Contact Phone: +1-555-112-4012
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Samantha Patel
+  Company: Quantum Innovations
+  Delivery Address: 890 Pine Rd, San Jose, CA 95112
+  Postal Code: 95112
+
+PACKAGE DETAILS:
+  Weight: 6.20 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Keep dry - sensitive electronic components
+  Barcode Checksum: 79498214200012*CHK012
+
+
+======================================================================
+SHIPPING LABEL #13 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: GROUND
+TRACKING NUMBER: 1Z999999910000013
+POSTAGE PAID: $12.30
+DATE ISSUED: 2026-11-14
+
+SHIP FROM (SENDER):
+  Name: Metro Electronics
+  Address: 75 5th Ave, New York, NY 10003
+  Contact Phone: +1-555-113-4013
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: David Miller
+  Company: Evergreen Consulting
+  Delivery Address: 345 Elm St, Portland, OR 97201
+  Postal Code: 97201
+
+PACKAGE DETAILS:
+  Weight: 6.65 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver between 9 AM and 5 PM weekdays
+  Barcode Checksum: 1Z999999910000013*CHK013
+
+
+======================================================================
+SHIPPING LABEL #14 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: NEXT DAY AIR
+TRACKING NUMBER: 1Z999999910000014
+POSTAGE PAID: $42.10
+DATE ISSUED: 2026-11-15
+
+SHIP FROM (SENDER):
+  Name: Peak Gear Outfitters
+  Address: 1400 Mountain Rd, Denver, CO 80202
+  Contact Phone: +1-555-114-4014
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Elena Rostova
+  Company: BioDynamics Corp
+  Delivery Address: 550 Lakeview Dr, Minneapolis, MN 55401
+  Postal Code: 55401
+
+PACKAGE DETAILS:
+  Weight: 7.10 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Leave at front door if no response
+  Barcode Checksum: 1Z999999910000014*CHK014
+
+
+======================================================================
+SHIPPING LABEL #15 - DHL LOGISTICS MANIFEST
+======================================================================
+CARRIER: DHL
+SERVICE TYPE: EXPRESS WORLDWIDE
+TRACKING NUMBER: DHL884910210015
+POSTAGE PAID: $55.00
+DATE ISSUED: 2026-11-16
+
+SHIP FROM (SENDER):
+  Name: Precision Tools Inc.
+  Address: 22 Factory Lane, Detroit, MI 48201
+  Contact Phone: +1-555-115-4015
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Marcus Johnson
+  Company: Apex Financial
+  Delivery Address: 901 Peachtree St, Atlanta, GA 30309
+  Postal Code: 30309
+
+PACKAGE DETAILS:
+  Weight: 7.55 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Signature required upon delivery
+  Barcode Checksum: DHL884910210015*CHK015
+
+
+======================================================================
+SHIPPING LABEL #16 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: PRIORITY MAIL 2-DAY
+TRACKING NUMBER: 9400111899562541100016
+POSTAGE PAID: $8.45
+DATE ISSUED: 2026-11-17
+
+SHIP FROM (SENDER):
+  Name: Apex Supply Co.
+  Address: 100 Industrial Pkwy, Cleveland, OH 44101
+  Contact Phone: +1-555-116-4016
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Chloe Dupont
+  Company: Studio Designworks
+  Delivery Address: 670 Broadway, New York, NY 10012
+  Postal Code: 10012
+
+PACKAGE DETAILS:
+  Weight: 8.00 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Fragile - handle with care
+  Barcode Checksum: 9400111899562541100016*CHK016
+
+
+======================================================================
+SHIPPING LABEL #17 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: GROUND ADVANTAGE
+TRACKING NUMBER: 9400111899562541100017
+POSTAGE PAID: $6.20
+DATE ISSUED: 2026-11-18
+
+SHIP FROM (SENDER):
+  Name: Global Tech Direct
+  Address: 450 Technology Way, Austin, TX 78701
+  Contact Phone: +1-555-117-4017
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Liam O'Connor
+  Company: Emerald Logistics
+  Delivery Address: 210 Riverfront Ave, Chicago, IL 60601
+  Postal Code: 60601
+
+PACKAGE DETAILS:
+  Weight: 8.45 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver to building reception / loading dock
+  Barcode Checksum: 9400111899562541100017*CHK017
+
+
+======================================================================
+SHIPPING LABEL #18 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: EXPRESS MAIL
+TRACKING NUMBER: 9400111899562541100018
+POSTAGE PAID: $28.75
+DATE ISSUED: 2026-11-19
+
+SHIP FROM (SENDER):
+  Name: Nordic Apparel LLC
+  Address: 88 Market St, Seattle, WA 98101
+  Contact Phone: +1-555-118-4018
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Sophia Zhang
+  Company: Nexus Cloud Solutions
+  Delivery Address: 404 Silicon Way, San Diego, CA 92101
+  Postal Code: 92101
+
+PACKAGE DETAILS:
+  Weight: 8.90 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Do not bend or crush
+  Barcode Checksum: 9400111899562541100018*CHK018
+
+
+======================================================================
+SHIPPING LABEL #19 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: STANDARD OVERNIGHT
+TRACKING NUMBER: 79498214200019
+POSTAGE PAID: $34.50
+DATE ISSUED: 2026-11-20
+
+SHIP FROM (SENDER):
+  Name: Pacific Books & Media
+  Address: 1200 Sunset Blvd, Los Angeles, CA 90028
+  Contact Phone: +1-555-119-4019
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Carlos Mendoza
+  Company: Solaris Energy
+  Delivery Address: 180 Desert Palm Way, Phoenix, AZ 85001
+  Postal Code: 85001
+
+PACKAGE DETAILS:
+  Weight: 9.35 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Keep dry - sensitive electronic components
+  Barcode Checksum: 79498214200019*CHK019
+
+
+======================================================================
+SHIPPING LABEL #20 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: 2DAY
+TRACKING NUMBER: 79498214200020
+POSTAGE PAID: $18.90
+DATE ISSUED: 2026-11-21
+
+SHIP FROM (SENDER):
+  Name: Sunrise Health Products
+  Address: 300 Sunshine Way, Miami, FL 33101
+  Contact Phone: +1-555-120-4020
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Alice Walker
+  Company: Horizon Labs
+  Delivery Address: 742 Evergreen Terrace, Springfield, IL 62704
+  Postal Code: 62704
+
+PACKAGE DETAILS:
+  Weight: 9.80 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver between 9 AM and 5 PM weekdays
+  Barcode Checksum: 79498214200020*CHK020
+
+
+======================================================================
+SHIPPING LABEL #21 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: GROUND
+TRACKING NUMBER: 1Z999999910000021
+POSTAGE PAID: $12.30
+DATE ISSUED: 2026-11-22
+
+SHIP FROM (SENDER):
+  Name: Metro Electronics
+  Address: 75 5th Ave, New York, NY 10003
+  Contact Phone: +1-555-121-4021
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Robert Davis
+  Company: Starlight Media
+  Delivery Address: 120 Maple Ave, Apt 4B, Boston, MA 02115
+  Postal Code: 02115
+
+PACKAGE DETAILS:
+  Weight: 10.25 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Leave at front door if no response
+  Barcode Checksum: 1Z999999910000021*CHK021
+
+
+======================================================================
+SHIPPING LABEL #22 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: NEXT DAY AIR
+TRACKING NUMBER: 1Z999999910000022
+POSTAGE PAID: $42.10
+DATE ISSUED: 2026-11-23
+
+SHIP FROM (SENDER):
+  Name: Peak Gear Outfitters
+  Address: 1400 Mountain Rd, Denver, CO 80202
+  Contact Phone: +1-555-122-4022
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Samantha Patel
+  Company: Quantum Innovations
+  Delivery Address: 890 Pine Rd, San Jose, CA 95112
+  Postal Code: 95112
+
+PACKAGE DETAILS:
+  Weight: 10.70 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Signature required upon delivery
+  Barcode Checksum: 1Z999999910000022*CHK022
+
+
+======================================================================
+SHIPPING LABEL #23 - DHL LOGISTICS MANIFEST
+======================================================================
+CARRIER: DHL
+SERVICE TYPE: EXPRESS WORLDWIDE
+TRACKING NUMBER: DHL884910210023
+POSTAGE PAID: $55.00
+DATE ISSUED: 2026-11-24
+
+SHIP FROM (SENDER):
+  Name: Precision Tools Inc.
+  Address: 22 Factory Lane, Detroit, MI 48201
+  Contact Phone: +1-555-123-4023
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: David Miller
+  Company: Evergreen Consulting
+  Delivery Address: 345 Elm St, Portland, OR 97201
+  Postal Code: 97201
+
+PACKAGE DETAILS:
+  Weight: 11.15 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Fragile - handle with care
+  Barcode Checksum: DHL884910210023*CHK023
+
+
+======================================================================
+SHIPPING LABEL #24 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: PRIORITY MAIL 2-DAY
+TRACKING NUMBER: 9400111899562541100024
+POSTAGE PAID: $8.45
+DATE ISSUED: 2026-11-25
+
+SHIP FROM (SENDER):
+  Name: Apex Supply Co.
+  Address: 100 Industrial Pkwy, Cleveland, OH 44101
+  Contact Phone: +1-555-124-4024
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Elena Rostova
+  Company: BioDynamics Corp
+  Delivery Address: 550 Lakeview Dr, Minneapolis, MN 55401
+  Postal Code: 55401
+
+PACKAGE DETAILS:
+  Weight: 11.60 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver to building reception / loading dock
+  Barcode Checksum: 9400111899562541100024*CHK024
+
+
+======================================================================
+SHIPPING LABEL #25 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: GROUND ADVANTAGE
+TRACKING NUMBER: 9400111899562541100025
+POSTAGE PAID: $6.20
+DATE ISSUED: 2026-11-26
+
+SHIP FROM (SENDER):
+  Name: Global Tech Direct
+  Address: 450 Technology Way, Austin, TX 78701
+  Contact Phone: +1-555-125-4025
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Marcus Johnson
+  Company: Apex Financial
+  Delivery Address: 901 Peachtree St, Atlanta, GA 30309
+  Postal Code: 30309
+
+PACKAGE DETAILS:
+  Weight: 12.05 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Do not bend or crush
+  Barcode Checksum: 9400111899562541100025*CHK025
+
+
+======================================================================
+SHIPPING LABEL #26 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: EXPRESS MAIL
+TRACKING NUMBER: 9400111899562541100026
+POSTAGE PAID: $28.75
+DATE ISSUED: 2026-11-27
+
+SHIP FROM (SENDER):
+  Name: Nordic Apparel LLC
+  Address: 88 Market St, Seattle, WA 98101
+  Contact Phone: +1-555-126-4026
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Chloe Dupont
+  Company: Studio Designworks
+  Delivery Address: 670 Broadway, New York, NY 10012
+  Postal Code: 10012
+
+PACKAGE DETAILS:
+  Weight: 12.50 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Keep dry - sensitive electronic components
+  Barcode Checksum: 9400111899562541100026*CHK026
+
+
+======================================================================
+SHIPPING LABEL #27 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: STANDARD OVERNIGHT
+TRACKING NUMBER: 79498214200027
+POSTAGE PAID: $34.50
+DATE ISSUED: 2026-11-28
+
+SHIP FROM (SENDER):
+  Name: Pacific Books & Media
+  Address: 1200 Sunset Blvd, Los Angeles, CA 90028
+  Contact Phone: +1-555-127-4027
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Liam O'Connor
+  Company: Emerald Logistics
+  Delivery Address: 210 Riverfront Ave, Chicago, IL 60601
+  Postal Code: 60601
+
+PACKAGE DETAILS:
+  Weight: 12.95 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver between 9 AM and 5 PM weekdays
+  Barcode Checksum: 79498214200027*CHK027
+
+
+======================================================================
+SHIPPING LABEL #28 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: 2DAY
+TRACKING NUMBER: 79498214200028
+POSTAGE PAID: $18.90
+DATE ISSUED: 2026-11-01
+
+SHIP FROM (SENDER):
+  Name: Sunrise Health Products
+  Address: 300 Sunshine Way, Miami, FL 33101
+  Contact Phone: +1-555-128-4028
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Sophia Zhang
+  Company: Nexus Cloud Solutions
+  Delivery Address: 404 Silicon Way, San Diego, CA 92101
+  Postal Code: 92101
+
+PACKAGE DETAILS:
+  Weight: 13.40 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Leave at front door if no response
+  Barcode Checksum: 79498214200028*CHK028
+
+
+======================================================================
+SHIPPING LABEL #29 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: GROUND
+TRACKING NUMBER: 1Z999999910000029
+POSTAGE PAID: $12.30
+DATE ISSUED: 2026-11-02
+
+SHIP FROM (SENDER):
+  Name: Metro Electronics
+  Address: 75 5th Ave, New York, NY 10003
+  Contact Phone: +1-555-129-4029
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Carlos Mendoza
+  Company: Solaris Energy
+  Delivery Address: 180 Desert Palm Way, Phoenix, AZ 85001
+  Postal Code: 85001
+
+PACKAGE DETAILS:
+  Weight: 13.85 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Signature required upon delivery
+  Barcode Checksum: 1Z999999910000029*CHK029
+
+
+======================================================================
+SHIPPING LABEL #30 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: NEXT DAY AIR
+TRACKING NUMBER: 1Z999999910000030
+POSTAGE PAID: $42.10
+DATE ISSUED: 2026-11-03
+
+SHIP FROM (SENDER):
+  Name: Peak Gear Outfitters
+  Address: 1400 Mountain Rd, Denver, CO 80202
+  Contact Phone: +1-555-130-4030
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Alice Walker
+  Company: Horizon Labs
+  Delivery Address: 742 Evergreen Terrace, Springfield, IL 62704
+  Postal Code: 62704
+
+PACKAGE DETAILS:
+  Weight: 14.30 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Fragile - handle with care
+  Barcode Checksum: 1Z999999910000030*CHK030
+
+
+======================================================================
+SHIPPING LABEL #31 - DHL LOGISTICS MANIFEST
+======================================================================
+CARRIER: DHL
+SERVICE TYPE: EXPRESS WORLDWIDE
+TRACKING NUMBER: DHL884910210031
+POSTAGE PAID: $55.00
+DATE ISSUED: 2026-11-04
+
+SHIP FROM (SENDER):
+  Name: Precision Tools Inc.
+  Address: 22 Factory Lane, Detroit, MI 48201
+  Contact Phone: +1-555-131-4031
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Robert Davis
+  Company: Starlight Media
+  Delivery Address: 120 Maple Ave, Apt 4B, Boston, MA 02115
+  Postal Code: 02115
+
+PACKAGE DETAILS:
+  Weight: 14.75 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver to building reception / loading dock
+  Barcode Checksum: DHL884910210031*CHK031
+
+
+======================================================================
+SHIPPING LABEL #32 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: PRIORITY MAIL 2-DAY
+TRACKING NUMBER: 9400111899562541100032
+POSTAGE PAID: $8.45
+DATE ISSUED: 2026-11-05
+
+SHIP FROM (SENDER):
+  Name: Apex Supply Co.
+  Address: 100 Industrial Pkwy, Cleveland, OH 44101
+  Contact Phone: +1-555-132-4032
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Samantha Patel
+  Company: Quantum Innovations
+  Delivery Address: 890 Pine Rd, San Jose, CA 95112
+  Postal Code: 95112
+
+PACKAGE DETAILS:
+  Weight: 15.20 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Do not bend or crush
+  Barcode Checksum: 9400111899562541100032*CHK032
+
+
+======================================================================
+SHIPPING LABEL #33 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: GROUND ADVANTAGE
+TRACKING NUMBER: 9400111899562541100033
+POSTAGE PAID: $6.20
+DATE ISSUED: 2026-11-06
+
+SHIP FROM (SENDER):
+  Name: Global Tech Direct
+  Address: 450 Technology Way, Austin, TX 78701
+  Contact Phone: +1-555-133-4033
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: David Miller
+  Company: Evergreen Consulting
+  Delivery Address: 345 Elm St, Portland, OR 97201
+  Postal Code: 97201
+
+PACKAGE DETAILS:
+  Weight: 15.65 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Keep dry - sensitive electronic components
+  Barcode Checksum: 9400111899562541100033*CHK033
+
+
+======================================================================
+SHIPPING LABEL #34 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: EXPRESS MAIL
+TRACKING NUMBER: 9400111899562541100034
+POSTAGE PAID: $28.75
+DATE ISSUED: 2026-11-07
+
+SHIP FROM (SENDER):
+  Name: Nordic Apparel LLC
+  Address: 88 Market St, Seattle, WA 98101
+  Contact Phone: +1-555-134-4034
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Elena Rostova
+  Company: BioDynamics Corp
+  Delivery Address: 550 Lakeview Dr, Minneapolis, MN 55401
+  Postal Code: 55401
+
+PACKAGE DETAILS:
+  Weight: 1.10 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver between 9 AM and 5 PM weekdays
+  Barcode Checksum: 9400111899562541100034*CHK034
+
+
+======================================================================
+SHIPPING LABEL #35 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: STANDARD OVERNIGHT
+TRACKING NUMBER: 79498214200035
+POSTAGE PAID: $34.50
+DATE ISSUED: 2026-11-08
+
+SHIP FROM (SENDER):
+  Name: Pacific Books & Media
+  Address: 1200 Sunset Blvd, Los Angeles, CA 90028
+  Contact Phone: +1-555-135-4035
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Marcus Johnson
+  Company: Apex Financial
+  Delivery Address: 901 Peachtree St, Atlanta, GA 30309
+  Postal Code: 30309
+
+PACKAGE DETAILS:
+  Weight: 1.55 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Leave at front door if no response
+  Barcode Checksum: 79498214200035*CHK035
+
+
+======================================================================
+SHIPPING LABEL #36 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: 2DAY
+TRACKING NUMBER: 79498214200036
+POSTAGE PAID: $18.90
+DATE ISSUED: 2026-11-09
+
+SHIP FROM (SENDER):
+  Name: Sunrise Health Products
+  Address: 300 Sunshine Way, Miami, FL 33101
+  Contact Phone: +1-555-136-4036
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Chloe Dupont
+  Company: Studio Designworks
+  Delivery Address: 670 Broadway, New York, NY 10012
+  Postal Code: 10012
+
+PACKAGE DETAILS:
+  Weight: 2.00 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Signature required upon delivery
+  Barcode Checksum: 79498214200036*CHK036
+
+
+======================================================================
+SHIPPING LABEL #37 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: GROUND
+TRACKING NUMBER: 1Z999999910000037
+POSTAGE PAID: $12.30
+DATE ISSUED: 2026-11-10
+
+SHIP FROM (SENDER):
+  Name: Metro Electronics
+  Address: 75 5th Ave, New York, NY 10003
+  Contact Phone: +1-555-137-4037
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Liam O'Connor
+  Company: Emerald Logistics
+  Delivery Address: 210 Riverfront Ave, Chicago, IL 60601
+  Postal Code: 60601
+
+PACKAGE DETAILS:
+  Weight: 2.45 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Fragile - handle with care
+  Barcode Checksum: 1Z999999910000037*CHK037
+
+
+======================================================================
+SHIPPING LABEL #38 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: NEXT DAY AIR
+TRACKING NUMBER: 1Z999999910000038
+POSTAGE PAID: $42.10
+DATE ISSUED: 2026-11-11
+
+SHIP FROM (SENDER):
+  Name: Peak Gear Outfitters
+  Address: 1400 Mountain Rd, Denver, CO 80202
+  Contact Phone: +1-555-138-4038
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Sophia Zhang
+  Company: Nexus Cloud Solutions
+  Delivery Address: 404 Silicon Way, San Diego, CA 92101
+  Postal Code: 92101
+
+PACKAGE DETAILS:
+  Weight: 2.90 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver to building reception / loading dock
+  Barcode Checksum: 1Z999999910000038*CHK038
+
+
+======================================================================
+SHIPPING LABEL #39 - DHL LOGISTICS MANIFEST
+======================================================================
+CARRIER: DHL
+SERVICE TYPE: EXPRESS WORLDWIDE
+TRACKING NUMBER: DHL884910210039
+POSTAGE PAID: $55.00
+DATE ISSUED: 2026-11-12
+
+SHIP FROM (SENDER):
+  Name: Precision Tools Inc.
+  Address: 22 Factory Lane, Detroit, MI 48201
+  Contact Phone: +1-555-139-4039
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Carlos Mendoza
+  Company: Solaris Energy
+  Delivery Address: 180 Desert Palm Way, Phoenix, AZ 85001
+  Postal Code: 85001
+
+PACKAGE DETAILS:
+  Weight: 3.35 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Do not bend or crush
+  Barcode Checksum: DHL884910210039*CHK039
+
+
+======================================================================
+SHIPPING LABEL #40 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: PRIORITY MAIL 2-DAY
+TRACKING NUMBER: 9400111899562541100040
+POSTAGE PAID: $8.45
+DATE ISSUED: 2026-11-13
+
+SHIP FROM (SENDER):
+  Name: Apex Supply Co.
+  Address: 100 Industrial Pkwy, Cleveland, OH 44101
+  Contact Phone: +1-555-140-4040
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Alice Walker
+  Company: Horizon Labs
+  Delivery Address: 742 Evergreen Terrace, Springfield, IL 62704
+  Postal Code: 62704
+
+PACKAGE DETAILS:
+  Weight: 3.80 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Keep dry - sensitive electronic components
+  Barcode Checksum: 9400111899562541100040*CHK040
+
+
+======================================================================
+SHIPPING LABEL #41 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: GROUND ADVANTAGE
+TRACKING NUMBER: 9400111899562541100041
+POSTAGE PAID: $6.20
+DATE ISSUED: 2026-11-14
+
+SHIP FROM (SENDER):
+  Name: Global Tech Direct
+  Address: 450 Technology Way, Austin, TX 78701
+  Contact Phone: +1-555-141-4041
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Robert Davis
+  Company: Starlight Media
+  Delivery Address: 120 Maple Ave, Apt 4B, Boston, MA 02115
+  Postal Code: 02115
+
+PACKAGE DETAILS:
+  Weight: 4.25 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver between 9 AM and 5 PM weekdays
+  Barcode Checksum: 9400111899562541100041*CHK041
+
+
+======================================================================
+SHIPPING LABEL #42 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: EXPRESS MAIL
+TRACKING NUMBER: 9400111899562541100042
+POSTAGE PAID: $28.75
+DATE ISSUED: 2026-11-15
+
+SHIP FROM (SENDER):
+  Name: Nordic Apparel LLC
+  Address: 88 Market St, Seattle, WA 98101
+  Contact Phone: +1-555-142-4042
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Samantha Patel
+  Company: Quantum Innovations
+  Delivery Address: 890 Pine Rd, San Jose, CA 95112
+  Postal Code: 95112
+
+PACKAGE DETAILS:
+  Weight: 4.70 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Leave at front door if no response
+  Barcode Checksum: 9400111899562541100042*CHK042
+
+
+======================================================================
+SHIPPING LABEL #43 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: STANDARD OVERNIGHT
+TRACKING NUMBER: 79498214200043
+POSTAGE PAID: $34.50
+DATE ISSUED: 2026-11-16
+
+SHIP FROM (SENDER):
+  Name: Pacific Books & Media
+  Address: 1200 Sunset Blvd, Los Angeles, CA 90028
+  Contact Phone: +1-555-143-4043
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: David Miller
+  Company: Evergreen Consulting
+  Delivery Address: 345 Elm St, Portland, OR 97201
+  Postal Code: 97201
+
+PACKAGE DETAILS:
+  Weight: 5.15 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Signature required upon delivery
+  Barcode Checksum: 79498214200043*CHK043
+
+
+======================================================================
+SHIPPING LABEL #44 - FEDEX LOGISTICS MANIFEST
+======================================================================
+CARRIER: FEDEX
+SERVICE TYPE: 2DAY
+TRACKING NUMBER: 79498214200044
+POSTAGE PAID: $18.90
+DATE ISSUED: 2026-11-17
+
+SHIP FROM (SENDER):
+  Name: Sunrise Health Products
+  Address: 300 Sunshine Way, Miami, FL 33101
+  Contact Phone: +1-555-144-4044
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Elena Rostova
+  Company: BioDynamics Corp
+  Delivery Address: 550 Lakeview Dr, Minneapolis, MN 55401
+  Postal Code: 55401
+
+PACKAGE DETAILS:
+  Weight: 5.60 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Fragile - handle with care
+  Barcode Checksum: 79498214200044*CHK044
+
+
+======================================================================
+SHIPPING LABEL #45 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: GROUND
+TRACKING NUMBER: 1Z999999910000045
+POSTAGE PAID: $12.30
+DATE ISSUED: 2026-11-18
+
+SHIP FROM (SENDER):
+  Name: Metro Electronics
+  Address: 75 5th Ave, New York, NY 10003
+  Contact Phone: +1-555-145-4045
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Marcus Johnson
+  Company: Apex Financial
+  Delivery Address: 901 Peachtree St, Atlanta, GA 30309
+  Postal Code: 30309
+
+PACKAGE DETAILS:
+  Weight: 6.05 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver to building reception / loading dock
+  Barcode Checksum: 1Z999999910000045*CHK045
+
+
+======================================================================
+SHIPPING LABEL #46 - UPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: UPS
+SERVICE TYPE: NEXT DAY AIR
+TRACKING NUMBER: 1Z999999910000046
+POSTAGE PAID: $42.10
+DATE ISSUED: 2026-11-19
+
+SHIP FROM (SENDER):
+  Name: Peak Gear Outfitters
+  Address: 1400 Mountain Rd, Denver, CO 80202
+  Contact Phone: +1-555-146-4046
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Chloe Dupont
+  Company: Studio Designworks
+  Delivery Address: 670 Broadway, New York, NY 10012
+  Postal Code: 10012
+
+PACKAGE DETAILS:
+  Weight: 6.50 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Do not bend or crush
+  Barcode Checksum: 1Z999999910000046*CHK046
+
+
+======================================================================
+SHIPPING LABEL #47 - DHL LOGISTICS MANIFEST
+======================================================================
+CARRIER: DHL
+SERVICE TYPE: EXPRESS WORLDWIDE
+TRACKING NUMBER: DHL884910210047
+POSTAGE PAID: $55.00
+DATE ISSUED: 2026-11-20
+
+SHIP FROM (SENDER):
+  Name: Precision Tools Inc.
+  Address: 22 Factory Lane, Detroit, MI 48201
+  Contact Phone: +1-555-147-4047
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Liam O'Connor
+  Company: Emerald Logistics
+  Delivery Address: 210 Riverfront Ave, Chicago, IL 60601
+  Postal Code: 60601
+
+PACKAGE DETAILS:
+  Weight: 6.95 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Keep dry - sensitive electronic components
+  Barcode Checksum: DHL884910210047*CHK047
+
+
+======================================================================
+SHIPPING LABEL #48 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: PRIORITY MAIL 2-DAY
+TRACKING NUMBER: 9400111899562541100048
+POSTAGE PAID: $8.45
+DATE ISSUED: 2026-11-21
+
+SHIP FROM (SENDER):
+  Name: Apex Supply Co.
+  Address: 100 Industrial Pkwy, Cleveland, OH 44101
+  Contact Phone: +1-555-148-4048
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Sophia Zhang
+  Company: Nexus Cloud Solutions
+  Delivery Address: 404 Silicon Way, San Diego, CA 92101
+  Postal Code: 92101
+
+PACKAGE DETAILS:
+  Weight: 7.40 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Deliver between 9 AM and 5 PM weekdays
+  Barcode Checksum: 9400111899562541100048*CHK048
+
+
+======================================================================
+SHIPPING LABEL #49 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: GROUND ADVANTAGE
+TRACKING NUMBER: 9400111899562541100049
+POSTAGE PAID: $6.20
+DATE ISSUED: 2026-11-22
+
+SHIP FROM (SENDER):
+  Name: Global Tech Direct
+  Address: 450 Technology Way, Austin, TX 78701
+  Contact Phone: +1-555-149-4049
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Carlos Mendoza
+  Company: Solaris Energy
+  Delivery Address: 180 Desert Palm Way, Phoenix, AZ 85001
+  Postal Code: 85001
+
+PACKAGE DETAILS:
+  Weight: 7.85 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Leave at front door if no response
+  Barcode Checksum: 9400111899562541100049*CHK049
+
+
+======================================================================
+SHIPPING LABEL #50 - USPS LOGISTICS MANIFEST
+======================================================================
+CARRIER: USPS
+SERVICE TYPE: EXPRESS MAIL
+TRACKING NUMBER: 9400111899562541100050
+POSTAGE PAID: $28.75
+DATE ISSUED: 2026-11-23
+
+SHIP FROM (SENDER):
+  Name: Nordic Apparel LLC
+  Address: 88 Market St, Seattle, WA 98101
+  Contact Phone: +1-555-150-4050
+
+DELIVER TO (RECIPIENT):
+  Recipient Name: Alice Walker
+  Company: Horizon Labs
+  Delivery Address: 742 Evergreen Terrace, Springfield, IL 62704
+  Postal Code: 62704
+
+PACKAGE DETAILS:
+  Weight: 8.30 LBS
+  Dimensions: 12 x 9 x 4 IN
+  Delivery Instructions: Signature required upon delivery
+  Barcode Checksum: 9400111899562541100050*CHK050

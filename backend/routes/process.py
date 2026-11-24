@@ -2,11 +2,17 @@ import io
 import json
 import time
 import uuid
-from typing import List
+from typing import List, Dict, Any, Optional
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException, Response
 from fastapi.responses import StreamingResponse
-from backend.models.schemas import ProcessResponse, BatchProcessResponse
+from backend.models.schemas import (
+    ProcessResponse,
+    BatchProcessResponse,
+    StepStatus,
+    ProcessSummary,
+    ValidationErrorItem
+)
 from backend.pipeline import process_file_pipeline, RESULTS_STORE
 
 router = APIRouter(prefix="/api", tags=["Processing"])
@@ -49,6 +55,7 @@ async def process_batch_files(files: List[UploadFile] = File(...)):
     Accepts multiple uploaded files simultaneously (e.g. Store, Item, Customer files or multiple receipts),
     cleans all files in parallel, performs cross-file entity resolution, stamps shared entity_id,
     and returns linked clean datasets with a relationship index.
+    Every uploaded file is preserved with its individual processing result and status.
     """
     if not files or len(files) == 0:
         raise HTTPException(status_code=400, detail="No files uploaded.")
@@ -56,12 +63,39 @@ async def process_batch_files(files: List[UploadFile] = File(...)):
     start_time = time.time()
     batch_id = str(uuid.uuid4())
     results: List[ProcessResponse] = []
+    failed_file_details: List[Dict[str, Any]] = []
     
     for file in files:
         if not file.filename:
             continue
         file_bytes = await file.read()
         if len(file_bytes) == 0:
+            failed_file_details.append({"filename": file.filename, "error": "Uploaded file is empty (0 bytes)."})
+            results.append(ProcessResponse(
+                id=str(uuid.uuid4()),
+                filename=file.filename,
+                file_type=file.filename.split(".")[-1].lower() if "." in file.filename else "unknown",
+                mime_type=file.content_type or "application/octet-stream",
+                classification="unknown",
+                status="failed",
+                steps=[
+                    StepStatus(
+                        step_id="file_received",
+                        name="File received",
+                        status="failed",
+                        message="File is empty (0 bytes)"
+                    )
+                ],
+                summary=ProcessSummary(
+                    total_records=0,
+                    valid_records=0,
+                    invalid_records=1,
+                    processing_time_ms=0,
+                    file_type=file.filename.split(".")[-1].lower() if "." in file.filename else "unknown",
+                    classification="unknown"
+                ),
+                errors=[ValidationErrorItem(field="file", message="File is empty (0 bytes)")]
+            ))
             continue
             
         try:
@@ -72,20 +106,88 @@ async def process_batch_files(files: List[UploadFile] = File(...)):
             )
             results.append(res)
         except Exception as e:
-            print(f"Error processing batch file {file.filename}: {e}")
+            failed_file_details.append({"filename": file.filename, "error": str(e)})
+            ext = file.filename.split(".")[-1].lower() if "." in file.filename else "unknown"
+            results.append(ProcessResponse(
+                id=str(uuid.uuid4()),
+                filename=file.filename,
+                file_type=ext,
+                mime_type=file.content_type or "application/octet-stream",
+                classification="unknown",
+                status="failed",
+                steps=[
+                    StepStatus(
+                        step_id="file_received",
+                        name="File received",
+                        status="completed",
+                        message=f"Received {file.filename} ({len(file_bytes):,} bytes)"
+                    ),
+                    StepStatus(
+                        step_id="pipeline_error",
+                        name="Processing failed",
+                        status="failed",
+                        message=str(e)
+                    )
+                ],
+                summary=ProcessSummary(
+                    total_records=0,
+                    valid_records=0,
+                    invalid_records=1,
+                    processing_time_ms=0,
+                    file_type=ext,
+                    classification="unknown"
+                ),
+                errors=[ValidationErrorItem(field="file", message=f"Extraction failed: {str(e)}")]
+            ))
             
     if not results:
         raise HTTPException(status_code=400, detail="None of the uploaded batch files could be processed.")
         
-    # Cross-File Record Linkage & Relationship Engine
-    from backend.matching.cross_file_linker import link_batch_records
-    results, relationship_index = link_batch_records(results)
+    # Cross-File Record Linkage & Relationship Engine for completed files
+    completed_results = [r for r in results if r.status == "completed"]
+    if len(completed_results) >= 2:
+        from backend.matching.cross_file_linker import link_batch_records
+        linked_completed, relationship_index = link_batch_records(completed_results)
+        # Update results with linked completed results while keeping failed results
+        linked_map = {r.id: r for r in linked_completed}
+        results = [linked_map.get(r.id, r) for r in results]
+    else:
+        relationship_index = {"relationships": [], "summary": {"relationships_found": 0}}
+
+    successful_count = sum(1 for r in results if r.status == "completed")
+    failed_count = sum(1 for r in results if r.status == "failed")
+    
+    total_pages = 0
+    processed_pages = 0
+    total_extracted_records = 0
+    
+    for r in results:
+        if r.page_stats:
+            total_pages += r.page_stats.get("total_pages", 0)
+            processed_pages += r.page_stats.get("pages_extracted", 0)
+        elif r.document_preview and getattr(r.document_preview, "page_count", None):
+            total_pages += r.document_preview.page_count
+            processed_pages += r.document_preview.page_count
+        elif r.classification == "unstructured":
+            total_pages += 1
+            processed_pages += 1
+            
+        if isinstance(r.structured_data, list):
+            total_extracted_records += len(r.structured_data)
+        elif r.fields:
+            total_extracted_records += 1
 
     total_time = round((time.time() - start_time) * 1000, 2)
     summary_data = relationship_index.get("summary", {})
     batch_response = BatchProcessResponse(
         batch_id=batch_id,
         total_files=len(results),
+        successful_files=successful_count,
+        failed_files=failed_count,
+        total_pages=total_pages,
+        processed_pages=processed_pages,
+        total_extracted_records=total_extracted_records,
+        failed_file_details=failed_file_details if failed_file_details else None,
         results=results,
         relationship_index=relationship_index,
         total_entities_linked=summary_data.get("relationships_found", 0),

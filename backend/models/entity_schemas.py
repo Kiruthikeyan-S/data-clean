@@ -15,6 +15,13 @@ class EntityType(str, Enum):
     STUDENT = "student"
     MEDICAL = "medical"
     TECHNICAL_TEST_REPORT = "technical_test_report"
+    SHIPPING_LABEL = "shipping_label"
+    BOOK_EDUCATIONAL = "book_educational"
+    RECEIPT = "receipt"
+    BUSINESS_CARD = "business_card"
+    UTILITY_BILL = "utility_bill"
+    BANK_STATEMENT = "bank_statement"
+    GENERAL_DOCUMENT = "general_document"
 
 CONFIDENCE_THRESHOLD = 0.70
 
@@ -467,6 +474,135 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
         foreign_key_columns={"test_case_id"}
     )
 
+    shipping_label_schema = EntitySchema(
+        name=EntityType.SHIPPING_LABEL.value,
+        display_name="Shipping Label / Logistics",
+        icon="truck",
+        strong_keywords={
+            "tracking_number", "tracking_no", "tracking", "usps", "fedex", "ups", "dhl",
+            "priority_mail", "ship_to", "ship_from", "postage", "carrier", "sender_address",
+            "receiver_address", "package_weight", "delivery_confirmation", "postal_barcode"
+        },
+        medium_keywords={
+            "sender", "receiver", "destination", "origin", "delivery", "postage_paid",
+            "permit_no", "service_type", "zone", "rate", "label", "recipient", "shipper"
+        },
+        weak_keywords={"address", "name", "city", "state", "zip", "postal_code", "country", "date"},
+        aliases={
+            "tracking_no": "tracking_number",
+            "tracking": "tracking_number",
+            "track_no": "tracking_number",
+            "ship_to": "receiver_name",
+            "recipient": "receiver_name",
+            "receiver": "receiver_name",
+            "ship_from": "sender_name",
+            "shipper": "sender_name",
+            "sender": "sender_name",
+            "delivery_address": "receiver_address",
+            "destination": "receiver_address",
+            "service": "service_type",
+            "class": "service_type",
+            "postage_amount": "postage"
+        },
+        value_patterns=[
+            re.compile(r"^\d{4}\s*\d{4}\s*\d{4}\s*\d{4}\s*\d{4}\s*\d{2}$"),
+            re.compile(r"^1Z[0-9A-Z]{16}$", re.I),
+            re.compile(r"^\d{20,24}$"),
+            re.compile(r"^(?:USPS|FEDEX|UPS|DHL)\s+", re.I)
+        ],
+        co_occurrence_rules=[
+            {"tracking_number", "receiver_name"},
+            {"carrier", "tracking_number"},
+            {"ship_to", "ship_from"},
+            {"tracking_number", "sender_name"}
+        ],
+        foreign_key_columns={"tracking_number"}
+    )
+
+    book_educational_schema = EntitySchema(
+        name=EntityType.BOOK_EDUCATIONAL.value,
+        display_name="Book / Educational Publication",
+        icon="book-open",
+        strong_keywords={
+            "chapter", "chapter_number", "chapter_title", "isbn", "author", "edition",
+            "publisher", "preface", "table_of_contents", "section_heading", "subheading",
+            "textbook", "volume", "curriculum_text"
+        },
+        medium_keywords={
+            "pages", "page_number", "publication_date", "copyright", "index",
+            "bibliography", "contents", "glossary", "summary", "lesson", "unit"
+        },
+        weak_keywords={"title", "heading", "text", "description", "topic", "paragraph"},
+        aliases={
+            "chap": "chapter",
+            "chap_no": "chapter_number",
+            "chap_title": "chapter_title",
+            "section": "section_heading",
+            "page": "page_number",
+            "book_title": "title"
+        },
+        value_patterns=[
+            re.compile(r"^ISBN(?:-1[03])?:?\s*(?=[0-9X]{10}|(?=(?:[0-9]+[-\s]){3})[- 0-9X]{13}|97[89][0-9]{10}|(?=(?:[0-9]+[-\s]){4})[- 0-9]{17}$)", re.I),
+            re.compile(r"^Chapter\s+\d+", re.I)
+        ],
+        co_occurrence_rules=[
+            {"chapter_number", "chapter_title"},
+            {"author", "isbn"},
+            {"chapter", "section_heading"},
+            {"chapter_title", "page_number"}
+        ],
+        foreign_key_columns={"isbn"}
+    )
+
+    receipt_schema = EntitySchema(
+        name=EntityType.RECEIPT.value,
+        display_name="Receipt / Point of Sale",
+        icon="receipt",
+        strong_keywords={
+            "receipt_no", "receipt_number", "merchant", "store_receipt", "pos_terminal",
+            "cashier", "subtotal", "change_due", "tender", "cash"
+        },
+        medium_keywords={"items", "quantity", "tax", "total", "payment_method", "card_no", "auth_code"},
+        weak_keywords={"date", "time", "amount", "price", "discount"},
+        aliases={
+            "receipt_num": "receipt_no",
+            "store": "merchant",
+            "vendor": "merchant"
+        },
+        value_patterns=[
+            re.compile(r"^RCPT[-\s]?\d+$", re.I)
+        ],
+        co_occurrence_rules=[
+            {"merchant", "total"},
+            {"receipt_no", "subtotal"}
+        ],
+        foreign_key_columns={"receipt_no"}
+    )
+
+    business_card_schema = EntitySchema(
+        name=EntityType.BUSINESS_CARD.value,
+        display_name="Business Card / Contact Profile",
+        icon="contact",
+        strong_keywords={
+            "job_title", "designation", "company_name", "business_email", "office_phone",
+            "company_website", "card_title"
+        },
+        medium_keywords={"person_name", "mobile", "direct_line", "fax", "headquarters", "linkedin"},
+        weak_keywords={"name", "email", "phone", "address", "website"},
+        aliases={
+            "position": "job_title",
+            "title": "job_title",
+            "organization": "company_name",
+            "company": "company_name"
+        },
+        value_patterns=[],
+        co_occurrence_rules=[
+            {"person_name", "job_title", "company_name"},
+            {"job_title", "company_name", "email"}
+        ],
+        foreign_key_columns={"person_name"}
+    )
+
     return {
         EntityType.STORE.value: store_schema,
         EntityType.ITEM.value: item_schema,
@@ -478,6 +614,10 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
         EntityType.STUDENT.value: student_schema,
         EntityType.MEDICAL.value: medical_schema,
         EntityType.TECHNICAL_TEST_REPORT.value: technical_test_report_schema,
+        EntityType.SHIPPING_LABEL.value: shipping_label_schema,
+        EntityType.BOOK_EDUCATIONAL.value: book_educational_schema,
+        EntityType.RECEIPT.value: receipt_schema,
+        EntityType.BUSINESS_CARD.value: business_card_schema,
     }
 
 
@@ -1125,6 +1265,220 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             field_type="numeric",
             aliases={"source_page", "page", "page_no", "page_number"},
             description="Source document page number"
+        )
+    },
+
+    EntityType.SHIPPING_LABEL.value: {
+        "tracking_number": CanonicalField(
+            name="tracking_number",
+            field_type="id",
+            aliases={"tracking_number", "tracking_no", "tracking", "track_no", "package_id", "barcode_data", "id"},
+            description="Carrier tracking number or barcode payload",
+            is_primary_key=True
+        ),
+        "carrier": CanonicalField(
+            name="carrier",
+            field_type="text_title",
+            aliases={"carrier", "shipping_company", "postal_service", "courier"},
+            description="Shipping carrier (e.g. USPS, FedEx, UPS, DHL)"
+        ),
+        "service_type": CanonicalField(
+            name="service_type",
+            field_type="text_title",
+            aliases={"service_type", "service", "class", "mail_class", "shipping_method", "delivery_service"},
+            description="Service level (e.g. Priority Mail, Ground, Express)"
+        ),
+        "sender_name": CanonicalField(
+            name="sender_name",
+            field_type="text_title",
+            aliases={"sender_name", "sender", "ship_from_name", "shipper", "from_name", "origin_contact"},
+            description="Sender or shipper name"
+        ),
+        "sender_address": CanonicalField(
+            name="sender_address",
+            field_type="text",
+            aliases={"sender_address", "ship_from", "from_address", "shipper_address", "origin_address"},
+            description="Sender origin full address"
+        ),
+        "receiver_name": CanonicalField(
+            name="receiver_name",
+            field_type="text_title",
+            aliases={"receiver_name", "recipient", "ship_to_name", "to_name", "destination_contact", "consignee"},
+            description="Recipient or consignee name"
+        ),
+        "receiver_company": CanonicalField(
+            name="receiver_company",
+            field_type="text_title",
+            aliases={"receiver_company", "company", "recipient_company", "business_name"},
+            description="Recipient business or company name"
+        ),
+        "receiver_address": CanonicalField(
+            name="receiver_address",
+            field_type="text",
+            aliases={"receiver_address", "ship_to", "to_address", "delivery_address", "destination_address"},
+            description="Delivery destination full address"
+        ),
+        "postal_code": CanonicalField(
+            name="postal_code",
+            field_type="postal_code",
+            aliases={"postal_code", "zip", "zip_code", "destination_zip", "pincode"},
+            description="Destination postal or ZIP code"
+        ),
+        "postage": CanonicalField(
+            name="postage",
+            field_type="numeric",
+            aliases={"postage", "postage_paid", "postage_amount", "shipping_cost", "freight_charge"},
+            description="Paid postage amount"
+        ),
+        "delivery_instructions": CanonicalField(
+            name="delivery_instructions",
+            field_type="text",
+            aliases={"delivery_instructions", "instructions", "special_instructions", "handling_instructions"},
+            description="Special handling or delivery notes"
+        ),
+        "barcode_data": CanonicalField(
+            name="barcode_data",
+            field_type="text",
+            aliases={"barcode_data", "barcode", "barcode_payload", "scanned_barcode"},
+            description="Decoded 1D or 2D barcode data"
+        )
+    },
+
+    EntityType.BOOK_EDUCATIONAL.value: {
+        "chapter_number": CanonicalField(
+            name="chapter_number",
+            field_type="numeric",
+            aliases={"chapter_number", "chapter_no", "chapter", "unit_number", "module_no"},
+            description="Chapter or unit sequence number",
+            is_primary_key=True
+        ),
+        "chapter_title": CanonicalField(
+            name="chapter_title",
+            field_type="text_title",
+            aliases={"chapter_title", "title", "chapter_name", "lesson_title", "topic"},
+            description="Title of the chapter or lesson"
+        ),
+        "section_heading": CanonicalField(
+            name="section_heading",
+            field_type="text_title",
+            aliases={"section_heading", "section", "subheading", "topic_heading"},
+            description="Section or topic heading"
+        ),
+        "author": CanonicalField(
+            name="author",
+            field_type="text_title",
+            aliases={"author", "authors", "written_by", "editor"},
+            description="Author or editor of the book"
+        ),
+        "isbn": CanonicalField(
+            name="isbn",
+            field_type="id",
+            aliases={"isbn", "isbn_10", "isbn_13", "book_id"},
+            description="International Standard Book Number"
+        ),
+        "content": CanonicalField(
+            name="content",
+            field_type="text",
+            aliases={"content", "body", "paragraphs", "text", "summary"},
+            description="Primary text content or chapter summary"
+        ),
+        "page_number": CanonicalField(
+            name="page_number",
+            field_type="numeric",
+            aliases={"page_number", "page", "page_no"},
+            description="Source page number"
+        )
+    },
+
+    EntityType.RECEIPT.value: {
+        "receipt_no": CanonicalField(
+            name="receipt_no",
+            field_type="id",
+            aliases={"receipt_no", "receipt_number", "receipt_num", "receipt_id", "transaction_no", "id"},
+            description="Unique receipt number",
+            is_primary_key=True
+        ),
+        "merchant": CanonicalField(
+            name="merchant",
+            field_type="text_title",
+            aliases={"merchant", "store", "vendor", "retailer", "merchant_name"},
+            description="Merchant or store name"
+        ),
+        "receipt_date": CanonicalField(
+            name="receipt_date",
+            field_type="date",
+            aliases={"receipt_date", "date", "trans_date", "purchase_date"},
+            description="Receipt transaction date"
+        ),
+        "subtotal": CanonicalField(
+            name="subtotal",
+            field_type="numeric",
+            aliases={"subtotal", "sub_total", "net_amount"},
+            description="Receipt subtotal before taxes"
+        ),
+        "tax": CanonicalField(
+            name="tax",
+            field_type="numeric",
+            aliases={"tax", "tax_amount", "vat", "gst", "sales_tax"},
+            description="Tax amount"
+        ),
+        "total": CanonicalField(
+            name="total",
+            field_type="numeric",
+            aliases={"total", "total_amount", "grand_total", "amount_paid"},
+            description="Total amount paid"
+        ),
+        "payment_method": CanonicalField(
+            name="payment_method",
+            field_type="text",
+            aliases={"payment_method", "tender", "tender_type", "payment_type", "cash_card"},
+            description="Payment method (e.g. Visa, Cash, Debit)"
+        )
+    },
+
+    EntityType.BUSINESS_CARD.value: {
+        "person_name": CanonicalField(
+            name="person_name",
+            field_type="text_title",
+            aliases={"person_name", "name", "full_name", "contact_name"},
+            description="Contact person full name",
+            is_primary_key=True
+        ),
+        "job_title": CanonicalField(
+            name="job_title",
+            field_type="text_title",
+            aliases={"job_title", "title", "designation", "position", "role"},
+            description="Professional job title or designation"
+        ),
+        "company_name": CanonicalField(
+            name="company_name",
+            field_type="text_title",
+            aliases={"company_name", "company", "organization", "firm", "business"},
+            description="Company or employer name"
+        ),
+        "email": CanonicalField(
+            name="email",
+            field_type="email",
+            aliases={"email", "business_email", "work_email", "mail"},
+            description="Business email address"
+        ),
+        "phone": CanonicalField(
+            name="phone",
+            field_type="phone",
+            aliases={"phone", "work_phone", "mobile", "tel", "cell"},
+            description="Business phone or mobile number"
+        ),
+        "website": CanonicalField(
+            name="website",
+            field_type="text",
+            aliases={"website", "url", "web", "company_website"},
+            description="Company website"
+        ),
+        "address": CanonicalField(
+            name="address",
+            field_type="text",
+            aliases={"address", "office_address", "location"},
+            description="Office or company physical address"
         )
     }
 }

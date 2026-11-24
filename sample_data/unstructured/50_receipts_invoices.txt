@@ -1,0 +1,1148 @@
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #01
+----------------------------------------------------------------------
+Merchant: TechGear Outlet (Consumer Electronics)
+Location: 1024 Circuit Blvd, San Jose, CA
+Receipt No: INV-2026-8001
+Transaction Date: 2026-11-02 14:07:13
+Cashier ID: EMP-102
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $24.15
+  2. Supplemental Product B       Qty: 2    Price: $12.07
+  3. Service & Handling           Qty: 1    Price: $4.03
+
+Subtotal: $40.25
+State Tax (8.25%): $3.32
+Total Amount: $43.57
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_19876
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #02
+----------------------------------------------------------------------
+Merchant: Organic Valley Supermarket (Groceries & Produce)
+Location: 890 Farmer Ave, Denver, CO
+Receipt No: INV-2026-8002
+Transaction Date: 2026-11-03 14:14:26
+Cashier ID: EMP-103
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $33.00
+  2. Supplemental Product B       Qty: 2    Price: $16.50
+  3. Service & Handling           Qty: 1    Price: $5.50
+
+Subtotal: $55.00
+State Tax (8.25%): $4.54
+Total Amount: $59.54
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_29752
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #03
+----------------------------------------------------------------------
+Merchant: Urban Outfitters Depot (Apparel & Retail)
+Location: 520 Fashion Square, New York, NY
+Receipt No: INV-2026-8003
+Transaction Date: 2026-11-04 14:21:39
+Cashier ID: EMP-104
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $41.85
+  2. Supplemental Product B       Qty: 2    Price: $20.93
+  3. Service & Handling           Qty: 1    Price: $6.98
+
+Subtotal: $69.75
+State Tax (8.25%): $5.75
+Total Amount: $75.50
+Payment Method: Apple Pay
+Authorization Code: AUTH_39628
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #04
+----------------------------------------------------------------------
+Merchant: Prime Auto Services (Automotive & Maintenance)
+Location: 310 Mechanic Dr, Detroit, MI
+Receipt No: INV-2026-8004
+Transaction Date: 2026-11-05 14:28:52
+Cashier ID: EMP-105
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $50.70
+  2. Supplemental Product B       Qty: 2    Price: $25.35
+  3. Service & Handling           Qty: 1    Price: $8.45
+
+Subtotal: $84.50
+State Tax (8.25%): $6.97
+Total Amount: $91.47
+Payment Method: Cash
+Authorization Code: AUTH_49504
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #05
+----------------------------------------------------------------------
+Merchant: Green Thumb Nurseries (Home & Garden)
+Location: 77 Botanical Way, Portland, OR
+Receipt No: INV-2026-8005
+Transaction Date: 2026-11-06 14:35:05
+Cashier ID: EMP-106
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $59.55
+  2. Supplemental Product B       Qty: 2    Price: $29.77
+  3. Service & Handling           Qty: 1    Price: $9.93
+
+Subtotal: $99.25
+State Tax (8.25%): $8.19
+Total Amount: $107.44
+Payment Method: VISA ****4892
+Authorization Code: AUTH_59380
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #06
+----------------------------------------------------------------------
+Merchant: Apex Office Furniture (Commercial Equipment)
+Location: 600 Executive Blvd, Chicago, IL
+Receipt No: INV-2026-8006
+Transaction Date: 2026-11-07 14:42:18
+Cashier ID: EMP-107
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $68.40
+  2. Supplemental Product B       Qty: 2    Price: $34.20
+  3. Service & Handling           Qty: 1    Price: $11.40
+
+Subtotal: $114.00
+State Tax (8.25%): $9.41
+Total Amount: $123.41
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_69256
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #07
+----------------------------------------------------------------------
+Merchant: Skyline Books & Cafe (Books & Beverages)
+Location: 412 University Ave, Boston, MA
+Receipt No: INV-2026-8007
+Transaction Date: 2026-11-08 14:49:31
+Cashier ID: EMP-108
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $77.25
+  2. Supplemental Product B       Qty: 2    Price: $38.62
+  3. Service & Handling           Qty: 1    Price: $12.88
+
+Subtotal: $128.75
+State Tax (8.25%): $10.62
+Total Amount: $139.37
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_79132
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #08
+----------------------------------------------------------------------
+Merchant: Blue Horizon Bistro (Dining & Hospitality)
+Location: 45 Waterfront Way, San Francisco, CA
+Receipt No: INV-2026-8008
+Transaction Date: 2026-11-09 14:56:44
+Cashier ID: EMP-109
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $86.10
+  2. Supplemental Product B       Qty: 2    Price: $43.05
+  3. Service & Handling           Qty: 1    Price: $14.35
+
+Subtotal: $143.50
+State Tax (8.25%): $11.84
+Total Amount: $155.34
+Payment Method: Apple Pay
+Authorization Code: AUTH_89008
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #09
+----------------------------------------------------------------------
+Merchant: TechGear Outlet (Consumer Electronics)
+Location: 1024 Circuit Blvd, San Jose, CA
+Receipt No: INV-2026-8009
+Transaction Date: 2026-11-10 14:03:57
+Cashier ID: EMP-110
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $94.95
+  2. Supplemental Product B       Qty: 2    Price: $47.48
+  3. Service & Handling           Qty: 1    Price: $15.83
+
+Subtotal: $158.25
+State Tax (8.25%): $13.06
+Total Amount: $171.31
+Payment Method: Cash
+Authorization Code: AUTH_98884
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #10
+----------------------------------------------------------------------
+Merchant: Organic Valley Supermarket (Groceries & Produce)
+Location: 890 Farmer Ave, Denver, CO
+Receipt No: INV-2026-8010
+Transaction Date: 2026-11-11 14:10:10
+Cashier ID: EMP-111
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $103.80
+  2. Supplemental Product B       Qty: 2    Price: $51.90
+  3. Service & Handling           Qty: 1    Price: $17.30
+
+Subtotal: $173.00
+State Tax (8.25%): $14.27
+Total Amount: $187.27
+Payment Method: VISA ****4892
+Authorization Code: AUTH_18760
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #11
+----------------------------------------------------------------------
+Merchant: Urban Outfitters Depot (Apparel & Retail)
+Location: 520 Fashion Square, New York, NY
+Receipt No: INV-2026-8011
+Transaction Date: 2026-11-12 14:17:23
+Cashier ID: EMP-112
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $112.65
+  2. Supplemental Product B       Qty: 2    Price: $56.32
+  3. Service & Handling           Qty: 1    Price: $18.78
+
+Subtotal: $187.75
+State Tax (8.25%): $15.49
+Total Amount: $203.24
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_28636
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #12
+----------------------------------------------------------------------
+Merchant: Prime Auto Services (Automotive & Maintenance)
+Location: 310 Mechanic Dr, Detroit, MI
+Receipt No: INV-2026-8012
+Transaction Date: 2026-11-13 14:24:36
+Cashier ID: EMP-101
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $121.50
+  2. Supplemental Product B       Qty: 2    Price: $60.75
+  3. Service & Handling           Qty: 1    Price: $20.25
+
+Subtotal: $202.50
+State Tax (8.25%): $16.71
+Total Amount: $219.21
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_38512
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #13
+----------------------------------------------------------------------
+Merchant: Green Thumb Nurseries (Home & Garden)
+Location: 77 Botanical Way, Portland, OR
+Receipt No: INV-2026-8013
+Transaction Date: 2026-11-14 14:31:49
+Cashier ID: EMP-102
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $130.35
+  2. Supplemental Product B       Qty: 2    Price: $65.17
+  3. Service & Handling           Qty: 1    Price: $21.73
+
+Subtotal: $217.25
+State Tax (8.25%): $17.92
+Total Amount: $235.17
+Payment Method: Apple Pay
+Authorization Code: AUTH_48388
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #14
+----------------------------------------------------------------------
+Merchant: Apex Office Furniture (Commercial Equipment)
+Location: 600 Executive Blvd, Chicago, IL
+Receipt No: INV-2026-8014
+Transaction Date: 2026-11-15 14:38:02
+Cashier ID: EMP-103
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $139.20
+  2. Supplemental Product B       Qty: 2    Price: $69.60
+  3. Service & Handling           Qty: 1    Price: $23.20
+
+Subtotal: $232.00
+State Tax (8.25%): $19.14
+Total Amount: $251.14
+Payment Method: Cash
+Authorization Code: AUTH_58264
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #15
+----------------------------------------------------------------------
+Merchant: Skyline Books & Cafe (Books & Beverages)
+Location: 412 University Ave, Boston, MA
+Receipt No: INV-2026-8015
+Transaction Date: 2026-11-16 14:45:15
+Cashier ID: EMP-104
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $148.05
+  2. Supplemental Product B       Qty: 2    Price: $74.02
+  3. Service & Handling           Qty: 1    Price: $24.68
+
+Subtotal: $246.75
+State Tax (8.25%): $20.36
+Total Amount: $267.11
+Payment Method: VISA ****4892
+Authorization Code: AUTH_68140
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #16
+----------------------------------------------------------------------
+Merchant: Blue Horizon Bistro (Dining & Hospitality)
+Location: 45 Waterfront Way, San Francisco, CA
+Receipt No: INV-2026-8016
+Transaction Date: 2026-11-17 14:52:28
+Cashier ID: EMP-105
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $156.90
+  2. Supplemental Product B       Qty: 2    Price: $78.45
+  3. Service & Handling           Qty: 1    Price: $26.15
+
+Subtotal: $261.50
+State Tax (8.25%): $21.57
+Total Amount: $283.07
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_78016
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #17
+----------------------------------------------------------------------
+Merchant: TechGear Outlet (Consumer Electronics)
+Location: 1024 Circuit Blvd, San Jose, CA
+Receipt No: INV-2026-8017
+Transaction Date: 2026-11-18 14:59:41
+Cashier ID: EMP-106
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $165.75
+  2. Supplemental Product B       Qty: 2    Price: $82.88
+  3. Service & Handling           Qty: 1    Price: $27.62
+
+Subtotal: $276.25
+State Tax (8.25%): $22.79
+Total Amount: $299.04
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_87892
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #18
+----------------------------------------------------------------------
+Merchant: Organic Valley Supermarket (Groceries & Produce)
+Location: 890 Farmer Ave, Denver, CO
+Receipt No: INV-2026-8018
+Transaction Date: 2026-11-19 14:06:54
+Cashier ID: EMP-107
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $174.60
+  2. Supplemental Product B       Qty: 2    Price: $87.30
+  3. Service & Handling           Qty: 1    Price: $29.10
+
+Subtotal: $291.00
+State Tax (8.25%): $24.01
+Total Amount: $315.01
+Payment Method: Apple Pay
+Authorization Code: AUTH_97768
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #19
+----------------------------------------------------------------------
+Merchant: Urban Outfitters Depot (Apparel & Retail)
+Location: 520 Fashion Square, New York, NY
+Receipt No: INV-2026-8019
+Transaction Date: 2026-11-20 14:13:07
+Cashier ID: EMP-108
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $183.45
+  2. Supplemental Product B       Qty: 2    Price: $91.72
+  3. Service & Handling           Qty: 1    Price: $30.58
+
+Subtotal: $305.75
+State Tax (8.25%): $25.22
+Total Amount: $330.97
+Payment Method: Cash
+Authorization Code: AUTH_17644
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #20
+----------------------------------------------------------------------
+Merchant: Prime Auto Services (Automotive & Maintenance)
+Location: 310 Mechanic Dr, Detroit, MI
+Receipt No: INV-2026-8020
+Transaction Date: 2026-11-21 14:20:20
+Cashier ID: EMP-109
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $192.30
+  2. Supplemental Product B       Qty: 2    Price: $96.15
+  3. Service & Handling           Qty: 1    Price: $32.05
+
+Subtotal: $320.50
+State Tax (8.25%): $26.44
+Total Amount: $346.94
+Payment Method: VISA ****4892
+Authorization Code: AUTH_27520
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #21
+----------------------------------------------------------------------
+Merchant: Green Thumb Nurseries (Home & Garden)
+Location: 77 Botanical Way, Portland, OR
+Receipt No: INV-2026-8021
+Transaction Date: 2026-11-22 14:27:33
+Cashier ID: EMP-110
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $201.15
+  2. Supplemental Product B       Qty: 2    Price: $100.58
+  3. Service & Handling           Qty: 1    Price: $33.52
+
+Subtotal: $335.25
+State Tax (8.25%): $27.66
+Total Amount: $362.91
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_37396
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #22
+----------------------------------------------------------------------
+Merchant: Apex Office Furniture (Commercial Equipment)
+Location: 600 Executive Blvd, Chicago, IL
+Receipt No: INV-2026-8022
+Transaction Date: 2026-11-23 14:34:46
+Cashier ID: EMP-111
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $210.00
+  2. Supplemental Product B       Qty: 2    Price: $105.00
+  3. Service & Handling           Qty: 1    Price: $35.00
+
+Subtotal: $350.00
+State Tax (8.25%): $28.88
+Total Amount: $378.88
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_47272
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #23
+----------------------------------------------------------------------
+Merchant: Skyline Books & Cafe (Books & Beverages)
+Location: 412 University Ave, Boston, MA
+Receipt No: INV-2026-8023
+Transaction Date: 2026-11-24 14:41:59
+Cashier ID: EMP-112
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $218.85
+  2. Supplemental Product B       Qty: 2    Price: $109.42
+  3. Service & Handling           Qty: 1    Price: $36.48
+
+Subtotal: $364.75
+State Tax (8.25%): $30.09
+Total Amount: $394.84
+Payment Method: Apple Pay
+Authorization Code: AUTH_57148
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #24
+----------------------------------------------------------------------
+Merchant: Blue Horizon Bistro (Dining & Hospitality)
+Location: 45 Waterfront Way, San Francisco, CA
+Receipt No: INV-2026-8024
+Transaction Date: 2026-11-25 14:48:12
+Cashier ID: EMP-101
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $17.70
+  2. Supplemental Product B       Qty: 2    Price: $8.85
+  3. Service & Handling           Qty: 1    Price: $2.95
+
+Subtotal: $29.50
+State Tax (8.25%): $2.43
+Total Amount: $31.93
+Payment Method: Cash
+Authorization Code: AUTH_67024
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #25
+----------------------------------------------------------------------
+Merchant: TechGear Outlet (Consumer Electronics)
+Location: 1024 Circuit Blvd, San Jose, CA
+Receipt No: INV-2026-8025
+Transaction Date: 2026-11-26 14:55:25
+Cashier ID: EMP-102
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $26.55
+  2. Supplemental Product B       Qty: 2    Price: $13.28
+  3. Service & Handling           Qty: 1    Price: $4.42
+
+Subtotal: $44.25
+State Tax (8.25%): $3.65
+Total Amount: $47.90
+Payment Method: VISA ****4892
+Authorization Code: AUTH_76900
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #26
+----------------------------------------------------------------------
+Merchant: Organic Valley Supermarket (Groceries & Produce)
+Location: 890 Farmer Ave, Denver, CO
+Receipt No: INV-2026-8026
+Transaction Date: 2026-11-27 14:02:38
+Cashier ID: EMP-103
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $35.40
+  2. Supplemental Product B       Qty: 2    Price: $17.70
+  3. Service & Handling           Qty: 1    Price: $5.90
+
+Subtotal: $59.00
+State Tax (8.25%): $4.87
+Total Amount: $63.87
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_86776
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #27
+----------------------------------------------------------------------
+Merchant: Urban Outfitters Depot (Apparel & Retail)
+Location: 520 Fashion Square, New York, NY
+Receipt No: INV-2026-8027
+Transaction Date: 2026-11-28 14:09:51
+Cashier ID: EMP-104
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $44.25
+  2. Supplemental Product B       Qty: 2    Price: $22.12
+  3. Service & Handling           Qty: 1    Price: $7.38
+
+Subtotal: $73.75
+State Tax (8.25%): $6.08
+Total Amount: $79.83
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_96652
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #28
+----------------------------------------------------------------------
+Merchant: Prime Auto Services (Automotive & Maintenance)
+Location: 310 Mechanic Dr, Detroit, MI
+Receipt No: INV-2026-8028
+Transaction Date: 2026-11-01 14:16:04
+Cashier ID: EMP-105
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $53.10
+  2. Supplemental Product B       Qty: 2    Price: $26.55
+  3. Service & Handling           Qty: 1    Price: $8.85
+
+Subtotal: $88.50
+State Tax (8.25%): $7.30
+Total Amount: $95.80
+Payment Method: Apple Pay
+Authorization Code: AUTH_16528
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #29
+----------------------------------------------------------------------
+Merchant: Green Thumb Nurseries (Home & Garden)
+Location: 77 Botanical Way, Portland, OR
+Receipt No: INV-2026-8029
+Transaction Date: 2026-11-02 14:23:17
+Cashier ID: EMP-106
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $61.95
+  2. Supplemental Product B       Qty: 2    Price: $30.97
+  3. Service & Handling           Qty: 1    Price: $10.33
+
+Subtotal: $103.25
+State Tax (8.25%): $8.52
+Total Amount: $111.77
+Payment Method: Cash
+Authorization Code: AUTH_26404
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #30
+----------------------------------------------------------------------
+Merchant: Apex Office Furniture (Commercial Equipment)
+Location: 600 Executive Blvd, Chicago, IL
+Receipt No: INV-2026-8030
+Transaction Date: 2026-11-03 14:30:30
+Cashier ID: EMP-107
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $70.80
+  2. Supplemental Product B       Qty: 2    Price: $35.40
+  3. Service & Handling           Qty: 1    Price: $11.80
+
+Subtotal: $118.00
+State Tax (8.25%): $9.74
+Total Amount: $127.74
+Payment Method: VISA ****4892
+Authorization Code: AUTH_36280
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #31
+----------------------------------------------------------------------
+Merchant: Skyline Books & Cafe (Books & Beverages)
+Location: 412 University Ave, Boston, MA
+Receipt No: INV-2026-8031
+Transaction Date: 2026-11-04 14:37:43
+Cashier ID: EMP-108
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $79.65
+  2. Supplemental Product B       Qty: 2    Price: $39.82
+  3. Service & Handling           Qty: 1    Price: $13.28
+
+Subtotal: $132.75
+State Tax (8.25%): $10.95
+Total Amount: $143.70
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_46156
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #32
+----------------------------------------------------------------------
+Merchant: Blue Horizon Bistro (Dining & Hospitality)
+Location: 45 Waterfront Way, San Francisco, CA
+Receipt No: INV-2026-8032
+Transaction Date: 2026-11-05 14:44:56
+Cashier ID: EMP-109
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $88.50
+  2. Supplemental Product B       Qty: 2    Price: $44.25
+  3. Service & Handling           Qty: 1    Price: $14.75
+
+Subtotal: $147.50
+State Tax (8.25%): $12.17
+Total Amount: $159.67
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_56032
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #33
+----------------------------------------------------------------------
+Merchant: TechGear Outlet (Consumer Electronics)
+Location: 1024 Circuit Blvd, San Jose, CA
+Receipt No: INV-2026-8033
+Transaction Date: 2026-11-06 14:51:09
+Cashier ID: EMP-110
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $97.35
+  2. Supplemental Product B       Qty: 2    Price: $48.67
+  3. Service & Handling           Qty: 1    Price: $16.23
+
+Subtotal: $162.25
+State Tax (8.25%): $13.39
+Total Amount: $175.64
+Payment Method: Apple Pay
+Authorization Code: AUTH_65908
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #34
+----------------------------------------------------------------------
+Merchant: Organic Valley Supermarket (Groceries & Produce)
+Location: 890 Farmer Ave, Denver, CO
+Receipt No: INV-2026-8034
+Transaction Date: 2026-11-07 14:58:22
+Cashier ID: EMP-111
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $106.20
+  2. Supplemental Product B       Qty: 2    Price: $53.10
+  3. Service & Handling           Qty: 1    Price: $17.70
+
+Subtotal: $177.00
+State Tax (8.25%): $14.60
+Total Amount: $191.60
+Payment Method: Cash
+Authorization Code: AUTH_75784
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #35
+----------------------------------------------------------------------
+Merchant: Urban Outfitters Depot (Apparel & Retail)
+Location: 520 Fashion Square, New York, NY
+Receipt No: INV-2026-8035
+Transaction Date: 2026-11-08 14:05:35
+Cashier ID: EMP-112
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $115.05
+  2. Supplemental Product B       Qty: 2    Price: $57.52
+  3. Service & Handling           Qty: 1    Price: $19.18
+
+Subtotal: $191.75
+State Tax (8.25%): $15.82
+Total Amount: $207.57
+Payment Method: VISA ****4892
+Authorization Code: AUTH_85660
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #36
+----------------------------------------------------------------------
+Merchant: Prime Auto Services (Automotive & Maintenance)
+Location: 310 Mechanic Dr, Detroit, MI
+Receipt No: INV-2026-8036
+Transaction Date: 2026-11-09 14:12:48
+Cashier ID: EMP-101
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $123.90
+  2. Supplemental Product B       Qty: 2    Price: $61.95
+  3. Service & Handling           Qty: 1    Price: $20.65
+
+Subtotal: $206.50
+State Tax (8.25%): $17.04
+Total Amount: $223.54
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_95536
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #37
+----------------------------------------------------------------------
+Merchant: Green Thumb Nurseries (Home & Garden)
+Location: 77 Botanical Way, Portland, OR
+Receipt No: INV-2026-8037
+Transaction Date: 2026-11-10 14:19:01
+Cashier ID: EMP-102
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $132.75
+  2. Supplemental Product B       Qty: 2    Price: $66.38
+  3. Service & Handling           Qty: 1    Price: $22.12
+
+Subtotal: $221.25
+State Tax (8.25%): $18.25
+Total Amount: $239.50
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_15412
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #38
+----------------------------------------------------------------------
+Merchant: Apex Office Furniture (Commercial Equipment)
+Location: 600 Executive Blvd, Chicago, IL
+Receipt No: INV-2026-8038
+Transaction Date: 2026-11-11 14:26:14
+Cashier ID: EMP-103
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $141.60
+  2. Supplemental Product B       Qty: 2    Price: $70.80
+  3. Service & Handling           Qty: 1    Price: $23.60
+
+Subtotal: $236.00
+State Tax (8.25%): $19.47
+Total Amount: $255.47
+Payment Method: Apple Pay
+Authorization Code: AUTH_25288
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #39
+----------------------------------------------------------------------
+Merchant: Skyline Books & Cafe (Books & Beverages)
+Location: 412 University Ave, Boston, MA
+Receipt No: INV-2026-8039
+Transaction Date: 2026-11-12 14:33:27
+Cashier ID: EMP-104
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $150.45
+  2. Supplemental Product B       Qty: 2    Price: $75.22
+  3. Service & Handling           Qty: 1    Price: $25.08
+
+Subtotal: $250.75
+State Tax (8.25%): $20.69
+Total Amount: $271.44
+Payment Method: Cash
+Authorization Code: AUTH_35164
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #40
+----------------------------------------------------------------------
+Merchant: Blue Horizon Bistro (Dining & Hospitality)
+Location: 45 Waterfront Way, San Francisco, CA
+Receipt No: INV-2026-8040
+Transaction Date: 2026-11-13 14:40:40
+Cashier ID: EMP-105
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $159.30
+  2. Supplemental Product B       Qty: 2    Price: $79.65
+  3. Service & Handling           Qty: 1    Price: $26.55
+
+Subtotal: $265.50
+State Tax (8.25%): $21.90
+Total Amount: $287.40
+Payment Method: VISA ****4892
+Authorization Code: AUTH_45040
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #41
+----------------------------------------------------------------------
+Merchant: TechGear Outlet (Consumer Electronics)
+Location: 1024 Circuit Blvd, San Jose, CA
+Receipt No: INV-2026-8041
+Transaction Date: 2026-11-14 14:47:53
+Cashier ID: EMP-106
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $168.15
+  2. Supplemental Product B       Qty: 2    Price: $84.08
+  3. Service & Handling           Qty: 1    Price: $28.03
+
+Subtotal: $280.25
+State Tax (8.25%): $23.12
+Total Amount: $303.37
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_54916
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #42
+----------------------------------------------------------------------
+Merchant: Organic Valley Supermarket (Groceries & Produce)
+Location: 890 Farmer Ave, Denver, CO
+Receipt No: INV-2026-8042
+Transaction Date: 2026-11-15 14:54:06
+Cashier ID: EMP-107
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $177.00
+  2. Supplemental Product B       Qty: 2    Price: $88.50
+  3. Service & Handling           Qty: 1    Price: $29.50
+
+Subtotal: $295.00
+State Tax (8.25%): $24.34
+Total Amount: $319.34
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_64792
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #43
+----------------------------------------------------------------------
+Merchant: Urban Outfitters Depot (Apparel & Retail)
+Location: 520 Fashion Square, New York, NY
+Receipt No: INV-2026-8043
+Transaction Date: 2026-11-16 14:01:19
+Cashier ID: EMP-108
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $185.85
+  2. Supplemental Product B       Qty: 2    Price: $92.92
+  3. Service & Handling           Qty: 1    Price: $30.98
+
+Subtotal: $309.75
+State Tax (8.25%): $25.55
+Total Amount: $335.30
+Payment Method: Apple Pay
+Authorization Code: AUTH_74668
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #44
+----------------------------------------------------------------------
+Merchant: Prime Auto Services (Automotive & Maintenance)
+Location: 310 Mechanic Dr, Detroit, MI
+Receipt No: INV-2026-8044
+Transaction Date: 2026-11-17 14:08:32
+Cashier ID: EMP-109
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $194.70
+  2. Supplemental Product B       Qty: 2    Price: $97.35
+  3. Service & Handling           Qty: 1    Price: $32.45
+
+Subtotal: $324.50
+State Tax (8.25%): $26.77
+Total Amount: $351.27
+Payment Method: Cash
+Authorization Code: AUTH_84544
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #45
+----------------------------------------------------------------------
+Merchant: Green Thumb Nurseries (Home & Garden)
+Location: 77 Botanical Way, Portland, OR
+Receipt No: INV-2026-8045
+Transaction Date: 2026-11-18 14:15:45
+Cashier ID: EMP-110
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $203.55
+  2. Supplemental Product B       Qty: 2    Price: $101.77
+  3. Service & Handling           Qty: 1    Price: $33.93
+
+Subtotal: $339.25
+State Tax (8.25%): $27.99
+Total Amount: $367.24
+Payment Method: VISA ****4892
+Authorization Code: AUTH_94420
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #46
+----------------------------------------------------------------------
+Merchant: Apex Office Furniture (Commercial Equipment)
+Location: 600 Executive Blvd, Chicago, IL
+Receipt No: INV-2026-8046
+Transaction Date: 2026-11-19 14:22:58
+Cashier ID: EMP-111
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $212.40
+  2. Supplemental Product B       Qty: 2    Price: $106.20
+  3. Service & Handling           Qty: 1    Price: $35.40
+
+Subtotal: $354.00
+State Tax (8.25%): $29.21
+Total Amount: $383.21
+Payment Method: Mastercard ****1204
+Authorization Code: AUTH_14296
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #47
+----------------------------------------------------------------------
+Merchant: Skyline Books & Cafe (Books & Beverages)
+Location: 412 University Ave, Boston, MA
+Receipt No: INV-2026-8047
+Transaction Date: 2026-11-20 14:29:11
+Cashier ID: EMP-112
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $221.25
+  2. Supplemental Product B       Qty: 2    Price: $110.62
+  3. Service & Handling           Qty: 1    Price: $36.88
+
+Subtotal: $368.75
+State Tax (8.25%): $30.42
+Total Amount: $399.17
+Payment Method: AMEX ****8019
+Authorization Code: AUTH_24172
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #48
+----------------------------------------------------------------------
+Merchant: Blue Horizon Bistro (Dining & Hospitality)
+Location: 45 Waterfront Way, San Francisco, CA
+Receipt No: INV-2026-8048
+Transaction Date: 2026-11-21 14:36:24
+Cashier ID: EMP-101
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $20.10
+  2. Supplemental Product B       Qty: 2    Price: $10.05
+  3. Service & Handling           Qty: 1    Price: $3.35
+
+Subtotal: $33.50
+State Tax (8.25%): $2.76
+Total Amount: $36.26
+Payment Method: Apple Pay
+Authorization Code: AUTH_34048
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #49
+----------------------------------------------------------------------
+Merchant: TechGear Outlet (Consumer Electronics)
+Location: 1024 Circuit Blvd, San Jose, CA
+Receipt No: INV-2026-8049
+Transaction Date: 2026-11-22 14:43:37
+Cashier ID: EMP-102
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $28.95
+  2. Supplemental Product B       Qty: 2    Price: $14.47
+  3. Service & Handling           Qty: 1    Price: $4.83
+
+Subtotal: $48.25
+State Tax (8.25%): $3.98
+Total Amount: $52.23
+Payment Method: Cash
+Authorization Code: AUTH_43924
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
+
+
+----------------------------------------------------------------------
+RECEIPT / TAX INVOICE #50
+----------------------------------------------------------------------
+Merchant: Organic Valley Supermarket (Groceries & Produce)
+Location: 890 Farmer Ave, Denver, CO
+Receipt No: INV-2026-8050
+Transaction Date: 2026-11-23 14:50:50
+Cashier ID: EMP-103
+
+Purchased Line Items:
+  1. Standard Item Pack A         Qty: 1    Price: $37.80
+  2. Supplemental Product B       Qty: 2    Price: $18.90
+  3. Service & Handling           Qty: 1    Price: $6.30
+
+Subtotal: $63.00
+State Tax (8.25%): $5.20
+Total Amount: $68.20
+Payment Method: VISA ****4892
+Authorization Code: AUTH_53800
+
+Thank you for your patronage! Please retain this receipt for warranty and returns.
