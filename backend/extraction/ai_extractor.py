@@ -20,32 +20,203 @@ GROQ_MODELS = [
 ]
 
 
-def extract_batch_records(
+def repair_and_parse_json(content: str) -> Optional[Dict[str, Any]]:
+    """
+    Robust JSON parser for LLM outputs.
+    Handles:
+    - Markdown code fences (```json ... ```)
+    - Truncated JSON (unclosed brackets/braces)
+    - Trailing commas before } or ]
+    - Leading/trailing text outside the JSON object
+    """
+    if not content or not content.strip():
+        return None
+
+    text = content.strip()
+
+    # 1. Strip markdown fences if present
+    fence_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text, re.IGNORECASE)
+    if fence_match:
+        text = fence_match.group(1).strip()
+
+    # 2. Extract substring from first '{' or '[' to last '}' or ']'
+    start_brace = text.find('{')
+    start_bracket = text.find('[')
+    
+    start_idx = -1
+    if start_brace != -1 and start_bracket != -1:
+        start_idx = min(start_brace, start_bracket)
+    elif start_brace != -1:
+        start_idx = start_brace
+    elif start_bracket != -1:
+        start_idx = start_bracket
+
+    if start_idx != -1:
+        text = text[start_idx:]
+
+    # Direct attempt
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            return parsed
+        elif isinstance(parsed, list):
+            return {"data_type": "records", "records": parsed}
+    except Exception:
+        pass
+
+    # 3. Clean common LLM quirks (trailing commas)
+    cleaned = re.sub(r',\s*([}\]])', r'\1', text)
+    try:
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, dict):
+            return parsed
+        elif isinstance(parsed, list):
+            return {"data_type": "records", "records": parsed}
+    except Exception:
+        pass
+
+    # 4. Handle truncated JSON by balancing open braces and brackets
+    open_braces = 0
+    open_brackets = 0
+    in_string = False
+    escape = False
+
+    for char in cleaned:
+        if escape:
+            escape = False
+            continue
+        if char == '\\':
+            escape = True
+            continue
+        if char == '"':
+            in_string = not in_string
+            continue
+        if not in_string:
+            if char == '{':
+                open_braces += 1
+            elif char == '}':
+                open_braces = max(0, open_braces - 1)
+            elif char == '[':
+                open_brackets += 1
+            elif char == ']':
+                open_brackets = max(0, open_brackets - 1)
+
+    balanced = cleaned
+    if in_string:
+        balanced += '"'
+
+    balanced += (']' * open_brackets) + ('}' * open_braces)
+    balanced = re.sub(r',\s*([}\]])', r'\1', balanced)
+
+    try:
+        parsed = json.loads(balanced)
+        if isinstance(parsed, dict):
+            return parsed
+        elif isinstance(parsed, list):
+            return {"data_type": "records", "records": parsed}
+    except Exception:
+        pass
+
+    return None
+
+
+def separate_amount_and_currency(raw_value: Any) -> Tuple[Optional[float], Optional[str]]:
+    """Separates numeric amount from currency symbol or code."""
+    if raw_value is None:
+        return None, None
+    s = str(raw_value).strip()
+    if not s:
+        return None, None
+
+    currency_map = {
+        "$": "USD", "USD": "USD",
+        "₹": "INR", "INR": "INR", "RS": "INR", "RS.": "INR",
+        "€": "EUR", "EUR": "EUR",
+        "£": "GBP", "GBP": "GBP",
+        "SAR": "SAR", "SR": "SAR",
+        "AED": "AED", "CAD": "CAD", "AUD": "AUD", "JPY": "JPY", "CNY": "CNY"
+    }
+
+    found_curr = None
+    for sym, code in currency_map.items():
+        pattern = r'(?i)(?:^|\s|\b)' + re.escape(sym) + r'(?:\s|\b|$)' if len(sym) > 1 else re.escape(sym)
+        if re.search(pattern, s):
+            found_curr = code
+            break
+
+    num_str = re.sub(r'[^\d.-]', '', s.replace(',', ''))
+    amt = None
+    try:
+        if num_str and num_str not in ('-', '.'):
+            amt = float(num_str)
+    except ValueError:
+        pass
+
+    return amt, found_curr
+
+
+def normalize_field_casing(key: str, val: Any) -> Any:
+    """
+    Preserves raw casing for IDs, SKUs, emails, codes, and abbreviations
+    without forcing improper Title Case.
+    """
+    if not isinstance(val, str):
+        return val
+    s = val.strip()
+    if not s:
+        return s
+
+    k = key.lower()
+    # IDs, SKUs, codes, VINs, UUIDs: preserve exact string without title casing
+    if any(tok in k for tok in ("id", "sku", "code", "vin", "uuid", "isbn", "no", "number", "key")):
+        return s
+
+    # Emails: standard lowercase
+    if "email" in k or ("@" in s and "." in s and " " not in s):
+        return s.lower()
+
+    # Acronyms or currency: preserve if all caps (e.g. USA, USD, VAT, GST, CEO, CTO)
+    if s.isupper() and len(s) <= 5:
+        return s
+
+    return s
+
+
+def _extract_batch_chunk(
     client: Groq,
     batch_text: str,
+    batch_index: int,
     expected_count: int,
-    models: List[str]
-) -> Optional[List[Dict[str, Any]]]:
-    """Helper to extract tabular records for a specific chunk/batch of items."""
+    models: List[str] = GROQ_MODELS
+) -> Dict[str, Any]:
+    """
+    Extracts tabular records for a specific chunk/batch of items with programmatic verification.
+    Reconciles expected_count vs extracted_count, tracks batch status, retries incomplete chunks,
+    and returns a structured batch result.
+    """
     system_instruction = (
         "You are an expert Data Extraction and Schema Normalization engine.\n"
         "Extract every single item/record from the provided text into structured tabular records JSON.\n"
         "Standardization rules:\n"
         "- Dates: Format as ISO 8601 (YYYY-MM-DD or YYYY-MM)\n"
         "- Names & Roles: Format in Title Case\n"
+        "- Identifiers & Emails & SKUs: Preserve exact original casing, DO NOT Title Case IDs or codes\n"
         "- Numbers & Salaries: Clean numeric values without currency symbols ($/₹/€/£/INR/USD) or commas\n"
-        "- Currencies & Periods: Normalized into separate standardized columns (e.g. currency: 'USD', period: 'Year' or 'Hour')\n\n"
+        "- Currencies: Extracted into a separate 'currency' column (e.g. 'USD', 'INR', 'SAR', 'EUR')\n\n"
         "Return JSON format:\n"
         "{\n"
         '  "data_type": "records",\n'
-        '  "columns": ["name", "job_role", "location", "joining_date", "manager", "salary", "currency", "period"],\n'
+        '  "columns": ["id", "name", "job_role", "location", "joining_date", "manager", "salary", "currency"],\n'
         '  "records": [\n'
-        '    {"name": "...", "job_role": "...", "location": "...", "joining_date": "YYYY-MM-DD", "manager": "...", "salary": 145000, "currency": "USD", "period": "Year"}\n'
+        '    {"id": "EMP-001", "name": "...", "job_role": "...", "location": "...", "joining_date": "YYYY-MM-DD", "manager": "...", "salary": 145000, "currency": "USD"}\n'
         "  ]\n"
         "}\n\n"
         f"CRITICAL: You MUST extract ALL {expected_count} individual items present in the text into 'records'. "
         f"Return exactly {expected_count} records without skipping, omitting, or truncating any."
     )
+
+    best_records: List[Dict[str, Any]] = []
+    errors: List[str] = []
 
     for model_name in models:
         try:
@@ -53,22 +224,77 @@ def extract_batch_records(
                 model=model_name,
                 messages=[
                     {"role": "system", "content": system_instruction},
-                    {"role": "user", "content": f"Extract all {expected_count} records from this batch:\n\n{batch_text}"}
+                    {"role": "user", "content": f"Extract all {expected_count} records from batch #{batch_index}:\n\n{batch_text}"}
                 ],
                 response_format={"type": "json_object"},
                 max_tokens=8192,
                 temperature=0.1
             )
             content = response.choices[0].message.content
-            parsed = json.loads(content)
-            records = parsed.get("records")
-            if records and isinstance(records, list) and len(records) > 0:
-                return [r for r in records if isinstance(r, dict)]
+            parsed = repair_and_parse_json(content)
+            if parsed and isinstance(parsed, dict):
+                records = parsed.get("records")
+                if records and isinstance(records, list):
+                    valid_recs = [r for r in records if isinstance(r, dict) and len(r) > 0]
+                    # Check if this model met the expected count
+                    if len(valid_recs) >= expected_count:
+                        best_records = valid_recs
+                        break
+                    elif len(valid_recs) > len(best_records):
+                        best_records = valid_recs
         except Exception as err:
-            print(f"Batch extraction attempt with {model_name} failed: {err}")
+            errors.append(f"Model {model_name} chunk #{batch_index} error: {str(err)}")
             continue
 
-    return None
+    # Clean and validate casing on extracted records
+    sanitized_records: List[Dict[str, Any]] = []
+    for idx, r in enumerate(best_records):
+        clean_r = {}
+        for k, v in r.items():
+            clean_r[k] = normalize_field_casing(k, v)
+        # Store source batch reference
+        clean_r["_source_batch"] = batch_index
+        clean_r["_source_item_offset"] = idx
+        sanitized_records.append(clean_r)
+
+    extracted_count = len(sanitized_records)
+    if extracted_count >= expected_count:
+        status = "complete"
+    elif extracted_count > 0:
+        status = "partial"
+    else:
+        status = "failed"
+
+    return {
+        "batch_index": batch_index,
+        "expected_count": expected_count,
+        "extracted_count": extracted_count,
+        "status": status,
+        "records": sanitized_records,
+        "skipped_count": max(0, expected_count - extracted_count),
+        "errors": errors
+    }
+
+
+def extract_batch_records(
+    client: Groq,
+    batch_text: str,
+    expected_count: int,
+    models: List[str] = GROQ_MODELS
+) -> Optional[List[Dict[str, Any]]]:
+    """
+    Public helper to extract tabular records for a specific chunk/batch.
+    Uses _extract_batch_chunk with verification and fallback models.
+    """
+    res = _extract_batch_chunk(
+        client=client,
+        batch_text=batch_text,
+        batch_index=0,
+        expected_count=expected_count,
+        models=models
+    )
+    recs = res.get("records", [])
+    return recs if recs else None
 
 
 def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -77,8 +303,9 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
     Intelligently determines if the input is:
     1. Multi-Record Dataset (e.g. employee list, transactions, catalog items, tabular text, rosters)
        -> Chunks large datasets into batches of ~10 items to extract 100% of all records without truncation.
+       -> Programmatically reconciles expected vs extracted counts, detecting skipped records and duplicates.
     2. Single-Entity Document (e.g. individual invoice, certificate, single receipt, letter)
-       -> Extracts standardized key-value fields.
+       -> Extracts standardized key-value fields with schema validation and currency preservation.
     """
     key_to_use = api_key or os.environ.get("GROQ_API_KEY", "") or GROQ_API_KEY
     if not key_to_use or not raw_text.strip():
@@ -100,19 +327,38 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
         if len(entries) >= 6:
             batch_size = 10
             all_records: List[Dict[str, Any]] = []
+            batch_audits: List[Dict[str, Any]] = []
+            extraction_errors: List[str] = []
 
-            for i in range(0, len(entries), batch_size):
+            for batch_idx, i in enumerate(range(0, len(entries), batch_size)):
                 batch = entries[i:i + batch_size]
                 batch_text = "\n".join(batch)
-                batch_recs = extract_batch_records(client, batch_text, len(batch), GROQ_MODELS)
-                if batch_recs:
-                    all_records.extend(batch_recs)
+                chunk_res = _extract_batch_chunk(
+                    client=client,
+                    batch_text=batch_text,
+                    batch_index=batch_idx,
+                    expected_count=len(batch),
+                    models=GROQ_MODELS
+                )
+                batch_audits.append({
+                    "batch_index": batch_idx,
+                    "expected_count": chunk_res["expected_count"],
+                    "extracted_count": chunk_res["extracted_count"],
+                    "status": chunk_res["status"],
+                    "skipped_count": chunk_res["skipped_count"]
+                })
+                if chunk_res["errors"]:
+                    extraction_errors.extend(chunk_res["errors"])
+                if chunk_res.get("records"):
+                    all_records.extend(chunk_res["records"])
 
             if all_records:
-                # Find all unique column keys in order of appearance
+                # Find all unique column keys in order of appearance (ignoring internal metadata keys)
                 all_columns: List[str] = []
                 for r in all_records:
                     for k in r.keys():
+                        if k.startswith("_"):
+                            continue
                         if k not in all_columns:
                             all_columns.append(k)
 
@@ -131,15 +377,42 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                 if not valid_columns:
                     valid_columns = all_columns
 
-                # Normalize each record to have uniform columns
+                # Normalize each record to have uniform columns and casing
                 final_records = []
+                seen_signatures = set()
+                duplicate_count = 0
+
                 for r in all_records:
-                    final_records.append({k: r.get(k) for k in valid_columns})
+                    rec_clean = {}
+                    for k in valid_columns:
+                        val = r.get(k)
+                        rec_clean[k] = normalize_field_casing(k, val)
+                    
+                    # Compute signature across non-null fields to detect duplicates across chunks
+                    sig = tuple(sorted((k, str(v)) for k, v in rec_clean.items() if v is not None))
+                    if sig in seen_signatures:
+                        duplicate_count += 1
+                    else:
+                        seen_signatures.add(sig)
+
+                    final_records.append(rec_clean)
+
+                total_expected = len(entries)
+                total_extracted = len(final_records)
+                completeness_rate = round(total_extracted / total_expected, 3) if total_expected > 0 else 1.0
 
                 return {
                     "data_type": "records",
                     "columns": valid_columns,
-                    "records": final_records
+                    "records": final_records,
+                    "audit": {
+                        "total_expected": total_expected,
+                        "total_extracted": total_extracted,
+                        "completeness_rate": completeness_rate,
+                        "duplicate_chunks_detected": duplicate_count,
+                        "batches": batch_audits,
+                        "errors": extraction_errors
+                    }
                 }
 
         # ─── CASE 2: Single-Record or Short Multi-Record Document ───
@@ -152,31 +425,31 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
             "Standardization rules:\n"
             "- Dates: Format as ISO 8601 (YYYY-MM-DD or YYYY-MM)\n"
             "- Names & Roles: Format in Title Case\n"
-            "- Numbers & Salaries: Clean numbers without currency symbols ($/₹/€/£/INR/USD) or commas\n"
-            "- Currencies & Periods: Normalized into separate standardized columns (e.g. currency: 'USD', period: 'Year')\n"
+            "- Identifiers & Emails: Preserve exact casing, do NOT Title Case codes or IDs\n"
+            "- Numbers: Clean numbers without currency symbols ($/₹/€/£/INR/USD) or commas\n"
+            "- Currencies: Standardized into separate columns (e.g. currency: 'USD')\n"
             "CRITICAL: You MUST extract ALL individual items/records described in the text into 'records'. Never truncate or sample.\n"
             "Return JSON:\n"
             "{\n"
             '  "data_type": "records",\n'
-            '  "columns": ["name", "job_role", "location", "joining_date", "manager", "salary", "currency", "period"],\n'
+            '  "columns": ["id", "name", "job_role", "location", "joining_date", "manager", "salary", "currency"],\n'
             '  "records": [\n'
-            '    {"name": "Marcus Vance", "job_role": "Senior Backend Architect", "location": "Austin", "joining_date": "2021-03-14", "manager": "Clara Oswald", "salary": 145000, "currency": "USD", "period": "Year"}\n'
+            '    {"id": "EMP-001", "name": "Marcus Vance", "job_role": "Senior Backend Architect", "location": "Austin", "joining_date": "2021-03-14", "manager": "Clara Oswald", "salary": 145000, "currency": "USD"}\n'
             "  ]\n"
             "}\n\n"
             "CATEGORY B: Single-Record Document or Visual Photo Analysis\n"
             "(Use this if the input is a single invoice, receipt, personal profile, certificate, OR visual photo analysis of food, objects, products, vehicles, scenes)\n"
             "Extract all relevant domain fields and properties into clean, informative key-values:\n"
+            "- For Invoices/Receipts: invoice_no, invoice_date, customer_name, vendor_name, total_amount, currency, vat_amount, due_date\n"
             "- For Food/Dining images: main_item, side_items, category, sauce, container, visible_contents, food_counts, dominant_colors\n"
             "- For Products/Objects: product_name, category, detected_objects, colors, features\n"
-            "- For Documents: name, date, email, amount, organization, etc.\n"
-            "CRITICAL: Only extract fields with actual information. Do NOT include empty/null placeholder fields.\n"
+            "CRITICAL: Preserve original raw_value. For monetary fields, separate numeric amount and currency code.\n"
             "Return JSON:\n"
             "{\n"
             '  "data_type": "key_value",\n'
             '  "fields": [\n'
-            '    {"key": "main_item", "label": "Main Item", "value": "Burger", "raw_value": "Cheeseburger", "field_type": "text"},\n'
-            '    {"key": "side_items", "label": "Side Items", "value": "French Fries", "raw_value": "French Fries", "field_type": "text"},\n'
-            '    {"key": "category", "label": "Category", "value": "Fast Food", "raw_value": "Fast Food", "field_type": "text"}\n'
+            '    {"key": "invoice_no", "label": "Invoice No", "value": "INV-2024-001", "raw_value": "INV-2024-001", "field_type": "identifier"},\n'
+            '    {"key": "total_amount", "label": "Total Amount", "value": 8037.75, "raw_value": "8,037.75 SAR", "currency": "SAR", "field_type": "currency"}\n'
             '  ]\n'
             "}"
         )
@@ -196,7 +469,9 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                     temperature=0.1
                 )
                 content = response.choices[0].message.content
-                parsed = json.loads(content)
+                parsed = repair_and_parse_json(content)
+                if not parsed or not isinstance(parsed, dict):
+                    continue
 
                 # Check for Multi-Record Dataset output
                 records = parsed.get("records")
@@ -222,12 +497,22 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                         if not valid_columns:
                             valid_columns = columns
 
-                        final_records = [{k: r.get(k) for k in valid_columns} for r in sanitized_records]
+                        final_records = []
+                        for r in sanitized_records:
+                            rec_clean = {}
+                            for k in valid_columns:
+                                rec_clean[k] = normalize_field_casing(k, r.get(k))
+                            final_records.append(rec_clean)
 
                         return {
                             "data_type": "records",
                             "columns": valid_columns,
-                            "records": final_records
+                            "records": final_records,
+                            "audit": {
+                                "model_used": model_name,
+                                "total_records": len(final_records),
+                                "status": "complete"
+                            }
                         }
 
                 # Check for Single-Record Document output
@@ -236,23 +521,47 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                     sanitized_fields = []
                     for f in fields:
                         if isinstance(f, dict) and "key" in f:
+                            key_name = str(f.get("key"))
                             val = f.get("value")
                             raw_val = f.get("raw_value", val)
-                            if val is not None and str(val).strip() and str(val).strip().lower() not in ["null", "none", "n/a", "", "-"]:
-                                sanitized_fields.append({
-                                    "key": str(f.get("key")),
-                                    "label": str(f.get("label", f.get("key").replace("_", " ").title())),
-                                    "value": val,
-                                    "raw_value": raw_val if raw_val is not None else val,
-                                    "field_type": str(f.get("field_type", "text")),
-                                    "confidence": 0.98,
-                                    "is_valid": True,
-                                    "error_message": None
-                                })
+                            field_type = str(f.get("field_type", "text"))
+                            curr = f.get("currency")
+
+                            # If currency isn't separated yet, separate it
+                            if field_type in ("currency", "amount", "salary") or any(c in str(raw_val) for c in ("$", "₹", "€", "£", "SAR")):
+                                amt, detected_curr = separate_amount_and_currency(raw_val)
+                                if amt is not None:
+                                    val = amt
+                                    if not curr and detected_curr:
+                                        curr = detected_curr
+
+                            cased_val = normalize_field_casing(key_name, val)
+
+                            is_missing = val is None or str(val).strip().lower() in ["null", "none", "n/a", "", "-", "nil", "nan"]
+
+                            sanitized_fields.append({
+                                "key": key_name,
+                                "label": str(f.get("label", key_name.replace("_", " ").title())),
+                                "value": None if is_missing else cased_val,
+                                "raw_value": raw_val,
+                                "currency": curr,
+                                "field_type": field_type,
+                                "confidence": 0.98 if not is_missing else 0.0,
+                                "is_extracted": not is_missing,
+                                "is_valid": True,
+                                "error_message": None if not is_missing else "Value was missing or unextractable in source"
+                            })
+
                     if sanitized_fields:
                         return {
                             "data_type": "key_value",
-                            "fields": sanitized_fields
+                            "fields": sanitized_fields,
+                            "audit": {
+                                "model_used": model_name,
+                                "total_fields": len(sanitized_fields),
+                                "extracted_fields": sum(1 for sf in sanitized_fields if sf["is_extracted"]),
+                                "missing_fields": sum(1 for sf in sanitized_fields if not sf["is_extracted"])
+                            }
                         }
 
             except Exception as model_err:
@@ -343,9 +652,9 @@ def classify_columns_with_llm(
                     temperature=0.1,
                 )
                 content = response.choices[0].message.content
-                parsed = json.loads(content)
+                parsed = repair_and_parse_json(content)
 
-                if "file_type" in parsed:
+                if parsed and "file_type" in parsed:
                     return parsed
 
             except Exception as model_err:
@@ -413,9 +722,9 @@ def classify_domain_with_llm(
                     temperature=0.1,
                 )
                 content = response.choices[0].message.content
-                parsed = json.loads(content)
+                parsed = repair_and_parse_json(content)
 
-                if "detected_type" in parsed:
+                if parsed and "detected_type" in parsed:
                     return parsed
 
             except Exception as model_err:

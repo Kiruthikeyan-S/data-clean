@@ -264,6 +264,11 @@ class ProcessResponse(BaseModel):
     errors: Optional[List[ValidationErrorItem]] = None
     entity_info: Optional[EntityClassificationInfo] = None
     document_preview: Optional[DocumentPreviewData] = None
+    quality_profile: Optional[Dict[str, Any]] = None
+    relationship_validation: Optional[Dict[str, Any]] = None
+    business_analytics: Optional[Dict[str, Any]] = None
+    demand_prediction: Optional[Dict[str, Any]] = None
+    merge_history: Optional[List[Dict[str, Any]]] = None
 
 class BatchProcessResponse(BaseModel):
     batch_id: str
@@ -272,3 +277,7 @@ class BatchProcessResponse(BaseModel):
     processing_time_ms: float
     relationship_index: Optional[Dict[str, Any]] = None
     total_entities_linked: int = 0
+    unified_dataset: Optional[Dict[str, Any]] = None
+    business_analytics: Optional[Dict[str, Any]] = None
+    demand_prediction: Optional[Dict[str, Any]] = None
+    relationship_validation: Optional[Dict[str, Any]] = None

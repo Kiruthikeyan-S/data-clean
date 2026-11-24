@@ -258,6 +258,133 @@ export interface DocumentPreviewData {
   entities: Array<{ type: string; mention: string; conf: string; norm: string }>;
 }
 
+export interface QualityProfileReport {
+  total_records: number;
+  valid_records: number;
+  invalid_records: number;
+  missing_value_count: number;
+  duplicate_count: number;
+  invalid_value_count: number;
+  quality_percentage: number;
+  issues_by_column: Record<string, Array<{
+    column: string;
+    issue_type: string;
+    count: number;
+    sample_invalid_values: any[];
+    description: string;
+    recommended_correction: string;
+    severity: string;
+  }>>;
+  recommended_corrections: Array<{
+    column: string;
+    issue_type: string;
+    severity: string;
+    recommendation: string;
+  }>;
+  column_quality_scores: Record<string, number>;
+  referential_integrity_issues: Array<{
+    foreign_key_column: string;
+    orphan_count: number;
+    sample_orphans: any[];
+    description: string;
+    recommended_correction: string;
+  }>;
+  summary: Record<string, any>;
+}
+
+export interface RelationshipValidationReport {
+  total_relationships_checked: number;
+  valid_relationships_count: number;
+  violations_count: number;
+  integrity_percentage: number;
+  violations: Array<{
+    relationship: string;
+    source_entity: string;
+    target_entity: string;
+    violation_type: string;
+    source_record_id: string;
+    foreign_key_column: string;
+    invalid_value: any;
+    severity: string;
+    description: string;
+    remediation: string;
+  }>;
+  entity_counts: {
+    stores: number;
+    items: number;
+    customers: number;
+    transactions: number;
+  };
+  referential_summary: Record<string, any>;
+  multi_item_transactions_count: number;
+}
+
+export interface BusinessAnalyticsReport {
+  store_analytics?: {
+    total_stores: number;
+    store_wise_metrics: Array<{
+      store_id: string;
+      store_name: string;
+      total_sales: number;
+      transactions_count: number;
+      total_stock: number;
+    }>;
+    best_performing_stores: any[];
+    low_performing_stores: any[];
+  };
+  item_analytics?: {
+    total_catalog_items: number;
+    fast_selling_products: any[];
+    slow_selling_products: any[];
+    non_selling_products: any[];
+    low_stock_products: any[];
+    top_revenue_items: any[];
+  };
+  customer_analytics?: {
+    total_customers: number;
+    top_customers_by_spend: any[];
+    average_purchase_frequency: number;
+    inactive_customers_count: number;
+    loyalty_tier_distribution: Record<string, number>;
+  };
+  transaction_analytics?: {
+    total_revenue: number;
+    total_transactions: number;
+    average_transaction_value: number;
+    sales_trends_timeline: Array<{
+      date: string;
+      revenue: number;
+      transactions: number;
+    }>;
+    payment_method_breakdown: Record<string, number>;
+  };
+}
+
+export interface DemandPredictionReport {
+  forecast_horizon_days: number;
+  data_sufficiency_status: 'sufficient' | 'insufficient' | 'sparse';
+  total_products_analyzed: number;
+  stock_shortage_alerts_count: number;
+  recommendations_count: number;
+  forecasts: Array<{
+    item_id: string;
+    item_name: string;
+    current_stock: number;
+    historical_sales_velocity_daily: number;
+    predicted_demand: number;
+    lower_confidence_bound: number;
+    upper_confidence_bound: number;
+    stock_shortage_warning: boolean;
+    projected_days_until_stockout?: number;
+    recommended_reorder_quantity: number;
+    reorder_urgency: 'critical' | 'medium' | 'healthy';
+    confidence_score: number;
+    actionable_recommendation: string;
+  }>;
+  limitations?: string;
+  summary: Record<string, any>;
+}
+
 export interface ProcessResponse {
   id: string;
   filename: string;
@@ -280,6 +407,11 @@ export interface ProcessResponse {
   errors?: ValidationErrorItem[];
   entity_info?: EntityClassificationInfo;
   document_preview?: DocumentPreviewData;
+  quality_profile?: QualityProfileReport;
+  relationship_validation?: RelationshipValidationReport;
+  business_analytics?: BusinessAnalyticsReport;
+  demand_prediction?: DemandPredictionReport;
+  merge_history?: any[];
 }
 
 export interface RelationshipNode {

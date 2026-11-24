@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table, Users, ChevronDown, ChevronRight, Scan } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table, Users, ChevronDown, ChevronRight, Scan, BarChart3, ShieldCheck, GitFork } from 'lucide-react';
 import { ProcessResponse, RelationshipIndexData } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
@@ -8,6 +8,9 @@ import { ExtractedTextCollapsible } from '../components/ExtractedTextCollapsible
 import { ProcessDetailsCollapsible } from '../components/ProcessDetailsCollapsible';
 import { RelationshipDashboard } from '../components/RelationshipDashboard';
 import { EntityMatchesView } from '../components/EntityMatchesView';
+import { DataQualityProfilerDashboard } from '../components/DataQualityProfilerDashboard';
+import { BusinessAnalyticsDashboard } from '../components/BusinessAnalyticsDashboard';
+import { RelationshipValidationDashboard } from '../components/RelationshipValidationDashboard';
 
 interface ResultPageProps {
   results: ProcessResponse[];
@@ -28,7 +31,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
   batchId,
   relationshipIndex
 }) => {
-  const [activeView, setActiveView] = useState<'datasets' | 'relationships' | 'entity_matches'>('datasets');
+  const [activeView, setActiveView] = useState<'datasets' | 'quality_profile' | 'analytics' | 'rel_validation' | 'relationships' | 'entity_matches'>('datasets');
   const [isValidationExpanded, setIsValidationExpanded] = useState(false);
   const currentResult = results[activeIndex] || results[0];
   
@@ -69,61 +72,124 @@ export const ResultPage: React.FC<ResultPageProps> = ({
         )}
       </div>
 
-      {/* Main 3-Tab View Switcher for Multi-File Batches */}
-      {isBatch && (
-        <div className="flex items-center gap-2 p-1.5 bg-slate-200/80 rounded-xl w-fit flex-wrap">
-          {/* Tab 1: Cleaned Datasets */}
-          <button
-            onClick={() => setActiveView('datasets')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'datasets'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Table className="w-4 h-4 text-blue-600" />
-            <span>Cleaned Datasets ({results.length})</span>
-          </button>
+      {/* Feature Navigation Tabs */}
+      <div className="flex items-center gap-1.5 p-1.5 bg-slate-200/80 rounded-xl w-fit flex-wrap">
+        {/* Tab 1: Cleaned Datasets */}
+        <button
+          onClick={() => setActiveView('datasets')}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            activeView === 'datasets'
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Table className="w-3.5 h-3.5 text-blue-600" />
+          <span>Cleaned Datasets ({results.length})</span>
+        </button>
 
-          {/* Tab 2: Cross-Entity Relationships */}
-          <button
-            onClick={() => setActiveView('relationships')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'relationships'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <Network className={`w-4 h-4 ${activeView === 'relationships' ? 'text-white' : 'text-blue-600'}`} />
-            <span>Relationships</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-              activeView === 'relationships' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
-            }`}>
-              {relCount} Edges
+        {/* Tab 2: Quality Profiler */}
+        <button
+          onClick={() => setActiveView('quality_profile')}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            activeView === 'quality_profile'
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Quality Profiler</span>
+          {currentResult.quality_profile && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-100 text-emerald-800">
+              {currentResult.quality_profile.quality_percentage}%
             </span>
-          </button>
+          )}
+        </button>
 
-          {/* Tab 3: Same-Entity Matches */}
-          <button
-            onClick={() => setActiveView('entity_matches')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'entity_matches'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <Users className={`w-4 h-4 ${activeView === 'entity_matches' ? 'text-white' : 'text-indigo-600'}`} />
-            <span>Entity Matches</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-              activeView === 'entity_matches' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-800'
-            }`}>
-              {matchCount} Matches
-            </span>
-          </button>
-        </div>
+        {/* Tab 3: Business Analytics & Demand */}
+        <button
+          onClick={() => setActiveView('analytics')}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            activeView === 'analytics'
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+          <span>Business Analytics & Demand</span>
+        </button>
+
+        {/* Tab 4: Relationship Validation */}
+        <button
+          onClick={() => setActiveView('rel_validation')}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            activeView === 'rel_validation'
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <GitFork className="w-3.5 h-3.5 text-cyan-600" />
+          <span>Relationship Validation</span>
+        </button>
+
+        {/* Multi-file batch tabs */}
+        {isBatch && (
+          <>
+            <button
+              onClick={() => setActiveView('relationships')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeView === 'relationships'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Network className={`w-3.5 h-3.5 ${activeView === 'relationships' ? 'text-white' : 'text-blue-600'}`} />
+              <span>Network</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                activeView === 'relationships' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
+              }`}>
+                {relCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveView('entity_matches')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeView === 'entity_matches'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Users className={`w-3.5 h-3.5 ${activeView === 'entity_matches' ? 'text-white' : 'text-indigo-600'}`} />
+              <span>Entity Matches</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                activeView === 'entity_matches' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-800'
+              }`}>
+                {matchCount}
+              </span>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* VIEW: Data Quality Profiler Dashboard */}
+      {activeView === 'quality_profile' && (
+        <DataQualityProfilerDashboard profile={currentResult.quality_profile} />
       )}
 
-      {/* VIEW 1: Cross-Entity Relationships */}
+      {/* VIEW: Business Analytics & Demand Prediction Dashboard */}
+      {activeView === 'analytics' && (
+        <BusinessAnalyticsDashboard
+          analytics={currentResult.business_analytics}
+          demand={currentResult.demand_prediction}
+        />
+      )}
+
+      {/* VIEW: Relationship Validation Dashboard */}
+      {activeView === 'rel_validation' && (
+        <RelationshipValidationDashboard report={currentResult.relationship_validation} />
+      )}
+
+      {/* VIEW: Cross-Entity Relationships */}
       {activeView === 'relationships' && (
         <RelationshipDashboard
           batchId={batchId}
@@ -131,14 +197,14 @@ export const ResultPage: React.FC<ResultPageProps> = ({
         />
       )}
 
-      {/* VIEW 2: Same-Entity Matches (Identity Resolution) */}
+      {/* VIEW: Same-Entity Matches (Identity Resolution) */}
       {activeView === 'entity_matches' && (
         <EntityMatchesView
           entityMatches={relationshipIndex?.entity_matches || []}
         />
       )}
 
-      {/* VIEW 3: Cleaned Dataset Views */}
+      {/* VIEW: Cleaned Dataset Views */}
       {activeView === 'datasets' && (
         <>
           {/* Multi-File Batch Dataset Switcher Tabs */}

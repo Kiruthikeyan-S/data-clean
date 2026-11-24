@@ -458,6 +458,18 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             aliases={"address", "street", "address_street", "store_address", "address_line1", "address_line_1", "location_address", "street_address", "addr"},
             description="Street address of the store"
         ),
+        "location": CanonicalField(
+            name="location",
+            field_type="text",
+            aliases={"location", "store_location", "loc", "site_location", "branch_location", "area"},
+            description="Geographic location or area of the store"
+        ),
+        "manager": CanonicalField(
+            name="manager",
+            field_type="text_title",
+            aliases={"manager", "store_manager", "branch_manager", "mgr", "managed_by", "supervisor", "incharge"},
+            description="Store or branch general manager"
+        ),
         "city": CanonicalField(
             name="city",
             field_type="text_title",
@@ -540,6 +552,24 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             aliases={"stock_quantity", "inventory", "in_stock", "stock_qty", "stock", "quantity", "qty", "units_in_stock", "available_stock", "reorder_level", "stock_count", "units", "units_in_stock"},
             description="Units currently on hand in inventory"
         ),
+        "sold_quantity": CanonicalField(
+            name="sold_quantity",
+            field_type="numeric",
+            aliases={"sold_quantity", "units_sold", "sold_qty", "sales_count", "items_sold"},
+            description="Total units sold historically"
+        ),
+        "currency": CanonicalField(
+            name="currency",
+            field_type="text",
+            aliases={"currency", "curr", "price_currency", "currency_code"},
+            description="Pricing currency ISO code (e.g. USD, EUR, INR, SAR)"
+        ),
+        "store_id": CanonicalField(
+            name="store_id",
+            field_type="id",
+            aliases={"store_id", "branch_id", "outlet_id", "store_code"},
+            description="Reference to Store location holding inventory"
+        ),
         "available": CanonicalField(
             name="available",
             field_type="boolean",
@@ -571,8 +601,14 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
         "phone": CanonicalField(
             name="phone",
             field_type="phone",
-            aliases={"phone", "mobile", "telephone", "customer_phone", "cust_phone", "contact", "cell", "phone_number", "contact_number"},
+            aliases={"phone", "mobile", "telephone", "customer_phone", "cust_phone", "contact", "cell", "phone_number", "contact_number", "cust_mob", "ph_no", "phone_no", "mobile_no", "cell_no", "tele_no"},
             description="Customer contact phone number"
+        ),
+        "preferences": CanonicalField(
+            name="preferences",
+            field_type="text",
+            aliases={"preferences", "preference", "pref", "interests", "tags", "fav_categories", "preferred_categories"},
+            description="Customer shopping preferences and tags"
         ),
         "address": CanonicalField(
             name="address",
@@ -679,6 +715,12 @@ CANONICAL_SCHEMAS: Dict[str, Dict[str, CanonicalField]] = {
             field_type="numeric",
             aliases={"total_amount", "order_total", "grand_total", "subtotal", "net_amount", "gross_amount", "total", "amount", "final_amount"},
             description="Final transaction total amount"
+        ),
+        "currency": CanonicalField(
+            name="currency",
+            field_type="text",
+            aliases={"currency", "curr", "txn_currency", "currency_code", "order_currency"},
+            description="Transaction currency ISO code (e.g. USD, EUR, INR, SAR)"
         ),
         "payment_method": CanonicalField(
             name="payment_method",

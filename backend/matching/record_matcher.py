@@ -1,6 +1,7 @@
 from __future__ import annotations
 import re
 import math
+from dataclasses import dataclass, asdict
 from typing import Dict, Any, List, Tuple, Optional, Set
 import pandas as pd
 import numpy as np
@@ -11,8 +12,87 @@ from backend.models.schemas import (
     RecordMatchConflict,
     RecordMatchingReport
 )
-from backend.rag.llm_rag_analyzer import heuristic_rag_analysis, analyze_candidate_with_llm
+from backend.rag.llm_rag_analyzer import (
+    heuristic_rag_analysis,
+    analyze_candidate_with_llm,
+    soundex
+)
 from backend.rag.record_retriever import search_similar_records, ingest_records_batch
+
+
+@dataclass
+class MergeHistoryEntry:
+    merge_id: str
+    entity_type: str
+    record_a_id: str
+    record_b_id: str
+    original_record_a: Dict[str, Any]
+    original_record_b: Dict[str, Any]
+    merged_record: Dict[str, Any]
+    matched_fields: List[str]
+    confidence: float
+    decision: str  # "auto_approved" | "human_approved" | "undone"
+    is_active: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+class ReversibleMergeManager:
+    """
+    Maintains an audit trail of merges and enables reversing any merged record
+    back into its constituent original records.
+    """
+    def __init__(self):
+        self.history: Dict[str, MergeHistoryEntry] = {}
+
+    def record_merge(
+        self,
+        merge_id: str,
+        entity_type: str,
+        rec_a: Dict[str, Any],
+        rec_b: Dict[str, Any],
+        merged: Dict[str, Any],
+        matched_fields: List[str],
+        confidence: float,
+        decision: str = "auto_approved"
+    ) -> MergeHistoryEntry:
+        entry = MergeHistoryEntry(
+            merge_id=merge_id,
+            entity_type=entity_type,
+            record_a_id=str(rec_a.get("id") or rec_a.get(f"{entity_type}_id") or "A"),
+            record_b_id=str(rec_b.get("id") or rec_b.get(f"{entity_type}_id") or "B"),
+            original_record_a=dict(rec_a),
+            original_record_b=dict(rec_b),
+            merged_record=dict(merged),
+            matched_fields=matched_fields,
+            confidence=confidence,
+            decision=decision,
+            is_active=True
+        )
+        self.history[merge_id] = entry
+        return entry
+
+    def reverse_merge(self, merge_id: str) -> Optional[Tuple[Dict[str, Any], Dict[str, Any]]]:
+        if merge_id in self.history:
+            entry = self.history[merge_id]
+            entry.is_active = False
+            entry.decision = "undone"
+            return entry.original_record_a, entry.original_record_b
+        return None
+
+    def approve_merge(self, merge_id: str) -> bool:
+        if merge_id in self.history:
+            self.history[merge_id].decision = "human_approved"
+            return True
+        return False
+
+    def get_history(self) -> List[Dict[str, Any]]:
+        return [entry.to_dict() for entry in self.history.values()]
+
+
+# Global merge manager instance
+global_merge_manager = ReversibleMergeManager()
 
 FIELD_WEIGHTS: Dict[str, float] = {
     'id': 1.0,
@@ -205,11 +285,13 @@ def compare_records(
                 matched_fields.append(str(key))
                 weighted_score += f_weight
             elif k_clean in FUZZY_MATCHABLE_FIELDS or any(f in k_clean for f in FUZZY_MATCHABLE_FIELDS):
-                # Fuzzy matching for names, addresses, products
+                # Fuzzy & Phonetic (Soundex) matching for names, addresses, products
                 sim = string_similarity(norm_a, norm_b)
-                if sim >= 0.70:
+                is_phonetic_match = bool(soundex(norm_a) and soundex(norm_a) == soundex(norm_b))
+                if sim >= 0.70 or is_phonetic_match:
                     matched_fields.append(str(key))
-                    weighted_score += (f_weight * sim)
+                    eff_sim = max(sim, 0.75 if is_phonetic_match else sim)
+                    weighted_score += (f_weight * eff_sim)
                 else:
                     conflicts[str(key)] = [val_a, val_b]
             else:
@@ -362,7 +444,16 @@ def analyze_record_matching(
                     merged_preview, filled_fields = merge_record_pair(rec_a, rec_b)
                     
                     if len(filled_fields) > 0:
-                        status_label = 'high_confidence' if len(matched_fields) >= 3 or confidence >= 0.85 else 'merge_candidate'
+                        if confidence >= 0.95 and len(conflict_dict) == 0:
+                            status_label = 'auto_approved'
+                            decision = 'auto_approved'
+                        elif confidence >= 0.75:
+                            status_label = 'review_required'
+                            decision = 'review_required'
+                        else:
+                            status_label = 'rejected'
+                            decision = 'rejected'
+
                         rag_eval = heuristic_rag_analysis(rec_a, rec_b, f'cand_{i}_{j}', entity_type or 'general')
                         rag_explanation = rag_eval.get("reason", f"Matched using fields: {', '.join(matched_fields)}")
                         
@@ -382,8 +473,9 @@ def analyze_record_matching(
                             rag_matched_record_id=rec_b.get("id") or rec_b.get(f"{entity_type}_id") or f"ROW-{j+1}"
                         ))
                         
+                        merge_id = f'merge_{i}_{j}'
                         merged_records.append(MergedRecordDetail(
-                            merge_id=f'merge_{i}_{j}',
+                            merge_id=merge_id,
                             record_a_index=i + 1,
                             record_b_index=j + 1,
                             original_record_a=rec_a,
@@ -391,9 +483,21 @@ def analyze_record_matching(
                             merged_record=merged_preview,
                             filled_fields=filled_fields,
                             matched_using_fields=matched_fields,
-                            status='Successfully Merged',
+                            status='Successfully Merged' if decision == 'auto_approved' else 'Review Required',
                             entity_type=entity_type
                         ))
+
+                        # Log in ReversibleMergeManager
+                        global_merge_manager.record_merge(
+                            merge_id=merge_id,
+                            entity_type=entity_type or 'general',
+                            rec_a=rec_a,
+                            rec_b=rec_b,
+                            merged=merged_preview,
+                            matched_fields=matched_fields,
+                            confidence=confidence,
+                            decision=decision
+                        )
                         
                         matched_indices_set.add(i)
                         matched_indices_set.add(j)

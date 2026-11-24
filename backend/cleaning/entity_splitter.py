@@ -102,15 +102,20 @@ def split_mixed_dataframe(df: pd.DataFrame, classification: EntityClassification
                 entity_cols[entity] = []
             entity_cols[entity].append(col)
             
-    # Foreign key keywords to include in Transaction
-    fk_keywords = ['store_id', 'customer_id', 'cust_id', 'client_id', 'product_id', 'item_id', 'member_id']
+    # Foreign key keywords to include in Transaction and Item
+    fk_keywords = ['store_id', 'customer_id', 'cust_id', 'client_id', 'product_id', 'item_id', 'member_id', 'sku']
     fk_columns = [col for col in df.columns if any(kw in str(col).lower() for kw in fk_keywords)]
     
     entity_metadata = {
         'store': {'display': 'Store Data', 'icon': '🏪'},
         'item': {'display': 'Product/Item Data', 'icon': '📦'},
         'customer': {'display': 'Customer Data', 'icon': '👤'},
-        'transaction': {'display': 'Transaction Data', 'icon': '🧾'}
+        'transaction': {'display': 'Transaction Data', 'icon': '🧾'},
+        'car': {'display': 'Vehicle/Auto Data', 'icon': '🚗'},
+        'employee': {'display': 'Employee Data', 'icon': '💼'},
+        'student': {'display': 'Student Data', 'icon': '🎓'},
+        'medical': {'display': 'Medical Data', 'icon': '🏥'},
+        'invoice': {'display': 'Invoice Data', 'icon': '📄'}
     }
     
     for entity_type, cols in entity_cols.items():
@@ -118,11 +123,17 @@ def split_mixed_dataframe(df: pd.DataFrame, classification: EntityClassification
         
         selected_cols = list(cols)
         
-        # Add FKs to transaction entity
+        # Add FKs to transaction entity (preserves Store_ID, Customer_ID, Item_ID)
         if entity_lower == 'transaction':
             for fk_col in fk_columns:
                 if fk_col not in selected_cols:
                     selected_cols.append(fk_col)
+                    
+        # Add store_id to item if present in dataset
+        if entity_lower == 'item':
+            for col in df.columns:
+                if str(col).lower() in ('store_id', 'branch_id', 'outlet_id') and col not in selected_cols:
+                    selected_cols.append(col)
                     
         # Extract subset
         entity_df = df[selected_cols].copy()
@@ -225,4 +236,37 @@ def create_entity_table_from_dataframe(
         confidence=confidence,
         schema_mapping_report=schema_report
     )
+
+
+def separate_entities(
+    df: pd.DataFrame,
+    classification: Optional[EntityClassificationResult] = None
+) -> Dict[str, EntityTable]:
+    """
+    Unified entry point to separate a DataFrame into independent canonical entity tables.
+    If the DataFrame is mixed, splits it across assigned domains.
+    If single entity, maps and formats it into an EntityTable.
+    Returns a dict mapping entity_type -> EntityTable.
+    """
+    if df.empty:
+        return {}
+
+    from backend.extraction.entity_classifier import classify_columns
+
+    if not classification:
+        classification = classify_columns(list(df.columns), df)
+
+    result_tables: Dict[str, EntityTable] = {}
+
+    if classification.is_mixed:
+        tables_list = split_mixed_dataframe(df, classification)
+        for tbl in tables_list:
+            result_tables[tbl.entity_type] = tbl
+    else:
+        dom = classification.file_type if classification.file_type != "unknown" else "general"
+        tbl = create_entity_table_from_dataframe(df, dom, confidence=classification.confidence)
+        result_tables[tbl.entity_type] = tbl
+
+    return result_tables
+
 

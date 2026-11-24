@@ -884,6 +884,92 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     
     data_quality_score = round(max(0.0, (total_records - len(errors)) / max(total_records, 1)), 4) if total_records > 0 else 1.0
 
+    # ─── Data Quality Profiler ───
+    quality_profile_dict = None
+    if isinstance(structured_data, list) and structured_data:
+        try:
+            from backend.quality.data_quality_profiler import profile_dataset
+            df_to_prof = pd.DataFrame(structured_data)
+            q_rep = profile_dataset(df_to_prof, entity_type=entity_info.entity_type if entity_info else None)
+            quality_profile_dict = q_rep.to_dict()
+        except Exception as q_err:
+            print(f"Quality profiler calculation error: {q_err}")
+
+    # ─── Separate Entities for Relationship Validation, Analytics & Demand ───
+    stores_list: List[Dict[str, Any]] = []
+    items_list: List[Dict[str, Any]] = []
+    customers_list: List[Dict[str, Any]] = []
+    txns_list: List[Dict[str, Any]] = []
+
+    if entity_info and entity_info.split_tables:
+        for tbl in entity_info.split_tables:
+            e_t = tbl.entity_type.lower()
+            if e_t == "store":
+                stores_list = tbl.records
+            elif e_t in ("item", "product"):
+                items_list = tbl.records
+            elif e_t in ("customer", "client"):
+                customers_list = tbl.records
+            elif e_t in ("transaction", "sale", "order"):
+                txns_list = tbl.records
+    elif entity_info and isinstance(structured_data, list):
+        e_t = entity_info.entity_type.lower()
+        if e_t == "store":
+            stores_list = structured_data
+        elif e_t in ("item", "product"):
+            items_list = structured_data
+        elif e_t in ("customer", "client"):
+            customers_list = structured_data
+        elif e_t in ("transaction", "sale", "order"):
+            txns_list = structured_data
+
+    # ─── Relationship Validation ───
+    relationship_validation_dict = None
+    if stores_list or items_list or customers_list or txns_list:
+        try:
+            from backend.validation.relationship_validator import validate_relationships
+            rel_rep = validate_relationships(
+                stores=stores_list,
+                items=items_list,
+                customers=customers_list,
+                transactions=txns_list
+            )
+            relationship_validation_dict = rel_rep.to_dict()
+        except Exception as r_err:
+            print(f"Relationship validator error: {r_err}")
+
+    # ─── Business Analytics Engine ───
+    business_analytics_dict = None
+    if stores_list or items_list or customers_list or txns_list:
+        try:
+            from backend.analytics.business_analytics import generate_business_analytics_report
+            biz_analytics_dict = generate_business_analytics_report(
+                stores=stores_list,
+                items=items_list,
+                customers=customers_list,
+                transactions=txns_list
+            )
+        except Exception as b_err:
+            print(f"Business analytics error: {b_err}")
+
+    # ─── Inventory Demand Forecasting Engine ───
+    demand_prediction_dict = None
+    if txns_list:
+        try:
+            from backend.analytics.demand_predictor import predict_product_demand
+            pred_rep = predict_product_demand(
+                items=items_list,
+                transactions=txns_list,
+                forecast_horizon_days=30
+            )
+            demand_prediction_dict = pred_rep.to_dict()
+        except Exception as d_err:
+            print(f"Demand predictor error: {d_err}")
+
+    # ─── Merge History from ReversibleMergeManager ───
+    from backend.matching.record_matcher import global_merge_manager
+    merge_history_list = global_merge_manager.get_history()
+
     summary = ProcessSummary(
         total_records=total_records,
         valid_records=total_records - (1 if errors and classification == "unstructured" else len(errors)),
@@ -914,7 +1000,12 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
         raw_text=raw_text,
         errors=errors if errors else None,
         entity_info=entity_info,
-        document_preview=document_preview
+        document_preview=document_preview,
+        quality_profile=quality_profile_dict,
+        relationship_validation=relationship_validation_dict,
+        business_analytics=business_analytics_dict,
+        demand_prediction=demand_prediction_dict,
+        merge_history=merge_history_list if merge_history_list else None
     )
 
     # Store in memory for export retrieval
