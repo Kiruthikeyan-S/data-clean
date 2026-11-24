@@ -3,13 +3,13 @@ import { Header } from './components/Header';
 import { UploadPage } from './pages/UploadPage';
 import { ProcessingPage } from './pages/ProcessingPage';
 import { ResultPage } from './pages/ResultPage';
-import { PipelineStepWalkthroughPage } from './pages/PipelineStepWalkthroughPage';
+import { DocumentOcrPreview } from './components/DocumentOcrPreview';
 import { ErrorMessage } from './components/ErrorMessage';
 import { ProcessResponse, StepStatus } from './types';
 import { processFile, processBatchFiles } from './services/api';
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'upload' | 'processing' | 'pipeline_steps' | 'result'>('upload');
+  const [currentPage, setCurrentPage] = useState<'upload' | 'processing' | 'ocr_preview' | 'result'>('upload');
   
   const [currentFileName, setCurrentFileName] = useState<string>('Files');
   const [steps, setSteps] = useState<StepStatus[]>([]);
@@ -63,9 +63,9 @@ export const App: React.FC = () => {
         }
       }
 
-      // Transition to interactive Step-by-Step Preview after processing completes
+      // Transition to Document OCR / Form Parser Preview mode
       setTimeout(() => {
-        setCurrentPage('pipeline_steps');
+        setCurrentPage('ocr_preview');
       }, 400);
 
     } catch (err: any) {
@@ -113,12 +113,10 @@ export const App: React.FC = () => {
           />
         )}
 
-        {currentPage === 'pipeline_steps' && results.length > 0 && (
-          <PipelineStepWalkthroughPage
-            results={results}
-            activeResultIndex={activeResultIndex}
-            onSelectResultIndex={(idx) => setActiveResultIndex(idx)}
-            onProceedToResult={() => setCurrentPage('result')}
+        {currentPage === 'ocr_preview' && results.length > 0 && (
+          <DocumentOcrPreview
+            result={results[activeResultIndex] || results[0]}
+            onProceedToCleanedDataset={() => setCurrentPage('result')}
             onUploadNew={handleReset}
           />
         )}
@@ -129,7 +127,7 @@ export const App: React.FC = () => {
             activeIndex={activeResultIndex}
             onSelectIndex={(idx) => setActiveResultIndex(idx)}
             onReset={handleReset}
-            onReviewSteps={() => setCurrentPage('pipeline_steps')}
+            onReviewSteps={() => setCurrentPage('ocr_preview')}
             batchId={batchId}
             relationshipIndex={relationshipIndex}
           />

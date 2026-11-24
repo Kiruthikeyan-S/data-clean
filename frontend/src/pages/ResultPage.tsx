@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table, Users, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Files, CheckCircle2, Network, Table, Users, ChevronDown, ChevronRight, Scan } from 'lucide-react';
 import { ProcessResponse, RelationshipIndexData } from '../types';
 import { ResultTable } from '../components/ResultTable';
 import { ExportButtons } from '../components/ExportButtons';
@@ -58,7 +58,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({
               onClick={onReviewSteps}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-md transition-colors w-fit shadow-2xs"
             >
-              <span>← Review Pipeline Steps (1 to 8)</span>
+              <Scan className="w-3.5 h-3.5" />
+              <span>← Document / OCR Preview</span>
             </button>
           )}
         </div>
