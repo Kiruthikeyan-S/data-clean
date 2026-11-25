@@ -355,7 +355,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
             </div>
           )}
 
-          {/* 12 Fundamentals & Data Quality Diagnostics Inspector */}
+          {/* Data Quality Dimensions & Profiling Inspector */}
           {currentResult.cleansing_report && (
             <DataQualityInspector 
               audit={currentResult.cleansing_report.quality_audit} 

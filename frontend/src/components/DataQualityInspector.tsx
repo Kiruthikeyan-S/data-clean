@@ -8,16 +8,14 @@ import {
   RefreshCw, 
   CheckCircle2, 
   ChevronRight, 
-  ChevronDown,
   Search, 
   X, 
   SlidersHorizontal, 
-  Info,
-  Link2,
-  Filter,
-  BarChart3,
-  History,
-  Award
+  Info, 
+  Link2, 
+  Filter, 
+  BarChart3, 
+  History 
 } from 'lucide-react';
 import { 
   QualityAuditReport, 
@@ -40,13 +38,10 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
   const postProfile = cleansingReport?.post_cleaning_profile;
   const provenanceLog = cleansingReport?.provenance_log || [];
 
-  const [activeTab, setActiveTab] = useState<'fundamentals' | 'profile' | 'dimensions' | 'provenance'>(
-    fundamentalsReport ? 'fundamentals' : 'dimensions'
-  );
+  const [activeTab, setActiveTab] = useState<'profile' | 'dimensions' | 'provenance'>('dimensions');
   const [selectedDimensionId, setSelectedDimensionId] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedColumnFilter, setSelectedColumnFilter] = useState<string | null>(null);
-  const [expandedFundamental, setExpandedFundamental] = useState<string | null>(null);
   const [profileViewMode, setProfileViewMode] = useState<'pre' | 'post' | 'comparison'>('comparison');
   const [provenanceFilter, setProvenanceFilter] = useState<string>('all');
 
@@ -154,33 +149,16 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
       <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
         <div>
           <div className="flex items-center gap-2">
-            <Award className="w-5 h-5 text-blue-600" />
-            <h3 className="text-base font-bold text-slate-900 tracking-tight">Data Quality & 12 Fundamentals Inspector</h3>
+            <SlidersHorizontal className="w-5 h-5 text-blue-600" />
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Data Quality & Profiling Inspector</h3>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Complete verification of statistical profiles, quality dimensions, all 12 cleaning fundamentals, and change provenance.
+            Complete verification of statistical profiles, quality dimensions, and data health.
           </p>
         </div>
 
         {/* View Switcher Tabs */}
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200/80 self-start md:self-auto flex-wrap">
-          {fundamentalsReport && (
-            <button
-              onClick={() => setActiveTab('fundamentals')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                activeTab === 'fundamentals'
-                  ? 'bg-white text-blue-700 shadow-xs border border-slate-200'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Award className="w-3.5 h-3.5" />
-              <span>12 Fundamentals</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 font-bold">
-                {fundamentalsReport.fundamentals.length}
-              </span>
-            </button>
-          )}
-
           {audit && (
             <button
               onClick={() => setActiveTab('dimensions')}
@@ -232,108 +210,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          TAB 1: 12 DATA CLEANING FUNDAMENTALS SCORECARD
-         ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'fundamentals' && fundamentalsReport && (
-        <div className="p-5 sm:p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span>All 12 Data Cleaning Fundamentals Verified</span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  {fundamentalsReport.overall_quality_status}
-                </span>
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Every fundamental operation is executed with full provenance tracking, safe type preservation, and strict non-destructive rules.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-xs font-semibold">
-              <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-800 border border-blue-200">
-                {fundamentalsReport.total_actions_completed} Actions Completed
-              </span>
-              <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-                {fundamentalsReport.total_issues_detected} Issues Evaluated
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {fundamentalsReport.fundamentals.map(item => {
-              const isExpanded = expandedFundamental === item.id;
-              const isPassed = item.status === 'Passed';
-              const isWarning = item.status === 'Warning';
-
-              return (
-                <div
-                  key={item.id}
-                  className={`rounded-xl border transition-all p-3.5 flex flex-col justify-between ${
-                    isPassed
-                      ? 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-2xs'
-                      : isWarning
-                      ? 'bg-amber-50/40 border-amber-200 hover:border-amber-300'
-                      : 'bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-700 text-xs font-black flex items-center justify-center border border-blue-200">
-                        {item.number}
-                      </span>
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
-                        isPassed
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : isWarning
-                          ? 'bg-amber-100 text-amber-900 border-amber-300'
-                          : 'bg-slate-100 text-slate-700 border-slate-300'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </div>
-
-                    <h5 className="text-xs font-bold text-slate-900 mb-1">{item.title}</h5>
-                    <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed mb-2">
-                      {item.summary}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100 mt-2">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
-                      <span>Actions: <strong className="text-slate-800">{item.actions_completed}</strong></span>
-                      {item.issues_detected > 0 && (
-                        <span>Issues: <strong className="text-amber-700">{item.issues_detected}</strong></span>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setExpandedFundamental(isExpanded ? null : item.id)}
-                      className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center justify-between w-full pt-1"
-                    >
-                      <span>{isExpanded ? 'Hide Verification Rules' : 'View Verification Details'}</span>
-                      {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                    </button>
-
-                    {isExpanded && item.details && item.details.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
-                        {item.details.map((d, dIdx) => (
-                          <div key={dIdx} className="text-[11px] text-slate-600 flex items-start gap-1.5">
-                            <span className="text-blue-500 font-bold mt-0.5">•</span>
-                            <span>{d}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
-          TAB 2: DATA PROFILING (PRE VS POST STATISTICS)
+          TAB 1: DATA PROFILING (PRE VS POST STATISTICS)
          ───────────────────────────────────────────────────────────── */}
       {activeTab === 'profile' && (preProfile || postProfile) && (
         <div className="p-5 sm:p-6 space-y-5">
