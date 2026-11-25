@@ -53,6 +53,8 @@ export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(true);
   const [copiedOcr, setCopiedOcr] = useState<boolean>(false);
   const [currentPageNum, setCurrentPageNum] = useState<number>(1);
+  const [tablePage, setTablePage] = useState<number>(1);
+  const TABLE_PAGE_SIZE = 25;
 
   // Direct object URL for uploaded file if available
   const fileObjectUrl = useMemo(() => {
@@ -98,15 +100,20 @@ export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
   // Real extracted Tables
   const tables = useMemo(() => {
     if (docPreview?.tables && docPreview.tables.length > 0) {
-      return docPreview.tables;
+      return docPreview.tables.map(t => ({
+        ...t,
+        totalRowsCount: t.rows.length
+      }));
     }
     // Fallback if tabular records exist in result
     if (result.structured_data && Array.isArray(result.structured_data) && result.structured_data.length > 0) {
       const cols = result.columns || Object.keys(result.structured_data[0]);
+      const sample = result.structured_data.slice(0, 500);
       return [{
-        title: `Extracted Records (${result.structured_data.length} rows)`,
+        title: `Extracted Records (${result.structured_data.length.toLocaleString()} rows)`,
+        totalRowsCount: result.structured_data.length,
         headers: cols,
-        rows: result.structured_data.map(r => cols.map(c => r[c] !== null && r[c] !== undefined ? String(r[c]) : '—'))
+        rows: sample.map(r => cols.map(c => r[c] !== null && r[c] !== undefined ? String(r[c]) : '—'))
       }];
     }
     return [];
@@ -454,52 +461,107 @@ export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
           {/* TAB 2: EXTRACTED TABLES */}
           {activeTab === 'table' && (
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              <div className="text-xs text-slate-600 bg-blue-50/60 p-2.5 rounded border border-blue-100 flex items-center space-x-2">
-                <TableIcon className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Extracted <strong>{tables.length} tables</strong> from {result.filename}.</span>
+              <div className="text-xs text-slate-600 bg-blue-50/60 p-2.5 rounded border border-blue-100 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <TableIcon className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span>Extracted <strong>{tables.length} table{tables.length !== 1 ? 's' : ''}</strong> from {result.filename}.</span>
+                </div>
+                {tables[0]?.totalRowsCount && tables[0].totalRowsCount > 500 && (
+                  <span className="text-[11px] bg-blue-100 text-blue-800 font-medium px-2 py-0.5 rounded">
+                    Previewing first 500 of {tables[0].totalRowsCount.toLocaleString()} rows
+                  </span>
+                )}
               </div>
 
-              {tables.map((tbl, tIdx) => (
-                <div key={tIdx} className="border border-slate-200 rounded-md overflow-hidden bg-white shadow-2xs">
-                  <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
-                      <TableIcon className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{tbl.title}</span>
-                    </span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded">
-                      {tbl.rows.length} Rows
-                    </span>
-                  </div>
-                  <div className="overflow-x-auto max-h-[300px]">
-                    <table className="w-full text-left border-collapse text-xs font-mono">
-                      <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-600 font-medium text-[11px]">
-                        <tr>
-                          {tbl.headers.map((h, hIdx) => (
-                            <th key={hIdx} className="p-2 whitespace-nowrap">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-[11px]">
-                        {tbl.rows.map((row, rIdx) => (
-                          <tr key={rIdx} className="hover:bg-slate-50">
-                            {row.map((cell, cIdx) => (
-                              <td key={cIdx} className="p-2 whitespace-nowrap font-sans text-slate-800">
-                                {cell === 'PASS' ? (
-                                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">PASS</span>
-                                ) : cell === 'FAIL' ? (
-                                  <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-bold text-[10px]">FAIL</span>
-                                ) : (
-                                  cell
-                                )}
-                              </td>
+              {tables.map((tbl: any, tIdx: number) => {
+                const totalTablePages = Math.ceil(tbl.rows.length / TABLE_PAGE_SIZE) || 1;
+                const visibleRows = tbl.rows.slice((tablePage - 1) * TABLE_PAGE_SIZE, tablePage * TABLE_PAGE_SIZE);
+
+                return (
+                  <div key={tIdx} className="border border-slate-200 rounded-md overflow-hidden bg-white shadow-2xs">
+                    <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
+                        <TableIcon className="w-3.5 h-3.5 text-blue-600" />
+                        <span>{tbl.title}</span>
+                      </span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded">
+                        {(tbl.totalRowsCount || tbl.rows.length).toLocaleString()} Total Rows
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto max-h-[360px]">
+                      <table className="w-full text-left border-collapse text-xs font-mono">
+                        <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-600 font-medium text-[11px]">
+                          <tr>
+                            <th className="p-2 border-r border-slate-200 w-10 text-center text-slate-400">#</th>
+                            {tbl.headers.map((h: string, hIdx: number) => (
+                              <th key={hIdx} className="p-2 whitespace-nowrap">{h}</th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-[11px]">
+                          {visibleRows.map((row: string[], rIdx: number) => {
+                            const actualRowIdx = (tablePage - 1) * TABLE_PAGE_SIZE + rIdx + 1;
+                            return (
+                              <tr key={rIdx} className="hover:bg-slate-50">
+                                <td className="p-2 border-r border-slate-200 text-center text-slate-400 font-mono">
+                                  {actualRowIdx}
+                                </td>
+                                {row.map((cell: string, cIdx: number) => (
+                                  <td key={cIdx} className="p-2 whitespace-nowrap font-sans text-slate-800">
+                                    {cell === 'PASS' ? (
+                                      <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">PASS</span>
+                                    ) : cell === 'FAIL' ? (
+                                      <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-bold text-[10px]">FAIL</span>
+                                    ) : (
+                                      cell
+                                    )}
+                                  </td>
+                                ))}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination Bar */}
+                    {tbl.rows.length > TABLE_PAGE_SIZE && (
+                      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-600">
+                        <span>
+                          Showing <strong className="font-semibold text-slate-800">{(tablePage - 1) * TABLE_PAGE_SIZE + 1}</strong> to{' '}
+                          <strong className="font-semibold text-slate-800">
+                            {Math.min(tablePage * TABLE_PAGE_SIZE, tbl.rows.length)}
+                          </strong>{' '}
+                          of <strong className="font-semibold text-slate-800">{tbl.rows.length}</strong> preview rows
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setTablePage(p => Math.max(p - 1, 1))}
+                            disabled={tablePage <= 1}
+                            className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-[11px] font-medium"
+                          >
+                            <ChevronLeft className="w-3 h-3" />
+                            <span>Prev</span>
+                          </button>
+                          <span className="px-2 py-0.5 font-semibold text-slate-700 text-[11px]">
+                            {tablePage} / {totalTablePages}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setTablePage(p => Math.min(p + 1, totalTablePages))}
+                            disabled={tablePage >= totalTablePages}
+                            className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-[11px] font-medium"
+                          >
+                            <span>Next</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -729,8 +791,57 @@ export const DocumentOcrPreview: React.FC<DocumentOcrPreviewProps> = ({
                       className="max-w-full h-auto object-contain shadow-md rounded"
                     />
                   </div>
+                ) : result.structured_data && Array.isArray(result.structured_data) && result.structured_data.length > 0 ? (
+                  /* 4. Structured Spreadsheet Document View */
+                  <div className="p-6 flex flex-col h-full bg-white select-text w-full">
+                    <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+                      <div className="flex items-center space-x-2">
+                        <span className="p-1.5 rounded bg-emerald-50 text-emerald-700 font-bold text-xs uppercase border border-emerald-200">
+                          {result.file_type || 'CSV'}
+                        </span>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-800">{result.filename}</h4>
+                          <p className="text-[11px] text-slate-500">
+                            {result.structured_data.length.toLocaleString()} records • {(result.columns || []).length} columns
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Structured Dataset Preview
+                      </span>
+                    </div>
+
+                    <div className="border border-slate-200 rounded overflow-x-auto flex-1 max-h-[820px]">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
+                          <tr>
+                            <th className="p-2 border-r border-slate-200 w-12 text-center text-slate-400">#</th>
+                            {(result.columns || Object.keys(result.structured_data[0] || {})).map((col: string, idx: number) => (
+                              <th key={idx} className="p-2 border-r border-slate-200 whitespace-nowrap font-mono">
+                                {col}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-[11px]">
+                          {result.structured_data.slice(0, 50).map((row: any, rIdx: number) => (
+                            <tr key={rIdx} className="hover:bg-slate-50/80">
+                              <td className="p-2 border-r border-slate-200 text-center text-slate-400 font-mono">
+                                {rIdx + 1}
+                              </td>
+                              {(result.columns || Object.keys(row)).map((col: string, cIdx: number) => (
+                                <td key={cIdx} className="p-2 border-r border-slate-100 whitespace-nowrap font-sans text-slate-800">
+                                  {row[col] !== null && row[col] !== undefined ? String(row[col]) : '—'}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 ) : (
-                  /* 4. Text Document Flow */
+                  /* 5. Text Document Flow */
                   <div className="p-8 font-mono text-xs text-slate-800 whitespace-pre-wrap leading-relaxed max-h-[960px] overflow-y-auto">
                     {result.raw_text || 'No preview content available'}
                   </div>
