@@ -189,21 +189,20 @@ class DataQualityProfiler:
 
                 # C. Date consistency validation
                 elif is_date_col:
-                    # Attempt datetime parse
-                    parsed_ok = False
-                    try:
-                        pd.to_datetime(val_str, errors="raise")
+                    if ISO_DATE_REGEX.match(val_str):
                         parsed_ok = True
-                    except Exception:
-                        parsed_ok = False
+                    else:
+                        try:
+                            pd.to_datetime(val_str, errors="raise")
+                            parsed_ok = True
+                            if len(invalid_samples) < 5:
+                                invalid_samples.append(val_str)
+                        except Exception:
+                            parsed_ok = False
 
                     if not parsed_ok:
                         col_invalids += 1
                         row_has_invalid_value[r_idx] = True
-                        if len(invalid_samples) < 5:
-                            invalid_samples.append(val_str)
-                    elif not ISO_DATE_REGEX.match(val_str):
-                        # Non-ISO date format (e.g. 05/12/2021)
                         if len(invalid_samples) < 5:
                             invalid_samples.append(val_str)
 

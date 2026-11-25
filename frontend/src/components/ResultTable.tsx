@@ -39,6 +39,9 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
     }
     if (isTabular) {
       if (isFullCombined) {
+        if (Array.isArray(result.structured_data) && result.structured_data.length > 0) {
+          return result.structured_data as Array<Record<string, any>>;
+        }
         const combined = splitTables.flatMap(t =>
           (t.records || []).map(r => ({
             ...r,
@@ -77,8 +80,10 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
       if (candidateCols.length === 0 && processedRows.length > 0) {
         candidateCols = Object.keys(processedRows[0]).filter(c => !c.startsWith('_') && c !== 'raw_text');
       }
+      // Sample up to first 100 rows to quickly check populated columns without locking UI thread
+      const sampleRows = processedRows.length > 100 ? processedRows.slice(0, 100) : processedRows;
       const populatedCols = candidateCols.filter(col => {
-        return processedRows.some(row => {
+        return sampleRows.some(row => {
           const val = row[col];
           if (val === null || val === undefined) return false;
           const str = String(val).trim().toLowerCase();
@@ -95,9 +100,14 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result }) => {
     if (!isTabular && !activeTable) return [];
     if (!searchQuery.trim()) return processedRows;
     const q = searchQuery.toLowerCase();
-    return processedRows.filter(row =>
-      Object.values(row).some(val => val !== null && String(val).toLowerCase().includes(q))
-    );
+    const matches: Array<Record<string, any>> = [];
+    for (const row of processedRows) {
+      if (Object.values(row).some(val => val !== null && String(val).toLowerCase().includes(q))) {
+        matches.push(row);
+        if (matches.length >= 1000) break; // Keep UI responsive on large datasets
+      }
+    }
+    return matches;
   }, [processedRows, searchQuery, isTabular, activeTable]);
 
   // Pagination

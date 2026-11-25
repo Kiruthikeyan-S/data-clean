@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileX2, 
   Trash2, 
@@ -7,6 +7,7 @@ import {
   TrendingUp, 
   RefreshCw, 
   CheckCircle2, 
+  ChevronLeft,
   ChevronRight, 
   Search, 
   X, 
@@ -44,6 +45,18 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
   const [selectedColumnFilter, setSelectedColumnFilter] = useState<string | null>(null);
   const [profileViewMode, setProfileViewMode] = useState<'pre' | 'post' | 'comparison'>('comparison');
   const [provenanceFilter, setProvenanceFilter] = useState<string>('all');
+  const [dimPage, setDimPage] = useState(1);
+  const [provenancePage, setProvenancePage] = useState(1);
+  const DIM_PAGE_SIZE = 15;
+  const PROV_PAGE_SIZE = 15;
+
+  useEffect(() => {
+    setDimPage(1);
+  }, [selectedDimensionId, searchFilter, selectedColumnFilter]);
+
+  useEffect(() => {
+    setProvenancePage(1);
+  }, [provenanceFilter, searchFilter]);
 
   if (!audit && !fundamentalsReport && !preProfile) {
     return null;
@@ -142,6 +155,12 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
       String(item.row_index).includes(q)
     );
   });
+
+  const totalDimPages = Math.ceil(filteredItems.length / DIM_PAGE_SIZE) || 1;
+  const paginatedItems = filteredItems.slice((dimPage - 1) * DIM_PAGE_SIZE, dimPage * DIM_PAGE_SIZE);
+
+  const totalProvPages = Math.ceil(filteredProvenance.length / PROV_PAGE_SIZE) || 1;
+  const paginatedProvenance = filteredProvenance.slice((provenancePage - 1) * PROV_PAGE_SIZE, provenancePage * PROV_PAGE_SIZE);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -575,7 +594,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                           </td>
                         </tr>
                       ) : (
-                        filteredItems.map((item, idx) => (
+                        paginatedItems.map((item, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                             <td className="px-4 py-2.5 text-slate-500 font-mono text-[11px]">
                               {item.row_index !== undefined ? `#${item.row_index}` : '—'}
@@ -609,6 +628,42 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                       )}
                     </tbody>
                   </table>
+
+                  {/* Pagination Bar for Diagnostic Items */}
+                  {filteredItems.length > DIM_PAGE_SIZE && (
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-t border-slate-200 text-xs text-slate-600">
+                      <span>
+                        Showing <strong className="font-semibold text-slate-800">{(dimPage - 1) * DIM_PAGE_SIZE + 1}</strong> to{' '}
+                        <strong className="font-semibold text-slate-800">
+                          {Math.min(dimPage * DIM_PAGE_SIZE, filteredItems.length)}
+                        </strong>{' '}
+                        of <strong className="font-semibold text-slate-800">{filteredItems.length}</strong> issues
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setDimPage(p => Math.max(p - 1, 1))}
+                          disabled={dimPage <= 1}
+                          className="px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 font-medium"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                          <span>Prev</span>
+                        </button>
+                        <span className="px-2 py-1 font-semibold text-slate-700">
+                          {dimPage} / {totalDimPages}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setDimPage(p => Math.min(p + 1, totalDimPages))}
+                          disabled={dimPage >= totalDimPages}
+                          className="px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 font-medium"
+                        >
+                          <span>Next</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : selectedDimension.count > 0 ? (
                 <div className="py-6 px-4 bg-blue-50/40 rounded-lg border border-blue-100 mt-3 text-center">
@@ -676,7 +731,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
-                {filteredProvenance.map((item, idx) => (
+                {paginatedProvenance.map((item, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-4 py-2 font-mono text-[11px] text-slate-500">
                       #{item.row_index}
@@ -714,6 +769,42 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                 ))}
               </tbody>
             </table>
+
+            {/* Pagination Bar for Provenance Log */}
+            {filteredProvenance.length > PROV_PAGE_SIZE && (
+              <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-t border-slate-200 text-xs text-slate-600">
+                <span>
+                  Showing <strong className="font-semibold text-slate-800">{(provenancePage - 1) * PROV_PAGE_SIZE + 1}</strong> to{' '}
+                  <strong className="font-semibold text-slate-800">
+                    {Math.min(provenancePage * PROV_PAGE_SIZE, filteredProvenance.length)}
+                  </strong>{' '}
+                  of <strong className="font-semibold text-slate-800">{filteredProvenance.length}</strong> log entries
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setProvenancePage(p => Math.max(p - 1, 1))}
+                    disabled={provenancePage <= 1}
+                    className="px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 font-medium"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Prev</span>
+                  </button>
+                  <span className="px-2 py-1 font-semibold text-slate-700">
+                    {provenancePage} / {totalProvPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setProvenancePage(p => Math.min(p + 1, totalProvPages))}
+                    disabled={provenancePage >= totalProvPages}
+                    className="px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 font-medium"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

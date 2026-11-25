@@ -117,20 +117,28 @@ def audit_structured_data(
     missing_count = 0
 
     for col in cleaned_df.columns:
-        for idx, val in enumerate(cleaned_df[col]):
-            if not is_valid_cell(val):
-                missing_count += 1
-                missing_cols_set.add(col)
-                if len(missing_items) < 50:
-                    row_ident = get_row_identity(original_df, idx)
-                    missing_items.append(AuditDetailItem(
-                        row_index=idx + 1,
-                        column=col,
-                        original_value="Missing / Null",
-                        cleaned_value=None,
-                        issue_description=f"Record: {row_ident}",
-                        severity="info"
-                    ))
+        s_col = cleaned_df[col]
+        # Fast vectorization: check for null/NaN values
+        has_na = s_col.isna()
+        if not has_na.any():
+            continue
+
+        missing_indices = s_col[has_na].index
+        missing_count += len(missing_indices)
+        missing_cols_set.add(col)
+        for idx in missing_indices:
+            if len(missing_items) < 50:
+                row_ident = get_row_identity(original_df, idx)
+                missing_items.append(AuditDetailItem(
+                    row_index=int(idx) + 1,
+                    column=col,
+                    original_value="Missing / Null",
+                    cleaned_value=None,
+                    issue_description=f"Record: {row_ident}",
+                    severity="info"
+                ))
+            else:
+                break
 
     total_issues += int(missing_count)
     dimensions.append(QualityDimension(
@@ -147,8 +155,14 @@ def audit_structured_data(
     # =========================================================================
     # 2. DUPLICATES
     # =========================================================================
-    # Check duplicates using trimmed string representations so trailing spaces ("Store A " vs "Store A") are detected
-    trimmed_original = original_df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    # Check duplicates using trimmed representations on string/object columns
+    trimmed_cols = {}
+    for col in original_df.columns:
+        if pd.api.types.is_object_dtype(original_df[col]) or pd.api.types.is_string_dtype(original_df[col]):
+            trimmed_cols[col] = original_df[col].astype(str).str.strip()
+        else:
+            trimmed_cols[col] = original_df[col]
+    trimmed_original = pd.DataFrame(trimmed_cols, index=original_df.index)
     dup_mask = safe_duplicated(trimmed_original, keep="first")
     dup_count = int(dup_mask.sum())
     dup_items: List[AuditDetailItem] = []
@@ -211,6 +225,10 @@ def audit_structured_data(
         is_expected_numeric = bool(tokens.intersection(NUMERIC_TOKENS)) and not is_text_column
         
         if is_expected_numeric:
+            # Fast-path: If pandas already recognized the column as numeric, skip cell-by-cell loop
+            if pd.api.types.is_numeric_dtype(original_df[col]):
+                continue
+
             for row_idx, val in enumerate(original_df[col]):
                 if is_valid_cell(val):
                     val_str = str(val).strip()
@@ -255,13 +273,23 @@ def audit_structured_data(
     for col in original_df.columns:
         col_str = str(col)
         col_lower = col_str.lower()
+
+        # Fast check: skip column entirely if it does not pertain to email, percentage, age, stock, or monetary values
+        is_email = "email" in col_lower
+        is_pct = any(k in col_lower for k in ("attendance", "pct", "percent"))
+        is_age = col_lower == "age"
+        is_stock = any(k in col_lower for k in ("stock", "qty", "quantity", "inventory", "units"))
+        is_monetary = any(k in col_lower for k in ("price", "cost", "mrp", "salary", "turnover", "revenue", "rate"))
+
+        if not (is_email or is_pct or is_age or is_stock or is_monetary):
+            continue
         
         for row_idx, val in enumerate(original_df[col]):
             if is_valid_cell(val):
                 val_str = str(val).strip()
                 if val_str and val_str.lower() not in NULL_REPRESENTATIONS:
                     # Check email validity
-                    if "email" in col_lower:
+                    if is_email:
                         if not re.match(r"^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$", val_str):
                             invalid_count += 1
                             invalid_cols_set.add(col_str)
@@ -275,7 +303,7 @@ def audit_structured_data(
                                     severity="warning"
                                 ))
                     # Check percentage out of bounds
-                    elif "attendance" in col_lower or "pct" in col_lower or "percent" in col_lower:
+                    elif is_pct:
                         try:
                             f_val = float(re.sub(r"[%\s]", "", val_str))
                             if f_val < 0 or f_val > 100:
@@ -293,7 +321,7 @@ def audit_structured_data(
                         except ValueError:
                             pass
                     # Check age bounds
-                    elif col_lower == "age":
+                    elif is_age:
                         try:
                             age_val = float(val_str)
                             if age_val < 0 or age_val > 130:
@@ -311,7 +339,7 @@ def audit_structured_data(
                         except ValueError:
                             pass
                     # Check negative stock / quantity / inventory
-                    elif any(k in col_lower for k in ("stock", "qty", "quantity", "inventory", "units")):
+                    elif is_stock:
                         try:
                             f_val = float(re.sub(r"[,\s]", "", val_str))
                             if f_val < 0:
@@ -330,7 +358,7 @@ def audit_structured_data(
                         except ValueError:
                             pass
                     # Check negative prices / costs / monetary amounts
-                    elif any(k in col_lower for k in ("price", "cost", "mrp", "salary", "turnover", "revenue", "rate")):
+                    elif is_monetary:
                         try:
                             f_val = float(re.sub(r"[₹\$€£¥,\s]", "", val_str))
                             if f_val < 0:
@@ -386,16 +414,21 @@ def audit_structured_data(
             continue
 
         # Extract numeric series
-        numeric_vals = []
-        val_indices = []
-        for row_idx, v in enumerate(original_df[col]):
-            if is_valid_cell(v):
-                v_clean = re.sub(r"[₹\$€£¥,\s%]", "", str(v).strip())
-                try:
-                    numeric_vals.append(float(v_clean))
-                    val_indices.append(row_idx)
-                except ValueError:
-                    pass
+        if pd.api.types.is_numeric_dtype(original_df[col]):
+            s_valid = original_df[col].dropna()
+            numeric_vals = [float(x) for x in s_valid]
+            val_indices = s_valid.index.tolist()
+        else:
+            numeric_vals = []
+            val_indices = []
+            for row_idx, v in enumerate(original_df[col]):
+                if is_valid_cell(v):
+                    v_clean = re.sub(r"[₹\$€£¥,\s%]", "", str(v).strip())
+                    try:
+                        numeric_vals.append(float(v_clean))
+                        val_indices.append(row_idx)
+                    except ValueError:
+                        pass
 
         if len(numeric_vals) >= 6:
             series = pd.Series(numeric_vals)
@@ -446,6 +479,11 @@ def audit_structured_data(
     for col in original_df.columns:
         col_str = str(col)
         col_lower = col_str.lower()
+
+        # Fast-path: Pure numeric columns (int/float) have no leading/trailing whitespace, currency symbols, or slash dates
+        if pd.api.types.is_numeric_dtype(original_df[col]):
+            continue
+
         is_text_col = any(k in col_lower for k in TEXT_COL_KEYWORDS)
 
         for row_idx, val in enumerate(original_df[col]):
