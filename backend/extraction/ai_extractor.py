@@ -11,13 +11,18 @@ load_dotenv()
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
-# Preferred fast & accurate models
+# Official supported Groq models with high speed and reliability
 GROQ_MODELS = [
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
-    "qwen/qwen3.6-27b",
-    "qwen/qwen3.8-27b"
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768"
 ]
+
+
+def is_auth_error(err: Exception) -> bool:
+    """Detects 401 Unauthorized / Invalid API Key errors to fail fast."""
+    err_str = str(err).lower()
+    return "401" in err_str or "invalid api key" in err_str or "invalid_api_key" in err_str or "unauthorized" in err_str
 
 
 def repair_and_parse_json(content: str) -> Optional[Dict[str, Any]]:
@@ -259,6 +264,10 @@ def _extract_batch_chunk(
                     elif len(valid_recs) > len(best_records):
                         best_records = valid_recs
         except Exception as err:
+            if is_auth_error(err):
+                print(f"[Warning] Groq API key is invalid or unauthorized (401). Falling back to local rule-based extractor.")
+                errors.append(f"Auth error (401): {str(err)}")
+                break
             errors.append(f"Model {model_name} chunk #{batch_index} error: {str(err)}")
             continue
 
@@ -346,7 +355,10 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
             batch_audits: List[Dict[str, Any]] = []
             extraction_errors: List[str] = []
 
+            auth_failed = False
             for batch_idx, i in enumerate(range(0, len(entries), batch_size)):
+                if auth_failed:
+                    break
                 batch = entries[i:i + batch_size]
                 batch_text = "\n".join(batch)
                 chunk_res = _extract_batch_chunk(
@@ -356,6 +368,9 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                     expected_count=len(batch),
                     models=GROQ_MODELS
                 )
+                if any("401" in str(e) or "Auth error" in str(e) for e in chunk_res.get("errors", [])):
+                    auth_failed = True
+                    break
                 batch_audits.append({
                     "batch_index": batch_idx,
                     "expected_count": chunk_res["expected_count"],
@@ -486,7 +501,10 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
         all_chunk_fields = []
         all_columns = []
 
+        auth_failed = False
         for c_idx, chunk_text in enumerate(text_chunks):
+            if auth_failed:
+                break
             user_content = f"Extract and structure document chunk #{c_idx + 1} of {len(text_chunks)}. Return valid JSON:\n\n{chunk_text}"
             chunk_parsed = None
 
@@ -508,6 +526,10 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                         chunk_parsed = parsed
                         break
                 except Exception as model_err:
+                    if is_auth_error(model_err):
+                        print(f"[Warning] Groq API key is invalid or unauthorized (401). Falling back to local high-precision rule extractor.")
+                        auth_failed = True
+                        break
                     print(f"Model {model_name} failed on chunk #{c_idx + 1}: {model_err}")
                     continue
 
@@ -669,6 +691,9 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
                         }
 
             except Exception as model_err:
+                if is_auth_error(model_err):
+                    print(f"[Warning] Groq API key is invalid or unauthorized (401). Falling back to local rule-based extractor.")
+                    break
                 print(f"Groq model {model_name} attempt failed: {model_err}")
                 continue
 
@@ -764,6 +789,9 @@ def classify_columns_with_llm(
                     return parsed
 
             except Exception as model_err:
+                if is_auth_error(model_err):
+                    print(f"[Warning] Groq API key is invalid (401). Using local canonical schema classifier.")
+                    break
                 print(f"Groq column classification model {model_name} failed: {model_err}")
                 continue
 
@@ -837,6 +865,9 @@ def classify_domain_with_llm(
                     return parsed
 
             except Exception as model_err:
+                if is_auth_error(model_err):
+                    print(f"[Warning] Groq API key is invalid (401). Using local domain pattern classifier.")
+                    break
                 print(f"Groq domain classification model {model_name} failed: {model_err}")
                 continue
 
