@@ -338,7 +338,7 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
         return None
 
     try:
-        http_client = httpx.Client(verify=False, timeout=35.0)
+        http_client = httpx.Client(verify=False, timeout=15.0)
         client = Groq(api_key=key_to_use, http_client=http_client)
 
         # ─── CASE 1: Detect Multi-Record List / Paragraph Dataset ───
@@ -351,7 +351,7 @@ def extract_fields_with_llm(raw_text: str, api_key: Optional[str] = None) -> Opt
 
         # If 6 or more distinct items/paragraphs detected -> Run batch chunk extraction to process ALL items
         if len(entries) >= 6:
-            batch_size = 10
+            batch_size = 25
             all_records: List[Dict[str, Any]] = []
             batch_audits: List[Dict[str, Any]] = []
             extraction_errors: List[str] = []

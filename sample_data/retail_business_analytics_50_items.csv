@@ -1,0 +1,131 @@
+transaction_id,transaction_date,customer_id,customer_name,store_id,store_name,item_id,item_name,category,quantity,unit_price,total_amount,stock_quantity,payment_method
+TXN-2026-10054,2026-10-26 11:03,CUST-1002,Bob Smith,STR-105,Midwest Commerce Center,ITM-010,Dual-Band Wi-Fi 6 Mesh Router,Electronics,2,129.99,259.98,18,Cash
+TXN-2026-10014,2026-10-26 11:40,CUST-1013,Mia Wong,STR-104,Northwest Retail Gallery,ITM-014,Memory Foam Seat Cushion,Office & Workspace,3,28.5,85.5,65,PayPal
+TXN-2026-10057,2026-10-26 16:21,CUST-1008,Henry Ford,STR-102,Metropolitan Plaza Store,ITM-048,Digital Luggage Scale Handheld,Travel & Gear,3,11.99,35.97,85,Debit Card
+TXN-2026-10058,2026-10-26 16:59,CUST-1014,Nathan Drake,STR-103,Silicon Valley Hub,ITM-012,Motorized Adjustable Standing Desk,Office & Workspace,2,380.0,760.0,6,Debit Card
+TXN-2026-10008,2026-10-26 17:24,CUST-1002,Bob Smith,STR-101,Downtown Tech Flagship,ITM-013,LED Dimmable Desk Lamp with USB,Office & Workspace,2,34.99,69.98,40,Apple Pay
+TXN-2026-10056,2026-10-26 17:47,CUST-1022,Victor Hugo,STR-102,Metropolitan Plaza Store,ITM-044,Memory Foam Travel Neck Pillow,Travel & Gear,1,19.5,19.5,50,Cash
+TXN-2026-10078,2026-10-27 21:31,CUST-1022,Victor Hugo,STR-104,Northwest Retail Gallery,ITM-009,Wireless Qi Charging Stand,Electronics,1,29.99,29.99,50,Cash
+TXN-2026-10019,2026-10-27 22:17,CUST-1022,Victor Hugo,STR-101,Downtown Tech Flagship,ITM-047,Compact Windproof Travel Umbrella,Travel & Gear,3,18.0,54.0,40,Apple Pay
+TXN-2026-10022,2026-10-28 12:28,CUST-1005,Emma Watson,STR-102,Metropolitan Plaza Store,ITM-039,Bamboo Cutting Board 3-Piece Set,Kitchen & Home,1,25.0,25.0,45,Debit Card
+TXN-2026-10081,2026-10-28 12:43,CUST-1016,Peter Parker,STR-105,Midwest Commerce Center,ITM-050,High Capacity Power Bank 20000mAh,Travel & Gear,2,39.99,79.98,18,Apple Pay
+TXN-2026-10080,2026-10-28 14:32,CUST-1015,Olivia Wilde,STR-104,Northwest Retail Gallery,ITM-011,Ergonomic Mesh Office Chair,Office & Workspace,1,199.99,199.99,10,Debit Card
+TXN-2026-10085,2026-10-28 16:36,CUST-1023,Wendy Darling,STR-105,Midwest Commerce Center,ITM-050,High Capacity Power Bank 20000mAh,Travel & Gear,1,39.99,39.99,18,Cash
+TXN-2026-10013,2026-10-28 22:09,CUST-1009,Ivy Taylor,STR-104,Northwest Retail Gallery,ITM-021,Stainless Steel Insulated Water Bottle 32oz,Fitness & Lifestyle,1,24.99,24.99,9,Cash
+TXN-2026-10070,2026-10-28 22:41,CUST-1014,Nathan Drake,STR-102,Metropolitan Plaza Store,ITM-019,Leather Executive Desk Blotter Mat,Office & Workspace,2,26.99,53.98,30,Cash
+TXN-2026-10072,2026-10-29 11:50,CUST-1010,Jack Robinson,STR-101,Downtown Tech Flagship,ITM-043,Compression Packing Cubes 6-Set,Travel & Gear,1,22.99,22.99,75,Cash
+TXN-2026-10120,2026-10-29 13:46,CUST-1013,Mia Wong,STR-105,Midwest Commerce Center,ITM-050,High Capacity Power Bank 20000mAh,Travel & Gear,1,39.99,39.99,18,PayPal
+TXN-2026-10100,2026-10-29 22:38,CUST-1022,Victor Hugo,STR-104,Northwest Retail Gallery,ITM-035,Non-Stick Silicone Kitchen Utensils 10pc,Kitchen & Home,1,29.99,29.99,40,Cash
+TXN-2026-10109,2026-10-29 22:55,CUST-1013,Mia Wong,STR-102,Metropolitan Plaza Store,ITM-019,Leather Executive Desk Blotter Mat,Office & Workspace,2,26.99,53.98,30,Apple Pay
+TXN-2026-10027,2026-10-30 11:16,CUST-1013,Mia Wong,STR-103,Silicon Valley Hub,ITM-013,LED Dimmable Desk Lamp with USB,Office & Workspace,5,34.99,174.95,40,Apple Pay
+TXN-2026-10020,2026-10-30 12:39,CUST-1014,Nathan Drake,STR-103,Silicon Valley Hub,ITM-008,Portable Bluetooth Speaker Waterproof,Electronics,1,55.0,55.0,5,Credit Card
+TXN-2026-10105,2026-10-30 15:24,CUST-1011,Karen White,STR-104,Northwest Retail Gallery,ITM-040,Stainless Steel Mixing Bowls Set,Kitchen & Home,1,28.0,28.0,30,Apple Pay
+TXN-2026-10092,2026-10-30 16:43,CUST-1009,Ivy Taylor,STR-104,Northwest Retail Gallery,ITM-049,TSA Approved Travel Toiletry Bottles,Travel & Gear,2,9.99,19.98,110,PayPal
+TXN-2026-10077,2026-10-30 16:46,CUST-1015,Olivia Wilde,STR-105,Midwest Commerce Center,ITM-012,Motorized Adjustable Standing Desk,Office & Workspace,1,380.0,380.0,6,Debit Card
+TXN-2026-10062,2026-10-30 18:38,CUST-1013,Mia Wong,STR-105,Midwest Commerce Center,ITM-042,Hardside Spinner Luggage Carry-On,Travel & Gear,2,119.0,238.0,5,Cash
+TXN-2026-10122,2026-10-30 19:20,CUST-1022,Victor Hugo,STR-103,Silicon Valley Hub,ITM-014,Memory Foam Seat Cushion,Office & Workspace,1,28.5,28.5,65,Debit Card
+TXN-2026-10017,2026-10-30 22:05,CUST-1021,Uma Thurman,STR-102,Metropolitan Plaza Store,ITM-008,Portable Bluetooth Speaker Waterproof,Electronics,1,55.0,55.0,5,PayPal
+TXN-2026-10094,2026-10-30 22:45,CUST-1020,Tom Hanks,STR-101,Downtown Tech Flagship,ITM-013,LED Dimmable Desk Lamp with USB,Office & Workspace,1,34.99,34.99,40,Debit Card
+TXN-2026-10021,2026-10-31 11:44,CUST-1017,Quinn Fabray,STR-102,Metropolitan Plaza Store,ITM-033,Cast Iron Skillet Pre-Seasoned 12in,Kitchen & Home,3,39.99,119.97,24,Apple Pay
+TXN-2026-10025,2026-10-31 15:08,CUST-1025,Yara Shahidi,STR-105,Midwest Commerce Center,ITM-005,Ergonomic Wireless Mouse,Electronics,1,39.99,39.99,60,PayPal
+TXN-2026-10053,2026-10-31 15:25,CUST-1018,Ryan Gosling,STR-104,Northwest Retail Gallery,ITM-046,RFID Blocking Passport Holder Wallet,Travel & Gear,1,14.5,14.5,60,Credit Card
+TXN-2026-10007,2026-10-31 15:26,CUST-1003,Carol Martinez,STR-104,Northwest Retail Gallery,ITM-008,Portable Bluetooth Speaker Waterproof,Electronics,1,55.0,55.0,5,Cash
+TXN-2026-10130,2026-10-31 17:22,CUST-1003,Carol Martinez,STR-101,Downtown Tech Flagship,ITM-017,Cable Management Organizer Kit,Office & Workspace,1,14.99,14.99,120,Cash
+TXN-2026-10112,2026-10-31 19:40,CUST-1025,Yara Shahidi,STR-105,Midwest Commerce Center,ITM-008,Portable Bluetooth Speaker Waterproof,Electronics,2,55.0,110.0,5,Debit Card
+TXN-2026-10089,2026-10-31 20:07,CUST-1020,Tom Hanks,STR-102,Metropolitan Plaza Store,ITM-030,Grip Strength Trainer Kit,Fitness & Lifestyle,1,15.99,15.99,95,PayPal
+TXN-2026-10005,2026-11-01 16:39,CUST-1007,Grace Hopper,STR-102,Metropolitan Plaza Store,ITM-018,Magnetic Desktop Whiteboard,Office & Workspace,4,22.5,90.0,45,Apple Pay
+TXN-2026-10107,2026-11-01 18:25,CUST-1007,Grace Hopper,STR-105,Midwest Commerce Center,ITM-001,Ultra Wireless Earbuds Pro,Electronics,1,89.99,89.99,12,PayPal
+TXN-2026-10002,2026-11-02 11:03,CUST-1019,Sophia Loren,STR-101,Downtown Tech Flagship,ITM-035,Non-Stick Silicone Kitchen Utensils 10pc,Kitchen & Home,1,29.99,29.99,40,Credit Card
+TXN-2026-10069,2026-11-02 11:03,CUST-1019,Sophia Loren,STR-105,Midwest Commerce Center,ITM-012,Motorized Adjustable Standing Desk,Office & Workspace,1,380.0,380.0,6,Cash
+TXN-2026-10039,2026-11-02 11:29,CUST-1010,Jack Robinson,STR-102,Metropolitan Plaza Store,ITM-010,Dual-Band Wi-Fi 6 Mesh Router,Electronics,1,129.99,129.99,18,Credit Card
+TXN-2026-10110,2026-11-02 13:37,CUST-1017,Quinn Fabray,STR-105,Midwest Commerce Center,ITM-031,Electric Gooseneck Pour-Over Kettle,Kitchen & Home,1,59.99,59.99,11,Cash
+TXN-2026-10031,2026-11-02 15:47,CUST-1024,Xavier Woods,STR-102,Metropolitan Plaza Store,ITM-035,Non-Stick Silicone Kitchen Utensils 10pc,Kitchen & Home,4,29.99,119.96,40,Cash
+TXN-2026-10012,2026-11-03 11:25,CUST-1025,Yara Shahidi,STR-103,Silicon Valley Hub,ITM-015,Under-Desk Footrest Adjustable,Office & Workspace,2,24.99,49.98,35,Debit Card
+TXN-2026-10102,2026-11-03 15:15,CUST-1006,Frank Miller,STR-104,Northwest Retail Gallery,ITM-010,Dual-Band Wi-Fi 6 Mesh Router,Electronics,2,129.99,259.98,18,Apple Pay
+TXN-2026-10116,2026-11-03 15:54,CUST-1010,Jack Robinson,STR-105,Midwest Commerce Center,ITM-001,Ultra Wireless Earbuds Pro,Electronics,1,89.99,89.99,12,PayPal
+TXN-2026-10071,2026-11-03 17:31,CUST-1022,Victor Hugo,STR-104,Northwest Retail Gallery,ITM-029,Gym Duffle Bag Waterproof,Fitness & Lifestyle,1,42.5,42.5,28,PayPal
+TXN-2026-10101,2026-11-03 18:00,CUST-1004,David Lee,STR-104,Northwest Retail Gallery,ITM-027,Speed Jump Rope Aluminum Handles,Fitness & Lifestyle,1,12.99,12.99,70,Apple Pay
+TXN-2026-10001,2026-11-03 21:59,CUST-1008,Henry Ford,STR-103,Silicon Valley Hub,ITM-048,Digital Luggage Scale Handheld,Travel & Gear,1,11.99,11.99,85,Credit Card
+TXN-2026-10011,2026-11-04 12:50,CUST-1006,Frank Miller,STR-102,Metropolitan Plaza Store,ITM-035,Non-Stick Silicone Kitchen Utensils 10pc,Kitchen & Home,1,29.99,29.99,40,Apple Pay
+TXN-2026-10103,2026-11-04 14:11,CUST-1014,Nathan Drake,STR-104,Northwest Retail Gallery,ITM-031,Electric Gooseneck Pour-Over Kettle,Kitchen & Home,2,59.99,119.98,11,Cash
+TXN-2026-10065,2026-11-04 14:53,CUST-1007,Grace Hopper,STR-105,Midwest Commerce Center,ITM-025,Smart Fitness Tracker Band,Fitness & Lifestyle,1,49.99,49.99,22,PayPal
+TXN-2026-10079,2026-11-04 17:12,CUST-1024,Xavier Woods,STR-105,Midwest Commerce Center,ITM-029,Gym Duffle Bag Waterproof,Fitness & Lifestyle,3,42.5,127.5,28,PayPal
+TXN-2026-10067,2026-11-04 17:18,CUST-1017,Quinn Fabray,STR-103,Silicon Valley Hub,ITM-008,Portable Bluetooth Speaker Waterproof,Electronics,1,55.0,55.0,5,PayPal
+TXN-2026-10042,2026-11-04 21:17,CUST-1004,David Lee,STR-104,Northwest Retail Gallery,ITM-016,Aluminum Laptop Stand Riser,Office & Workspace,4,32.0,128.0,55,Cash
+TXN-2026-10018,2026-11-04 21:36,CUST-1015,Olivia Wilde,STR-105,Midwest Commerce Center,ITM-025,Smart Fitness Tracker Band,Fitness & Lifestyle,1,49.99,49.99,22,Cash
+TXN-2026-10040,2026-11-05 11:26,CUST-1002,Bob Smith,STR-103,Silicon Valley Hub,ITM-004,Mechanical Gaming Keyboard RGB,Electronics,1,79.99,79.99,25,PayPal
+TXN-2026-10090,2026-11-05 13:18,CUST-1021,Uma Thurman,STR-101,Downtown Tech Flagship,ITM-002,Noise-Canceling Bluetooth Headphones,Electronics,1,149.5,149.5,45,PayPal
+TXN-2026-10044,2026-11-05 14:40,CUST-1022,Victor Hugo,STR-102,Metropolitan Plaza Store,ITM-017,Cable Management Organizer Kit,Office & Workspace,2,14.99,29.98,120,Debit Card
+TXN-2026-10029,2026-11-05 14:46,CUST-1001,Alice Johnson,STR-102,Metropolitan Plaza Store,ITM-038,Automatic Soap Dispenser Touchless,Kitchen & Home,1,22.0,22.0,50,Credit Card
+TXN-2026-10032,2026-11-05 15:45,CUST-1007,Grace Hopper,STR-104,Northwest Retail Gallery,ITM-031,Electric Gooseneck Pour-Over Kettle,Kitchen & Home,1,59.99,59.99,11,PayPal
+TXN-2026-10087,2026-11-06 11:13,CUST-1008,Henry Ford,STR-105,Midwest Commerce Center,ITM-035,Non-Stick Silicone Kitchen Utensils 10pc,Kitchen & Home,1,29.99,29.99,40,Apple Pay
+TXN-2026-10023,2026-11-06 14:02,CUST-1011,Karen White,STR-105,Midwest Commerce Center,ITM-001,Ultra Wireless Earbuds Pro,Electronics,1,89.99,89.99,12,Credit Card
+TXN-2026-10055,2026-11-06 20:33,CUST-1010,Jack Robinson,STR-101,Downtown Tech Flagship,ITM-009,Wireless Qi Charging Stand,Electronics,1,29.99,29.99,50,Credit Card
+TXN-2026-10026,2026-11-06 20:44,CUST-1014,Nathan Drake,STR-105,Midwest Commerce Center,ITM-034,Digital Meat Thermometer Instant Read,Kitchen & Home,4,19.99,79.96,65,Cash
+TXN-2026-10129,2026-11-07 14:29,CUST-1020,Tom Hanks,STR-101,Downtown Tech Flagship,ITM-029,Gym Duffle Bag Waterproof,Fitness & Lifestyle,1,42.5,42.5,28,PayPal
+TXN-2026-10041,2026-11-07 14:50,CUST-1003,Carol Martinez,STR-105,Midwest Commerce Center,ITM-004,Mechanical Gaming Keyboard RGB,Electronics,3,79.99,239.97,25,Credit Card
+TXN-2026-10051,2026-11-07 15:44,CUST-1021,Uma Thurman,STR-101,Downtown Tech Flagship,ITM-004,Mechanical Gaming Keyboard RGB,Electronics,1,79.99,79.99,25,Apple Pay
+TXN-2026-10095,2026-11-08 12:53,CUST-1015,Olivia Wilde,STR-102,Metropolitan Plaza Store,ITM-037,Airtight Food Storage Containers 12pc,Kitchen & Home,2,36.5,73.0,32,Apple Pay
+TXN-2026-10108,2026-11-08 14:12,CUST-1021,Uma Thurman,STR-104,Northwest Retail Gallery,ITM-016,Aluminum Laptop Stand Riser,Office & Workspace,2,32.0,64.0,55,PayPal
+TXN-2026-10076,2026-11-08 16:45,CUST-1025,Yara Shahidi,STR-101,Downtown Tech Flagship,ITM-010,Dual-Band Wi-Fi 6 Mesh Router,Electronics,3,129.99,389.97,18,Credit Card
+TXN-2026-10124,2026-11-08 18:58,CUST-1023,Wendy Darling,STR-103,Silicon Valley Hub,ITM-015,Under-Desk Footrest Adjustable,Office & Workspace,1,24.99,24.99,35,PayPal
+TXN-2026-10118,2026-11-08 21:24,CUST-1005,Emma Watson,STR-101,Downtown Tech Flagship,ITM-041,Anti-Theft Travel Backpack 35L,Travel & Gear,1,65.0,65.0,13,Cash
+TXN-2026-10048,2026-11-09 14:15,CUST-1021,Uma Thurman,STR-105,Midwest Commerce Center,ITM-020,Heavy Duty Desktop Monitor Arm,Office & Workspace,1,59.99,59.99,14,Cash
+TXN-2026-10028,2026-11-09 14:32,CUST-1008,Henry Ford,STR-102,Metropolitan Plaza Store,ITM-008,Portable Bluetooth Speaker Waterproof,Electronics,1,55.0,55.0,5,Credit Card
+TXN-2026-10036,2026-11-09 14:54,CUST-1001,Alice Johnson,STR-105,Midwest Commerce Center,ITM-004,Mechanical Gaming Keyboard RGB,Electronics,4,79.99,319.96,25,Debit Card
+TXN-2026-10075,2026-11-09 16:04,CUST-1007,Grace Hopper,STR-105,Midwest Commerce Center,ITM-041,Anti-Theft Travel Backpack 35L,Travel & Gear,2,65.0,130.0,13,PayPal
+TXN-2026-10035,2026-11-09 20:33,CUST-1015,Olivia Wilde,STR-103,Silicon Valley Hub,ITM-012,Motorized Adjustable Standing Desk,Office & Workspace,1,380.0,380.0,6,Credit Card
+TXN-2026-10082,2026-11-09 21:15,CUST-1009,Ivy Taylor,STR-102,Metropolitan Plaza Store,ITM-019,Leather Executive Desk Blotter Mat,Office & Workspace,1,26.99,26.99,30,Cash
+TXN-2026-10128,2026-11-09 21:31,CUST-1023,Wendy Darling,STR-103,Silicon Valley Hub,ITM-045,Universal International Travel Adapter,Travel & Gear,1,17.99,17.99,90,Apple Pay
+TXN-2026-10016,2026-11-10 13:35,CUST-1005,Emma Watson,STR-102,Metropolitan Plaza Store,ITM-024,Resistance Bands Set 5-Pack,Fitness & Lifestyle,1,18.99,18.99,80,Credit Card
+TXN-2026-10088,2026-11-10 15:59,CUST-1022,Victor Hugo,STR-103,Silicon Valley Hub,ITM-025,Smart Fitness Tracker Band,Fitness & Lifestyle,2,49.99,99.98,22,PayPal
+TXN-2026-10004,2026-11-10 19:32,CUST-1001,Alice Johnson,STR-103,Silicon Valley Hub,ITM-038,Automatic Soap Dispenser Touchless,Kitchen & Home,2,22.0,44.0,50,Debit Card
+TXN-2026-10126,2026-11-10 21:26,CUST-1009,Ivy Taylor,STR-102,Metropolitan Plaza Store,ITM-015,Under-Desk Footrest Adjustable,Office & Workspace,2,24.99,49.98,35,Credit Card
+TXN-2026-10098,2026-11-11 11:48,CUST-1023,Wendy Darling,STR-105,Midwest Commerce Center,ITM-005,Ergonomic Wireless Mouse,Electronics,2,39.99,79.98,60,Debit Card
+TXN-2026-10086,2026-11-11 16:00,CUST-1025,Yara Shahidi,STR-103,Silicon Valley Hub,ITM-023,Adjustable Dumbbell Set 50lbs,Fitness & Lifestyle,1,189.0,189.0,7,PayPal
+TXN-2026-10038,2026-11-11 22:36,CUST-1010,Jack Robinson,STR-104,Northwest Retail Gallery,ITM-017,Cable Management Organizer Kit,Office & Workspace,1,14.99,14.99,120,Cash
+TXN-2026-10033,2026-11-12 16:34,CUST-1022,Victor Hugo,STR-101,Downtown Tech Flagship,ITM-030,Grip Strength Trainer Kit,Fitness & Lifestyle,2,15.99,31.98,95,Credit Card
+TXN-2026-10024,2026-11-12 18:45,CUST-1019,Sophia Loren,STR-102,Metropolitan Plaza Store,ITM-004,Mechanical Gaming Keyboard RGB,Electronics,4,79.99,319.96,25,Credit Card
+TXN-2026-10068,2026-11-13 16:16,CUST-1005,Emma Watson,STR-105,Midwest Commerce Center,ITM-019,Leather Executive Desk Blotter Mat,Office & Workspace,1,26.99,26.99,30,PayPal
+TXN-2026-10111,2026-11-13 17:16,CUST-1010,Jack Robinson,STR-103,Silicon Valley Hub,ITM-030,Grip Strength Trainer Kit,Fitness & Lifestyle,1,15.99,15.99,95,Credit Card
+TXN-2026-10117,2026-11-13 20:57,CUST-1004,David Lee,STR-104,Northwest Retail Gallery,ITM-017,Cable Management Organizer Kit,Office & Workspace,2,14.99,29.98,120,PayPal
+TXN-2026-10073,2026-11-13 21:08,CUST-1022,Victor Hugo,STR-102,Metropolitan Plaza Store,ITM-049,TSA Approved Travel Toiletry Bottles,Travel & Gear,1,9.99,9.99,110,Debit Card
+TXN-2026-10063,2026-11-13 22:53,CUST-1019,Sophia Loren,STR-102,Metropolitan Plaza Store,ITM-017,Cable Management Organizer Kit,Office & Workspace,4,14.99,59.96,120,Apple Pay
+TXN-2026-10049,2026-11-14 12:54,CUST-1004,David Lee,STR-103,Silicon Valley Hub,ITM-009,Wireless Qi Charging Stand,Electronics,3,29.99,89.97,50,Cash
+TXN-2026-10121,2026-11-14 13:33,CUST-1020,Tom Hanks,STR-105,Midwest Commerce Center,ITM-020,Heavy Duty Desktop Monitor Arm,Office & Workspace,1,59.99,59.99,14,Credit Card
+TXN-2026-10119,2026-11-14 21:45,CUST-1025,Yara Shahidi,STR-105,Midwest Commerce Center,ITM-008,Portable Bluetooth Speaker Waterproof,Electronics,1,55.0,55.0,5,Cash
+TXN-2026-10045,2026-11-15 16:52,CUST-1015,Olivia Wilde,STR-103,Silicon Valley Hub,ITM-043,Compression Packing Cubes 6-Set,Travel & Gear,1,22.99,22.99,75,Credit Card
+TXN-2026-10104,2026-11-15 17:06,CUST-1009,Ivy Taylor,STR-101,Downtown Tech Flagship,ITM-016,Aluminum Laptop Stand Riser,Office & Workspace,3,32.0,96.0,55,Debit Card
+TXN-2026-10047,2026-11-15 20:01,CUST-1008,Henry Ford,STR-101,Downtown Tech Flagship,ITM-023,Adjustable Dumbbell Set 50lbs,Fitness & Lifestyle,1,189.0,189.0,7,Debit Card
+TXN-2026-10059,2026-11-15 20:10,CUST-1013,Mia Wong,STR-101,Downtown Tech Flagship,ITM-045,Universal International Travel Adapter,Travel & Gear,3,17.99,53.97,90,PayPal
+TXN-2026-10043,2026-11-16 13:22,CUST-1003,Carol Martinez,STR-105,Midwest Commerce Center,ITM-003,4K Ultra-HD Smart Monitor 27in,Electronics,1,299.0,299.0,8,Cash
+TXN-2026-10060,2026-11-16 19:08,CUST-1010,Jack Robinson,STR-103,Silicon Valley Hub,ITM-030,Grip Strength Trainer Kit,Fitness & Lifestyle,2,15.99,31.98,95,Debit Card
+TXN-2026-10030,2026-11-16 21:03,CUST-1003,Carol Martinez,STR-103,Silicon Valley Hub,ITM-003,4K Ultra-HD Smart Monitor 27in,Electronics,1,299.0,299.0,8,Apple Pay
+TXN-2026-10061,2026-11-16 22:18,CUST-1011,Karen White,STR-104,Northwest Retail Gallery,ITM-013,LED Dimmable Desk Lamp with USB,Office & Workspace,1,34.99,34.99,40,Credit Card
+TXN-2026-10113,2026-11-17 11:30,CUST-1025,Yara Shahidi,STR-105,Midwest Commerce Center,ITM-018,Magnetic Desktop Whiteboard,Office & Workspace,1,22.5,22.5,45,Apple Pay
+TXN-2026-10096,2026-11-18 13:22,CUST-1025,Yara Shahidi,STR-101,Downtown Tech Flagship,ITM-048,Digital Luggage Scale Handheld,Travel & Gear,2,11.99,23.98,85,Apple Pay
+TXN-2026-10123,2026-11-18 14:56,CUST-1014,Nathan Drake,STR-101,Downtown Tech Flagship,ITM-011,Ergonomic Mesh Office Chair,Office & Workspace,1,199.99,199.99,10,Cash
+TXN-2026-10106,2026-11-18 15:47,CUST-1011,Karen White,STR-103,Silicon Valley Hub,ITM-023,Adjustable Dumbbell Set 50lbs,Fitness & Lifestyle,1,189.0,189.0,7,Cash
+TXN-2026-10037,2026-11-18 16:29,CUST-1013,Mia Wong,STR-102,Metropolitan Plaza Store,ITM-031,Electric Gooseneck Pour-Over Kettle,Kitchen & Home,3,59.99,179.97,11,Debit Card
+TXN-2026-10010,2026-11-18 17:38,CUST-1023,Wendy Darling,STR-103,Silicon Valley Hub,ITM-014,Memory Foam Seat Cushion,Office & Workspace,4,28.5,114.0,65,Credit Card
+TXN-2026-10091,2026-11-18 22:44,CUST-1007,Grace Hopper,STR-103,Silicon Valley Hub,ITM-025,Smart Fitness Tracker Band,Fitness & Lifestyle,1,49.99,49.99,22,Apple Pay
+TXN-2026-10050,2026-11-19 18:42,CUST-1023,Wendy Darling,STR-102,Metropolitan Plaza Store,ITM-039,Bamboo Cutting Board 3-Piece Set,Kitchen & Home,1,25.0,25.0,45,Apple Pay
+TXN-2026-10015,2026-11-19 18:52,CUST-1018,Ryan Gosling,STR-105,Midwest Commerce Center,ITM-016,Aluminum Laptop Stand Riser,Office & Workspace,1,32.0,32.0,55,Cash
+TXN-2026-10115,2026-11-19 18:58,CUST-1010,Jack Robinson,STR-105,Midwest Commerce Center,ITM-004,Mechanical Gaming Keyboard RGB,Electronics,2,79.99,159.98,25,Debit Card
+TXN-2026-10074,2026-11-19 22:58,CUST-1020,Tom Hanks,STR-104,Northwest Retail Gallery,ITM-016,Aluminum Laptop Stand Riser,Office & Workspace,2,32.0,64.0,55,Credit Card
+TXN-2026-10099,2026-11-20 11:11,CUST-1004,David Lee,STR-105,Midwest Commerce Center,ITM-020,Heavy Duty Desktop Monitor Arm,Office & Workspace,2,59.99,119.98,14,Cash
+TXN-2026-10097,2026-11-20 13:59,CUST-1022,Victor Hugo,STR-105,Midwest Commerce Center,ITM-020,Heavy Duty Desktop Monitor Arm,Office & Workspace,3,59.99,179.97,14,PayPal
+TXN-2026-10114,2026-11-20 19:42,CUST-1006,Frank Miller,STR-103,Silicon Valley Hub,ITM-015,Under-Desk Footrest Adjustable,Office & Workspace,1,24.99,24.99,35,Cash
+TXN-2026-10006,2026-11-20 21:36,CUST-1012,Leo Messi,STR-103,Silicon Valley Hub,ITM-007,Smart Home Security Camera,Electronics,2,69.99,139.98,30,Credit Card
+TXN-2026-10125,2026-11-21 12:46,CUST-1022,Victor Hugo,STR-105,Midwest Commerce Center,ITM-017,Cable Management Organizer Kit,Office & Workspace,2,14.99,29.98,120,Debit Card
+TXN-2026-10084,2026-11-21 16:34,CUST-1015,Olivia Wilde,STR-105,Midwest Commerce Center,ITM-022,High-Density Yoga Mat Non-Slip,Fitness & Lifestyle,1,35.0,35.0,42,Debit Card
+TXN-2026-10009,2026-11-21 19:05,CUST-1009,Ivy Taylor,STR-104,Northwest Retail Gallery,ITM-007,Smart Home Security Camera,Electronics,1,69.99,69.99,30,Apple Pay
+TXN-2026-10003,2026-11-21 19:46,CUST-1001,Alice Johnson,STR-105,Midwest Commerce Center,ITM-033,Cast Iron Skillet Pre-Seasoned 12in,Kitchen & Home,1,39.99,39.99,24,Cash
+TXN-2026-10083,2026-11-21 20:51,CUST-1023,Wendy Darling,STR-104,Northwest Retail Gallery,ITM-015,Under-Desk Footrest Adjustable,Office & Workspace,1,24.99,24.99,35,Debit Card
+TXN-2026-10034,2026-11-22 16:14,CUST-1008,Henry Ford,STR-101,Downtown Tech Flagship,ITM-022,High-Density Yoga Mat Non-Slip,Fitness & Lifestyle,1,35.0,35.0,42,Cash
+TXN-2026-10127,2026-11-22 20:10,CUST-1024,Xavier Woods,STR-105,Midwest Commerce Center,ITM-020,Heavy Duty Desktop Monitor Arm,Office & Workspace,2,59.99,119.98,14,Apple Pay
+TXN-2026-10064,2026-11-22 21:22,CUST-1024,Xavier Woods,STR-103,Silicon Valley Hub,ITM-028,Hydration Backpack 2L Water Bladder,Fitness & Lifestyle,2,38.0,76.0,16,PayPal
+TXN-2026-10052,2026-11-22 22:39,CUST-1021,Uma Thurman,STR-102,Metropolitan Plaza Store,ITM-050,High Capacity Power Bank 20000mAh,Travel & Gear,5,39.99,199.95,18,Debit Card
+TXN-2026-10093,2026-11-23 11:26,CUST-1008,Henry Ford,STR-103,Silicon Valley Hub,ITM-004,Mechanical Gaming Keyboard RGB,Electronics,2,79.99,159.98,25,Credit Card
+TXN-2026-10066,2026-11-23 14:01,CUST-1012,Leo Messi,STR-102,Metropolitan Plaza Store,ITM-035,Non-Stick Silicone Kitchen Utensils 10pc,Kitchen & Home,1,29.99,29.99,40,Apple Pay
+TXN-2026-10046,2026-11-23 15:21,CUST-1003,Carol Martinez,STR-101,Downtown Tech Flagship,ITM-037,Airtight Food Storage Containers 12pc,Kitchen & Home,1,36.5,36.5,32,Cash

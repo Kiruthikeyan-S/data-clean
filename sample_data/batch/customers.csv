@@ -1,0 +1,26 @@
+customer_id,customer_name,email,phone
+CUST-1001,Alice Johnson,alice.johnson@example.com,+1-555-0101
+CUST-1002,Bob Smith,bob.smith@example.com,+1-555-0102
+CUST-1003,Carol Martinez,carol.martinez@example.com,+1-555-0103
+CUST-1004,David Lee,david.lee@example.com,+1-555-0104
+CUST-1005,Emma Watson,emma.watson@example.com,+1-555-0105
+CUST-1006,Frank Miller,frank.miller@example.com,+1-555-0106
+CUST-1007,Grace Hopper,grace.hopper@example.com,+1-555-0107
+CUST-1008,Henry Ford,henry.ford@example.com,+1-555-0108
+CUST-1009,Ivy Taylor,ivy.taylor@example.com,+1-555-0109
+CUST-1010,Jack Robinson,jack.robinson@example.com,+1-555-0110
+CUST-1011,Karen White,karen.white@example.com,+1-555-0111
+CUST-1012,Leo Messi,leo.messi@example.com,+1-555-0112
+CUST-1013,Mia Wong,mia.wong@example.com,+1-555-0113
+CUST-1014,Nathan Drake,nathan.drake@example.com,+1-555-0114
+CUST-1015,Olivia Wilde,olivia.wilde@example.com,+1-555-0115
+CUST-1016,Peter Parker,peter.parker@example.com,+1-555-0116
+CUST-1017,Quinn Fabray,quinn.fabray@example.com,+1-555-0117
+CUST-1018,Ryan Gosling,ryan.gosling@example.com,+1-555-0118
+CUST-1019,Sophia Loren,sophia.loren@example.com,+1-555-0119
+CUST-1020,Tom Hanks,tom.hanks@example.com,+1-555-0120
+CUST-1021,Uma Thurman,uma.thurman@example.com,+1-555-0121
+CUST-1022,Victor Hugo,victor.hugo@example.com,+1-555-0122
+CUST-1023,Wendy Darling,wendy.darling@example.com,+1-555-0123
+CUST-1024,Xavier Woods,xavier.woods@example.com,+1-555-0124
+CUST-1025,Yara Shahidi,yara.shahidi@example.com,+1-555-0125

@@ -1,0 +1,51 @@
+item_id,item_name,category,unit_price,stock_quantity,store_id
+ITM-001,Ultra Wireless Earbuds Pro,Electronics,89.99,12,STR-105
+ITM-002,Noise-Canceling Bluetooth Headphones,Electronics,149.5,45,STR-105
+ITM-003,4K Ultra-HD Smart Monitor 27in,Electronics,299.0,8,STR-102
+ITM-004,Mechanical Gaming Keyboard RGB,Electronics,79.99,25,STR-103
+ITM-005,Ergonomic Wireless Mouse,Electronics,39.99,60,STR-103
+ITM-006,Fast Charging USB-C Hub 7-in-1,Electronics,45.0,15,STR-102
+ITM-007,Smart Home Security Camera,Electronics,69.99,30,STR-102
+ITM-008,Portable Bluetooth Speaker Waterproof,Electronics,55.0,5,STR-102
+ITM-009,Wireless Qi Charging Stand,Electronics,29.99,50,STR-101
+ITM-010,Dual-Band Wi-Fi 6 Mesh Router,Electronics,129.99,18,STR-102
+ITM-011,Ergonomic Mesh Office Chair,Office & Workspace,199.99,10,STR-104
+ITM-012,Motorized Adjustable Standing Desk,Office & Workspace,380.0,6,STR-103
+ITM-013,LED Dimmable Desk Lamp with USB,Office & Workspace,34.99,40,STR-103
+ITM-014,Memory Foam Seat Cushion,Office & Workspace,28.5,65,STR-103
+ITM-015,Under-Desk Footrest Adjustable,Office & Workspace,24.99,35,STR-105
+ITM-016,Aluminum Laptop Stand Riser,Office & Workspace,32.0,55,STR-105
+ITM-017,Cable Management Organizer Kit,Office & Workspace,14.99,120,STR-101
+ITM-018,Magnetic Desktop Whiteboard,Office & Workspace,22.5,45,STR-105
+ITM-019,Leather Executive Desk Blotter Mat,Office & Workspace,26.99,30,STR-103
+ITM-020,Heavy Duty Desktop Monitor Arm,Office & Workspace,59.99,14,STR-104
+ITM-021,Stainless Steel Insulated Water Bottle 32oz,Fitness & Lifestyle,24.99,9,STR-105
+ITM-022,High-Density Yoga Mat Non-Slip,Fitness & Lifestyle,35.0,42,STR-103
+ITM-023,Adjustable Dumbbell Set 50lbs,Fitness & Lifestyle,189.0,7,STR-105
+ITM-024,Resistance Bands Set 5-Pack,Fitness & Lifestyle,18.99,80,STR-101
+ITM-025,Smart Fitness Tracker Band,Fitness & Lifestyle,49.99,22,STR-104
+ITM-026,Deep Tissue Muscle Foam Roller,Fitness & Lifestyle,21.5,38,STR-104
+ITM-027,Speed Jump Rope Aluminum Handles,Fitness & Lifestyle,12.99,70,STR-105
+ITM-028,Hydration Backpack 2L Water Bladder,Fitness & Lifestyle,38.0,16,STR-105
+ITM-029,Gym Duffle Bag Waterproof,Fitness & Lifestyle,42.5,28,STR-104
+ITM-030,Grip Strength Trainer Kit,Fitness & Lifestyle,15.99,95,STR-104
+ITM-031,Electric Gooseneck Pour-Over Kettle,Kitchen & Home,59.99,11,STR-102
+ITM-032,Conical Burr Coffee Grinder,Kitchen & Home,79.99,15,STR-101
+ITM-033,Cast Iron Skillet Pre-Seasoned 12in,Kitchen & Home,39.99,24,STR-103
+ITM-034,Digital Meat Thermometer Instant Read,Kitchen & Home,19.99,65,STR-103
+ITM-035,Non-Stick Silicone Kitchen Utensils 10pc,Kitchen & Home,29.99,40,STR-104
+ITM-036,Compact Air Fryer 4-Quart,Kitchen & Home,69.99,8,STR-102
+ITM-037,Airtight Food Storage Containers 12pc,Kitchen & Home,36.5,32,STR-102
+ITM-038,Automatic Soap Dispenser Touchless,Kitchen & Home,22.0,50,STR-105
+ITM-039,Bamboo Cutting Board 3-Piece Set,Kitchen & Home,25.0,45,STR-104
+ITM-040,Stainless Steel Mixing Bowls Set,Kitchen & Home,28.0,30,STR-101
+ITM-041,Anti-Theft Travel Backpack 35L,Travel & Gear,65.0,13,STR-104
+ITM-042,Hardside Spinner Luggage Carry-On,Travel & Gear,119.0,5,STR-105
+ITM-043,Compression Packing Cubes 6-Set,Travel & Gear,22.99,75,STR-101
+ITM-044,Memory Foam Travel Neck Pillow,Travel & Gear,19.5,50,STR-104
+ITM-045,Universal International Travel Adapter,Travel & Gear,17.99,90,STR-102
+ITM-046,RFID Blocking Passport Holder Wallet,Travel & Gear,14.5,60,STR-104
+ITM-047,Compact Windproof Travel Umbrella,Travel & Gear,18.0,40,STR-101
+ITM-048,Digital Luggage Scale Handheld,Travel & Gear,11.99,85,STR-105
+ITM-049,TSA Approved Travel Toiletry Bottles,Travel & Gear,9.99,110,STR-103
+ITM-050,High Capacity Power Bank 20000mAh,Travel & Gear,39.99,18,STR-105

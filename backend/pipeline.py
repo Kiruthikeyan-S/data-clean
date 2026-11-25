@@ -284,13 +284,13 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     "document_type": doc_type or "tabular_document"
                 }
             else:
-                ai_extracted = extract_fields_with_llm(cleaned_text)
-                
-                # If LLM didn't return records, check if unstructured text contains multiple repeating records via rule parser
-                if not (ai_extracted and isinstance(ai_extracted, dict) and ai_extracted.get("data_type") == "records" and len(ai_extracted.get("records", [])) > 0):
-                    rule_records = extract_records_from_unstructured_text(cleaned_text)
-                    if rule_records and len(rule_records.get("records", [])) > 0:
-                        ai_extracted = rule_records
+                # Fast-path: check rule-based extractor first (< 5ms response time)
+                rule_records = extract_records_from_unstructured_text(cleaned_text)
+                if rule_records and isinstance(rule_records, dict) and len(rule_records.get("records", [])) > 0:
+                    ai_extracted = rule_records
+                else:
+                    # Semantic LLM extraction for unstructured documents
+                    ai_extracted = extract_fields_with_llm(cleaned_text)
 
             highlights = [
                 "Normalized Unicode NFKC encoding and line endings",
@@ -1007,7 +1007,7 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
     if stores_list or items_list or customers_list or txns_list:
         try:
             from backend.analytics.business_analytics import generate_business_analytics_report
-            biz_analytics_dict = generate_business_analytics_report(
+            business_analytics_dict = generate_business_analytics_report(
                 stores=stores_list,
                 items=items_list,
                 customers=customers_list,
