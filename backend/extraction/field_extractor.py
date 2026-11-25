@@ -286,11 +286,70 @@ def map_to_schema(extracted_raw: Dict[str, Any]) -> List[Dict[str, Any]]:
 def extract_records_from_unstructured_text(raw_text: str) -> Optional[Dict[str, Any]]:
     """
     Rule-based parser that segments unstructured text containing multiple records
-    (e.g., repeating profiles, numbered lists, multi-line blocks, customer rosters)
+    (e.g., repeating profiles, numbered lists, multi-line blocks, customer rosters, delimited tables)
     into a standardized tabular records dataset.
     """
     if not raw_text or not raw_text.strip():
         return None
+
+    # 0. Check for delimited text tables (pipe |, tab \t, or semicolon ;)
+    lines = [l.strip() for l in raw_text.splitlines() if l.strip()]
+    for delim in ("|", "\t", ";"):
+        delim_lines = [l for l in lines if l.count(delim) >= 2]
+        if len(delim_lines) >= 3:
+            header_line = None
+            data_lines = []
+            for l in lines:
+                if l.lower().startswith("columns:") and l.count(delim) >= 2:
+                    header_line = re.sub(r"^columns:\s*", "", l, flags=re.IGNORECASE).strip()
+                elif l.count(delim) >= 2:
+                    if header_line is None:
+                        header_line = l
+                    else:
+                        data_lines.append(l)
+
+            if header_line and len(data_lines) >= 2:
+                raw_cols = [c.strip() for c in header_line.split(delim) if c.strip()]
+                # Sanitize column names: remove units in parentheses or clean
+                cols = [re.sub(r'\s*\([^)]*\)', '', c).strip().replace(' ', '_').lower() for c in raw_cols]
+                seen_c: Dict[str, int] = {}
+                clean_cols = []
+                for c in cols:
+                    c_clean = re.sub(r'[^a-z0-9_]+', '', c).strip('_')
+                    if not c_clean:
+                        c_clean = "col"
+                    if c_clean in seen_c:
+                        seen_c[c_clean] += 1
+                        clean_cols.append(f"{c_clean}_{seen_c[c_clean]}")
+                    else:
+                        seen_c[c_clean] = 0
+                        clean_cols.append(c_clean)
+
+                records = []
+                for dl in data_lines:
+                    parts = [p.strip() for p in dl.split(delim)]
+                    if len(parts) >= max(2, int(len(clean_cols) * 0.6)):
+                        row_dict = {}
+                        for idx, col in enumerate(clean_cols):
+                            val = parts[idx].strip() if idx < len(parts) else ""
+                            # Cast numeric values if possible
+                            num_match = re.sub(r"[,\s]", "", val)
+                            try:
+                                if "." in num_match:
+                                    row_dict[col] = float(num_match)
+                                else:
+                                    row_dict[col] = int(num_match)
+                            except ValueError:
+                                row_dict[col] = val
+                        records.append(row_dict)
+
+                if len(records) >= 2:
+                    return {
+                        "data_type": "records",
+                        "columns": clean_cols,
+                        "records": records,
+                        "document_type": "delimited_table"
+                    }
 
     # Check if text represents a technical test report (TC-001 ... TC-100)
     tc_pattern = re.compile(

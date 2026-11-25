@@ -161,3 +161,25 @@ def test_pipeline_unstructured_shipping_label_file():
     assert response.entity_info is not None
     assert response.entity_info.entity_type != "customer"
     assert len(response.steps) >= 4
+
+
+def test_pipe_delimited_text_table_extraction():
+    """Verify that a pipe-delimited text inventory file is parsed into a structured table."""
+    sample_pipe_text = """
+BMW SPARE-PARTS INVENTORY & DEMAND FORECAST
+Columns: Item ID | Item Name | Current Stock | Units Sold Last 90 Days | Daily Velocity
+
+BMW-SP-001 | Engine Oil Filter | 65 | 339 | 3.77
+BMW-SP-002 | Air Filter | 82 | 193 | 2.14
+BMW-SP-003 | Cabin Air Filter | 123 | 445 | 4.94
+"""
+    res = extract_records_from_unstructured_text(sample_pipe_text)
+    assert res is not None
+    assert res.get("data_type") == "records"
+    assert res.get("document_type") == "delimited_table"
+    records = res.get("records", [])
+    assert len(records) == 3
+    assert records[0]["item_id"] == "BMW-SP-001"
+    assert records[0]["item_name"] == "Engine Oil Filter"
+    assert records[0]["current_stock"] == 65
+    assert records[0]["daily_velocity"] == 3.77
