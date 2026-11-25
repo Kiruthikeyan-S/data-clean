@@ -1,0 +1,221 @@
+Item ID,Item Name,Current Stock (units),Units Sold Last 90 Days,Daily Velocity (units/day),Predicted Demand Next 30 Days (units),Confidence Bounds (units),Estimated Days of Stock,Status,Urgency,Reorder Action
+BMW-SP-001,Engine Oil Filter,65,339,3.77,113,90-136,17.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-002,Air Filter,82,193,2.14,64,51-77,38.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-003,Cabin Air Filter,123,445,4.94,148,118-178,24.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-004,Fuel Filter,32,98,1.09,33,26-40,29.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-005,Spark Plug,40,97,1.08,32,26-38,37.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-006,Ignition Coil,116,311,3.46,104,83-125,33.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-007,Brake Pad Set - Front,51,102,1.13,34,27-41,45.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-008,Brake Pad Set - Rear,47,382,4.24,127,102-152,11.1,Low Stock,Medium,Plan reorder of 80 units
+BMW-SP-009,Brake Disc - Front,43,491,5.46,164,131-197,7.9,Low Stock,Medium,Plan reorder of 121 units
+BMW-SP-010,Brake Disc - Rear,53,139,1.54,46,37-55,34.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-011,Brake Wear Sensor,12,35,0.39,12,10-14,30.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-012,ABS Wheel Speed Sensor,176,501,5.57,167,134-200,31.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-013,Coolant Hose,243,457,5.08,152,122-182,47.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-014,Radiator,6,95,1.06,32,26-38,5.7,Reorder Now,High,Reorder 32 units
+BMW-SP-015,Water Pump,14,182,2.02,61,49-73,6.9,Reorder Now,High,Reorder 59 units
+BMW-SP-016,Thermostat,35,179,1.99,60,48-72,17.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-017,Serpentine Belt,88,357,3.97,119,95-143,22.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-018,Tensioner Pulley,100,174,1.93,58,46-70,51.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-019,Timing Chain Kit,50,376,4.18,125,100-150,12.0,Low Stock,Medium,Plan reorder of 75 units
+BMW-SP-020,Engine Mount,97,384,4.27,128,102-154,22.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-021,Transmission Mount,45,128,1.42,43,34-52,31.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-022,Oil Pan Gasket,15,32,0.36,11,9-13,42.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-023,Valve Cover Gasket,38,175,1.94,58,46-70,19.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-024,Head Gasket,113,196,2.18,65,52-78,51.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-025,Crankshaft Sensor,187,455,5.06,152,122-182,37.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-026,Camshaft Sensor,83,278,3.09,93,74-112,26.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-027,Mass Air Flow Sensor,70,196,2.18,65,52-78,32.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-028,Oxygen Sensor,37,67,0.74,22,18-26,49.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-029,Throttle Body,153,251,2.79,84,67-101,54.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-030,Fuel Injector,18,290,3.22,97,78-116,5.6,Reorder Now,High,Reorder 98 units
+BMW-SP-031,High Pressure Fuel Pump,69,140,1.56,47,38-56,44.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-032,Turbocharger,64,254,2.82,85,68-102,22.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-033,Intercooler Hose,24,41,0.46,14,11-17,52.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-034,Radiator Fan,192,427,4.74,142,114-170,40.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-035,Expansion Tank,19,101,1.12,34,27-41,16.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-036,Coolant Temperature Sensor,98,345,3.83,115,92-138,25.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-037,Battery 12V,165,306,3.40,102,82-122,48.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-038,Alternator,28,204,2.27,68,54-82,12.4,Low Stock,Medium,Plan reorder of 40 units
+BMW-SP-039,Starter Motor,105,512,5.69,171,137-205,18.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-040,AC Compressor,45,372,4.13,124,99-149,10.9,Low Stock,Medium,Plan reorder of 79 units
+BMW-SP-041,AC Condenser,204,422,4.69,141,113-169,43.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-042,AC Cabin Blower Motor,18,81,0.90,27,22-32,20.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-043,AC Pressure Sensor,57,105,1.17,35,28-42,48.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-044,Power Steering Pump,2,34,0.38,11,9-13,5.3,Reorder Now,High,Reorder 11 units
+BMW-SP-045,Steering Rack,42,502,5.58,167,134-200,7.5,Low Stock,Medium,Plan reorder of 125 units
+BMW-SP-046,Tie Rod End,132,280,3.11,93,74-112,42.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-047,Control Arm - Front Left,122,397,4.41,132,106-158,27.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-048,Control Arm - Front Right,170,316,3.51,105,84-126,48.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-049,Ball Joint,26,76,0.84,25,20-30,30.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-050,Stabilizer Link,82,386,4.29,129,103-155,19.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-051,Shock Absorber - Front,152,532,5.91,177,142-212,25.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-052,Shock Absorber - Rear,48,295,3.28,98,78-118,14.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-053,Strut Mount,40,239,2.66,80,64-96,15.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-054,Wheel Bearing,69,173,1.92,58,46-70,35.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-055,Drive Shaft,8,16,0.18,5,4-6,45.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-056,CV Joint Boot,21,49,0.54,16,13-19,38.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-057,Differential Mount,99,172,1.91,57,46-68,51.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-058,Clutch Kit,163,335,3.72,112,90-134,43.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-059,Clutch Master Cylinder,37,418,4.64,139,111-167,8.0,Low Stock,Medium,Plan reorder of 102 units
+BMW-SP-060,Clutch Slave Cylinder,83,273,3.03,91,73-109,27.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-061,Gearbox Oil Filter,250,416,4.62,139,111-167,54.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-062,Automatic Transmission Pan,30,131,1.46,44,35-53,20.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-063,Transmission Solenoid,16,110,1.22,37,30-44,13.1,Low Stock,Medium,Plan reorder of 21 units
+BMW-SP-064,Mechatronic Sleeve,54,280,3.11,93,74-112,17.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-065,Flywheel,61,211,2.34,70,56-84,26.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-066,Engine Air Duct,2,36,0.40,12,10-14,5.0,Reorder Now,High,Reorder 12 units
+BMW-SP-067,Intake Manifold Gasket,326,549,6.10,183,146-220,53.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-068,Exhaust Manifold Gasket,67,517,5.74,172,138-206,11.7,Low Stock,Medium,Plan reorder of 105 units
+BMW-SP-069,EGR Valve,76,286,3.18,95,76-114,23.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-070,DPF Pressure Sensor,30,49,0.54,16,13-19,55.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-071,NOx Sensor,63,214,2.38,71,57-85,26.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-072,Exhaust Gas Temperature Sensor,178,292,3.24,97,78-116,54.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-073,Catalytic Converter,42,341,3.79,114,91-137,11.1,Low Stock,Medium,Plan reorder of 72 units
+BMW-SP-074,Lambda Sensor,86,234,2.60,78,62-94,33.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-075,Diesel Fuel Injector,22,337,3.74,112,90-134,5.9,Reorder Now,High,Reorder 112 units
+BMW-SP-076,Glow Plug,180,343,3.81,114,91-137,47.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-077,Glow Plug Control Unit,1,13,0.14,4,3-5,6.9,Reorder Now,High,Reorder 4 units
+BMW-SP-078,Parking Sensor - Front,73,173,1.92,58,46-70,38.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-079,Parking Sensor - Rear,99,180,2.00,60,48-72,49.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-080,Reverse Camera,78,199,2.21,66,53-79,35.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-081,Headlamp - Left,92,275,3.06,92,74-110,30.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-082,Headlamp - Right,211,471,5.23,157,126-188,40.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-083,Tail Lamp - Left,80,190,2.11,63,50-76,37.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-084,Tail Lamp - Right,31,67,0.74,22,18-26,41.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-085,Fog Lamp,74,121,1.34,40,32-48,55.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-086,LED Module,76,486,5.40,162,130-194,14.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-087,Headlight Level Sensor,118,218,2.42,73,58-88,48.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-088,Turn Signal Lamp,4,36,0.40,12,10-14,10.0,Low Stock,Medium,Plan reorder of 8 units
+BMW-SP-089,Door Mirror - Left,179,464,5.16,155,124-186,34.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-090,Door Mirror - Right,20,529,5.88,176,141-211,3.4,Reorder Now,High,Reorder 191 units
+BMW-SP-091,Mirror Glass,45,108,1.20,36,29-43,37.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-092,Window Regulator - Front,47,467,5.19,156,125-187,9.1,Low Stock,Medium,Plan reorder of 109 units
+BMW-SP-093,Window Regulator - Rear,26,137,1.52,46,37-55,17.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-094,Door Lock Actuator,55,363,4.03,121,97-145,13.6,Low Stock,Medium,Plan reorder of 66 units
+BMW-SP-095,Door Handle - Exterior,111,351,3.90,117,94-140,28.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-096,Door Handle - Interior,44,507,5.63,169,135-203,7.8,Low Stock,Medium,Plan reorder of 125 units
+BMW-SP-097,Central Locking Module,9,264,2.93,88,70-106,3.1,Reorder Now,High,Reorder 97 units
+BMW-SP-098,Power Window Switch,20,110,1.22,37,30-44,16.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-099,Light Control Module,9,32,0.36,11,9-13,25.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-100,Body Control Module,48,88,0.98,29,23-35,49.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-101,Engine Control Module,250,484,5.38,161,129-193,46.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-102,ABS Control Module,35,323,3.59,108,86-130,9.8,Low Stock,Medium,Plan reorder of 73 units
+BMW-SP-103,Airbag Sensor,117,237,2.63,79,63-95,44.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-104,Seat Belt Pretensioner,76,490,5.44,163,130-196,14.0,Low Stock,Medium,Plan reorder of 87 units
+BMW-SP-105,Steering Angle Sensor,30,61,0.68,20,16-24,44.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-106,Rain Sensor,182,465,5.17,155,124-186,35.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-107,Wiper Blade - Front,89,167,1.86,56,45-67,48.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-108,Wiper Blade - Rear,291,536,5.96,179,143-215,48.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-109,Washer Pump,23,104,1.16,35,28-42,19.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-110,Washer Fluid Reservoir,21,40,0.44,13,10-16,47.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-111,Bonnet Gas Strut,207,424,4.71,141,113-169,43.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-112,Tailgate Gas Strut,30,57,0.63,19,15-23,47.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-113,Door Hinge,58,195,2.17,65,52-78,26.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-114,Boot Lock Actuator,38,232,2.58,77,62-92,14.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-115,Front Bumper Grille,21,95,1.06,32,26-38,19.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-116,Rear Bumper Reflector,97,497,5.52,166,133-199,17.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-117,Front Bumper Cover,217,361,4.01,120,96-144,54.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-118,Rear Bumper Cover,34,344,3.82,115,92-138,8.9,Low Stock,Medium,Plan reorder of 81 units
+BMW-SP-119,Radiator Support,69,117,1.30,39,31-47,53.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-120,Underbody Shield,55,192,2.13,64,51-77,25.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-121,Wheel Arch Liner - Front,12,31,0.34,10,8-12,34.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-122,Wheel Arch Liner - Rear,112,305,3.39,102,82-122,33.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-123,Engine Splash Guard,7,207,2.30,69,55-83,3.0,Reorder Now,High,Reorder 76 units
+BMW-SP-124,Front Fender - Left,221,493,5.48,164,131-197,40.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-125,Front Fender - Right,103,421,4.68,140,112-168,22.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-126,Bonnet,12,52,0.58,17,14-20,20.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-127,Boot Lid,107,238,2.64,79,63-95,40.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-128,Door Shell - Front Left,57,213,2.37,71,57-85,24.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-129,Door Shell - Front Right,27,255,2.83,85,68-102,9.5,Low Stock,Medium,Plan reorder of 58 units
+BMW-SP-130,Door Shell - Rear Left,123,290,3.22,97,78-116,38.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-131,Door Shell - Rear Right,101,489,5.43,163,130-196,18.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-132,Front Windscreen,5,23,0.26,8,6-10,19.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-133,Rear Windscreen,33,81,0.90,27,22-32,36.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-134,Side Window Glass,45,288,3.20,96,77-115,14.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-135,Windscreen Washer Jet,154,313,3.48,104,83-125,44.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-136,Front Seat Switch,51,153,1.70,51,41-61,30.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-137,Seat Adjustment Motor,179,354,3.93,118,94-142,45.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-138,Seat Heating Element,69,426,4.73,142,114-170,14.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-139,Seat Occupancy Sensor,28,163,1.81,54,43-65,15.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-140,Dashboard Air Vent,7,88,0.98,29,23-35,7.2,Low Stock,Medium,Plan reorder of 22 units
+BMW-SP-141,Centre Console Trim,40,274,3.04,91,73-109,13.1,Low Stock,Medium,Plan reorder of 51 units
+BMW-SP-142,Door Trim Panel,68,390,4.33,130,104-156,15.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-143,Floor Mat Set,13,27,0.30,9,7-11,43.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-144,Alloy Wheel - 17 inch,111,397,4.41,132,106-158,25.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-145,Alloy Wheel - 18 inch,59,178,1.98,59,47-71,29.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-146,Alloy Wheel - 19 inch,56,107,1.19,36,29-43,47.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-147,Wheel Bolt Set,36,86,0.96,29,23-35,37.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-148,Tyre Pressure Sensor,305,524,5.82,175,140-210,52.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-149,Wheel Centre Cap,217,483,5.37,161,129-193,40.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-150,Tyre Repair Kit,113,324,3.60,108,86-130,31.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-151,Jack Tool Kit,153,496,5.51,165,132-198,27.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-152,Engine Oil 5W-30 1L,78,194,2.16,65,52-78,36.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-153,Engine Oil 5W-30 5L,167,422,4.69,141,113-169,35.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-154,Coolant 1L,3,15,0.17,5,4-6,18.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-155,Brake Fluid 1L,70,202,2.24,67,54-80,31.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-156,Automatic Transmission Fluid 1L,63,144,1.60,48,38-58,39.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-157,Differential Oil 1L,99,368,4.09,123,98-148,24.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-158,Power Steering Fluid 1L,49,320,3.56,107,86-128,13.8,Low Stock,Medium,Plan reorder of 58 units
+BMW-SP-159,AdBlue 10L,107,289,3.21,96,77-115,33.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-160,Washer Fluid 5L,196,412,4.58,137,110-164,42.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-161,Grease Cartridge,17,70,0.78,23,18-28,21.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-162,Air Conditioning Refrigerant,256,438,4.87,146,117-175,52.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-163,Oil Drain Plug,98,281,3.12,94,75-113,31.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-164,Oil Filter Housing,54,335,3.72,112,90-134,14.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-165,Oil Cooler,5,20,0.22,7,6-8,22.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-166,Oil Cooler Gasket,49,378,4.20,126,101-151,11.7,Low Stock,Medium,Plan reorder of 77 units
+BMW-SP-167,Turbo Oil Feed Pipe,108,275,3.06,92,74-110,35.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-168,Turbo Oil Return Pipe,17,46,0.51,15,12-18,33.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-169,Vacuum Pump,12,104,1.16,35,28-42,10.4,Low Stock,Medium,Plan reorder of 23 units
+BMW-SP-170,Vacuum Hose,68,269,2.99,90,72-108,22.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-171,PCV Valve,84,177,1.97,59,47-71,42.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-172,Crankcase Ventilation Hose,136,264,2.93,88,70-106,46.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-173,Intake Air Temperature Sensor,8,186,2.07,62,50-74,3.9,Reorder Now,High,Reorder 66 units
+BMW-SP-174,Boost Pressure Sensor,82,348,3.87,116,93-139,21.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-175,Manifold Absolute Pressure Sensor,42,102,1.13,34,27-41,37.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-176,Fuel Pressure Sensor,5,35,0.39,12,10-14,12.9,Low Stock,Medium,Plan reorder of 7 units
+BMW-SP-177,Fuel Pump Module,10,93,1.03,31,25-37,9.7,Low Stock,Medium,Plan reorder of 21 units
+BMW-SP-178,Fuel Tank Sending Unit,61,383,4.26,128,102-154,14.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-179,Fuel Tank Cap,53,408,4.53,136,109-163,11.7,Low Stock,Medium,Plan reorder of 83 units
+BMW-SP-180,EVAP Purge Valve,36,366,4.07,122,98-146,8.9,Low Stock,Medium,Plan reorder of 86 units
+BMW-SP-181,EVAP Leak Detection Pump,46,476,5.29,159,127-191,8.7,Low Stock,Medium,Plan reorder of 113 units
+BMW-SP-182,Exhaust Hanger,20,46,0.51,15,12-18,39.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-183,Exhaust Flex Pipe,221,496,5.51,165,132-198,40.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-184,Muffler Assembly,50,126,1.40,42,34-50,35.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-185,Exhaust Clamp,73,140,1.56,47,38-56,46.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-186,Engine Undertray Fastener Kit,198,329,3.66,110,88-132,54.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-187,Plastic Rivet Assortment,9,32,0.36,11,9-13,25.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-188,Battery Cable,58,250,2.78,83,66-100,20.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-189,Battery Terminal,11,120,1.33,40,32-48,8.2,Low Stock,Medium,Plan reorder of 29 units
+BMW-SP-190,Fuse Set,264,516,5.73,172,138-206,46.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-191,Relay,179,392,4.36,131,105-157,41.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-192,Wiring Harness Repair Kit,245,489,5.43,163,130-196,45.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-193,Parking Brake Actuator,92,322,3.58,107,86-128,25.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-194,Electronic Handbrake Switch,205,391,4.34,130,104-156,47.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-195,Brake Caliper - Front,228,420,4.67,140,112-168,48.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-196,Brake Caliper - Rear,25,64,0.71,21,17-25,35.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-197,Brake Caliper Repair Kit,123,235,2.61,78,62-94,47.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-198,Brake Master Cylinder,6,13,0.14,4,3-5,41.5,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-199,Brake Booster,110,251,2.79,84,67-101,39.4,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-200,Brake Vacuum Hose,112,193,2.14,64,51-77,52.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-201,ABS Hydraulic Unit,41,131,1.46,44,35-53,28.2,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-202,Brake Fluid Reservoir,175,430,4.78,143,114-172,36.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-203,Steering Column Switch,8,89,0.99,30,24-36,8.1,Low Stock,Medium,Plan reorder of 22 units
+BMW-SP-204,Steering Wheel Trim,40,191,2.12,64,51-77,18.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-205,Steering Universal Joint,116,340,3.78,113,90-136,30.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-206,Rear Subframe Bush,64,284,3.16,95,76-114,20.3,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-207,Front Subframe Bush,68,380,4.22,127,102-152,16.1,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-208,Rear Trailing Arm Bush,14,135,1.50,45,36-54,9.3,Low Stock,Medium,Plan reorder of 31 units
+BMW-SP-209,Suspension Spring - Front,4,26,0.29,9,7-11,13.8,Low Stock,Medium,Plan reorder of 5 units
+BMW-SP-210,Suspension Spring - Rear,28,62,0.69,21,17-25,40.6,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-211,Air Suspension Compressor,101,514,5.71,171,137-205,17.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-212,Air Suspension Valve Block,21,127,1.41,42,34-50,14.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-213,Ride Height Sensor,53,155,1.72,52,42-62,30.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-214,Adaptive Damper,79,224,2.49,75,60-90,31.7,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-215,Propshaft Centre Bearing,197,369,4.10,123,98-148,48.0,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-216,Propshaft Flex Disc,117,320,3.56,107,86-128,32.9,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-217,Rear Differential Seal,11,82,0.91,27,22-32,12.1,Low Stock,Medium,Plan reorder of 16 units
+BMW-SP-218,Transmission Mount Bracket,37,120,1.33,40,32-48,27.8,Healthy,Low,Monitor stock; no immediate reorder
+BMW-SP-219,Gear Selector Cable,33,438,4.87,146,117-175,6.8,Reorder Now,High,Reorder 142 units
+BMW-SP-220,Gear Selector Knob,3,26,0.29,9,7-11,10.4,Low Stock,Medium,Plan reorder of 6 units

@@ -1,0 +1,224 @@
+{
+  "total_skus": 220,
+  "total_current_stock": 17731,
+  "total_90d_sales_units": 55681,
+  "average_daily_velocity_per_sku": 2.81,
+  "total_predicted_demand_next_30_days": 18560,
+  "total_reorder_units_needed": 2977,
+  "skus_needing_reorder": 46,
+  "status_distribution": {
+    "Healthy": 174,
+    "Low Stock": 34,
+    "Reorder Now": 12
+  },
+  "urgency_distribution": {
+    "Low": 174,
+    "Medium": 34,
+    "High": 12
+  },
+  "reorder_now_count": 12,
+  "low_stock_count": 34,
+  "healthy_stock_count": 174,
+  "critical_items": [
+    {
+      "item_id": "BMW-SP-123",
+      "item_name": "Engine Splash Guard",
+      "current_stock": 7,
+      "daily_velocity": 2.3,
+      "predicted_demand_next_30_days": 69,
+      "estimated_days_of_stock": 3.0,
+      "reorder_action": "Reorder 76 units"
+    },
+    {
+      "item_id": "BMW-SP-097",
+      "item_name": "Central Locking Module",
+      "current_stock": 9,
+      "daily_velocity": 2.93,
+      "predicted_demand_next_30_days": 88,
+      "estimated_days_of_stock": 3.1,
+      "reorder_action": "Reorder 97 units"
+    },
+    {
+      "item_id": "BMW-SP-090",
+      "item_name": "Door Mirror - Right",
+      "current_stock": 20,
+      "daily_velocity": 5.88,
+      "predicted_demand_next_30_days": 176,
+      "estimated_days_of_stock": 3.4,
+      "reorder_action": "Reorder 191 units"
+    },
+    {
+      "item_id": "BMW-SP-173",
+      "item_name": "Intake Air Temperature Sensor",
+      "current_stock": 8,
+      "daily_velocity": 2.07,
+      "predicted_demand_next_30_days": 62,
+      "estimated_days_of_stock": 3.9,
+      "reorder_action": "Reorder 66 units"
+    },
+    {
+      "item_id": "BMW-SP-066",
+      "item_name": "Engine Air Duct",
+      "current_stock": 2,
+      "daily_velocity": 0.4,
+      "predicted_demand_next_30_days": 12,
+      "estimated_days_of_stock": 5.0,
+      "reorder_action": "Reorder 12 units"
+    },
+    {
+      "item_id": "BMW-SP-044",
+      "item_name": "Power Steering Pump",
+      "current_stock": 2,
+      "daily_velocity": 0.38,
+      "predicted_demand_next_30_days": 11,
+      "estimated_days_of_stock": 5.3,
+      "reorder_action": "Reorder 11 units"
+    },
+    {
+      "item_id": "BMW-SP-030",
+      "item_name": "Fuel Injector",
+      "current_stock": 18,
+      "daily_velocity": 3.22,
+      "predicted_demand_next_30_days": 97,
+      "estimated_days_of_stock": 5.6,
+      "reorder_action": "Reorder 98 units"
+    },
+    {
+      "item_id": "BMW-SP-014",
+      "item_name": "Radiator",
+      "current_stock": 6,
+      "daily_velocity": 1.06,
+      "predicted_demand_next_30_days": 32,
+      "estimated_days_of_stock": 5.7,
+      "reorder_action": "Reorder 32 units"
+    },
+    {
+      "item_id": "BMW-SP-075",
+      "item_name": "Diesel Fuel Injector",
+      "current_stock": 22,
+      "daily_velocity": 3.74,
+      "predicted_demand_next_30_days": 112,
+      "estimated_days_of_stock": 5.9,
+      "reorder_action": "Reorder 112 units"
+    },
+    {
+      "item_id": "BMW-SP-219",
+      "item_name": "Gear Selector Cable",
+      "current_stock": 33,
+      "daily_velocity": 4.87,
+      "predicted_demand_next_30_days": 146,
+      "estimated_days_of_stock": 6.8,
+      "reorder_action": "Reorder 142 units"
+    },
+    {
+      "item_id": "BMW-SP-077",
+      "item_name": "Glow Plug Control Unit",
+      "current_stock": 1,
+      "daily_velocity": 0.14,
+      "predicted_demand_next_30_days": 4,
+      "estimated_days_of_stock": 6.9,
+      "reorder_action": "Reorder 4 units"
+    },
+    {
+      "item_id": "BMW-SP-015",
+      "item_name": "Water Pump",
+      "current_stock": 14,
+      "daily_velocity": 2.02,
+      "predicted_demand_next_30_days": 61,
+      "estimated_days_of_stock": 6.9,
+      "reorder_action": "Reorder 59 units"
+    }
+  ],
+  "top_demand_items": [
+    {
+      "item_id": "BMW-SP-067",
+      "item_name": "Intake Manifold Gasket",
+      "units_sold_last_90_days": 549,
+      "predicted_demand_next_30_days": 183,
+      "current_stock": 326,
+      "estimated_days_of_stock": 53.4,
+      "status": "Healthy"
+    },
+    {
+      "item_id": "BMW-SP-108",
+      "item_name": "Wiper Blade - Rear",
+      "units_sold_last_90_days": 536,
+      "predicted_demand_next_30_days": 179,
+      "current_stock": 291,
+      "estimated_days_of_stock": 48.9,
+      "status": "Healthy"
+    },
+    {
+      "item_id": "BMW-SP-051",
+      "item_name": "Shock Absorber - Front",
+      "units_sold_last_90_days": 532,
+      "predicted_demand_next_30_days": 177,
+      "current_stock": 152,
+      "estimated_days_of_stock": 25.7,
+      "status": "Healthy"
+    },
+    {
+      "item_id": "BMW-SP-090",
+      "item_name": "Door Mirror - Right",
+      "units_sold_last_90_days": 529,
+      "predicted_demand_next_30_days": 176,
+      "current_stock": 20,
+      "estimated_days_of_stock": 3.4,
+      "status": "Reorder Now"
+    },
+    {
+      "item_id": "BMW-SP-148",
+      "item_name": "Tyre Pressure Sensor",
+      "units_sold_last_90_days": 524,
+      "predicted_demand_next_30_days": 175,
+      "current_stock": 305,
+      "estimated_days_of_stock": 52.4,
+      "status": "Healthy"
+    },
+    {
+      "item_id": "BMW-SP-190",
+      "item_name": "Fuse Set",
+      "units_sold_last_90_days": 516,
+      "predicted_demand_next_30_days": 172,
+      "current_stock": 264,
+      "estimated_days_of_stock": 46.0,
+      "status": "Healthy"
+    },
+    {
+      "item_id": "BMW-SP-068",
+      "item_name": "Exhaust Manifold Gasket",
+      "units_sold_last_90_days": 517,
+      "predicted_demand_next_30_days": 172,
+      "current_stock": 67,
+      "estimated_days_of_stock": 11.7,
+      "status": "Low Stock"
+    },
+    {
+      "item_id": "BMW-SP-039",
+      "item_name": "Starter Motor",
+      "units_sold_last_90_days": 512,
+      "predicted_demand_next_30_days": 171,
+      "current_stock": 105,
+      "estimated_days_of_stock": 18.5,
+      "status": "Healthy"
+    },
+    {
+      "item_id": "BMW-SP-211",
+      "item_name": "Air Suspension Compressor",
+      "units_sold_last_90_days": 514,
+      "predicted_demand_next_30_days": 171,
+      "current_stock": 101,
+      "estimated_days_of_stock": 17.7,
+      "status": "Healthy"
+    },
+    {
+      "item_id": "BMW-SP-096",
+      "item_name": "Door Handle - Interior",
+      "units_sold_last_90_days": 507,
+      "predicted_demand_next_30_days": 169,
+      "current_stock": 44,
+      "estimated_days_of_stock": 7.8,
+      "status": "Low Stock"
+    }
+  ]
+}

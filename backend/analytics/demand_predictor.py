@@ -118,18 +118,14 @@ class DemandPredictor:
 
         # 3. Aggregate item transaction history & date intervals
         item_quantities: Dict[str, List[float]] = {}
-        dates_seen: List[pd.Timestamp] = []
+        unique_dates_str: Set[str] = set()
 
         for t in transactions:
             i_id = str(t.get("item_id") or t.get("Item_ID") or t.get("product_id") or "").strip()
             qty = self._to_float(t.get("quantity") or t.get("Quantity")) or 1.0
             d_val = str(t.get("transaction_date") or t.get("purchase_date") or t.get("order_date") or "").strip()
-            
-            try:
-                ts = pd.to_datetime(d_val)
-                dates_seen.append(ts)
-            except Exception:
-                pass
+            if d_val:
+                unique_dates_str.add(d_val)
 
             if i_id:
                 if i_id not in item_quantities:
@@ -139,6 +135,13 @@ class DemandPredictor:
                     item_names[i_id] = f"Item {i_id}"
                 if i_id not in item_stock:
                     item_stock[i_id] = 0.0
+
+        dates_seen: List[pd.Timestamp] = []
+        for d_str in unique_dates_str:
+            try:
+                dates_seen.append(pd.to_datetime(d_str))
+            except Exception:
+                pass
 
         # Calculate time span in days (minimum 7 days to avoid division by zero or inflated spikes)
         if len(dates_seen) >= 2:
