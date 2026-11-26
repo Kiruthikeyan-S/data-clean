@@ -156,43 +156,46 @@ class DemandPredictor:
         for i_id, qties in item_quantities.items():
             total_sold = sum(qties)
             sales_count = len(qties)
-            daily_velocity = round(total_sold / time_span_days, 3)
+            raw_velocity = total_sold / time_span_days
+            daily_velocity = int(round(raw_velocity)) if raw_velocity >= 1.0 else round(raw_velocity, 2)
 
-            # Mean predicted demand
-            pred_demand = round(daily_velocity * forecast_horizon_days, 1)
+            # Whole-unit predicted demand over forecast horizon (no fractional physical items)
+            raw_pred_demand = raw_velocity * forecast_horizon_days
+            pred_demand = int(math.ceil(raw_pred_demand)) if raw_pred_demand > 0 else 0
 
-            # Statistical variance & confidence interval (z=1.645 for 90% bounds)
+            # Statistical variance & confidence interval (z=1.645 for 90% bounds) in whole units
             if sales_count >= 2:
                 std_dev = float(np.std(qties, ddof=1))
                 std_err = (std_dev / math.sqrt(sales_count)) * math.sqrt(forecast_horizon_days)
-                margin = round(1.645 * std_err, 1)
+                margin = 1.645 * std_err
             else:
-                margin = round(pred_demand * 0.35, 1)
+                margin = raw_pred_demand * 0.35
 
-            lower_bound = round(max(0.0, pred_demand - margin), 1)
-            upper_bound = round(pred_demand + margin, 1)
+            lower_bound = int(max(0, math.floor(raw_pred_demand - margin)))
+            upper_bound = int(max(pred_demand, math.ceil(raw_pred_demand + margin)))
 
-            curr_stock = item_stock.get(i_id, 0.0)
+            curr_stock = int(round(item_stock.get(i_id, 0.0)))
 
-            # Stockout projection
-            days_until_stockout = round(curr_stock / daily_velocity, 1) if daily_velocity > 0 else None
+            # Stockout projection in whole days
+            days_until_stockout = int(round(curr_stock / raw_velocity)) if raw_velocity > 0 else None
 
             # Stock shortage evaluation
             stock_shortage = curr_stock < upper_bound
             if stock_shortage:
                 shortage_count += 1
-                safety_buffer = round(daily_velocity * 7, 1)  # 7-day safety buffer
-                reorder_qty = round(max(0.0, upper_bound - curr_stock + safety_buffer))
+                safety_buffer = raw_velocity * 7  # 7-day safety buffer
+                reorder_qty = int(max(1, math.ceil(upper_bound - curr_stock + safety_buffer)))
                 if curr_stock <= 0 or (days_until_stockout is not None and days_until_stockout <= 7):
                     urgency = "critical"
-                    rec_action = f"CRITICAL: Stock will run out in ~{days_until_stockout or 0} days. Reorder {reorder_qty} units immediately."
+                    days_label = days_until_stockout if days_until_stockout is not None else 0
+                    rec_action = f"Order {reorder_qty:,} units immediately — stock runs out in ~{days_label} days."
                 else:
                     urgency = "medium"
-                    rec_action = f"ATTENTION: Projected demand exceeds current stock. Schedule reorder of {reorder_qty} units."
+                    rec_action = f"Plan order of {reorder_qty:,} units — 30-day demand exceeds current stock."
             else:
-                reorder_qty = 0.0
+                reorder_qty = 0
                 urgency = "healthy"
-                rec_action = "Stock is currently healthy and covers the forecast horizon."
+                rec_action = "No reorder needed — current stock covers the next 30 days."
 
             # Confidence score based on sample size
             confidence_score = min(0.95, round(0.50 + 0.08 * min(5, sales_count), 2))

@@ -1,5 +1,6 @@
 import uuid
 import time
+import math
 import re
 from typing import Dict, Any, List, Optional
 import numpy as np
@@ -1023,10 +1024,13 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
             for idx, r in enumerate(structured_data):
                 itm_id = str(r.get(id_col) or f"ITEM-{idx+1:03d}")
                 itm_name = str(r.get(name_col) or itm_id)
-                stk = float(re.sub(r"[^\d.-]", "", str(r.get(stock_col, 0))) or 0)
-                pred_d = float(re.sub(r"[^\d.-]", "", str(r.get(demand_col, 0))) or 0)
-                vel = float(re.sub(r"[^\d.-]", "", str(r.get(vel_col, 0))) or (pred_d / 30.0)) if vel_col else round(pred_d / 30.0, 2)
-                d_stock = float(re.sub(r"[^\d.-]", "", str(r.get(days_col, 0))) or (stk / max(0.01, vel))) if days_col else round(stk / max(0.01, vel), 1)
+                stk = int(round(float(re.sub(r"[^\d.-]", "", str(r.get(stock_col, 0))) or 0)))
+                raw_pred_d = float(re.sub(r"[^\d.-]", "", str(r.get(demand_col, 0))) or 0)
+                pred_d = int(math.ceil(raw_pred_d)) if raw_pred_d > 0 else 0
+                raw_vel = float(re.sub(r"[^\d.-]", "", str(r.get(vel_col, 0))) or (raw_pred_d / 30.0)) if vel_col else (raw_pred_d / 30.0)
+                vel = int(round(raw_vel)) if raw_vel >= 1.0 else round(raw_vel, 2)
+                raw_d_stock = float(re.sub(r"[^\d.-]", "", str(r.get(days_col, 0))) or (stk / max(0.01, raw_vel))) if days_col else (stk / max(0.01, raw_vel))
+                d_stock = int(round(raw_d_stock))
 
                 raw_stat = str(r.get(status_col) or "").lower() if status_col else ""
                 raw_urg = str(r.get(urgency_col) or "").lower() if urgency_col else ""
@@ -1040,25 +1044,37 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                 else:
                     u_level = "healthy"
 
-                rec_action = str(r.get(action_col) or ("Reorder stock required" if u_level != "healthy" else "Monitor stock; no immediate reorder"))
+                reorder_q = 0
+                if reorder_qty_col and r.get(reorder_qty_col) is not None:
+                    reorder_q = int(round(float(re.sub(r"[^\d.-]", "", str(r.get(reorder_qty_col, 0))) or 0)))
+                elif u_level != "healthy":
+                    raw_act_str = str(r.get(action_col) or "")
+                    m_re = re.search(r"(\d+)\s*units", raw_act_str, re.I)
+                    reorder_q = int(m_re.group(1)) if m_re else int(max(1, round(pred_d - stk + 10)))
+
+                if action_col and r.get(action_col):
+                    rec_action = str(r.get(action_col)).strip()
+                    if rec_action.lower() in ("monitor stock; no immediate reorder", "stock is currently healthy and covers the forecast horizon."):
+                        rec_action = "No reorder needed — current stock covers the next 30 days."
+                else:
+                    if u_level == "critical":
+                        rec_action = f"Order {reorder_q:,} units immediately — stock runs out in ~{d_stock} days."
+                    elif u_level == "medium":
+                        rec_action = f"Plan order of {reorder_q:,} units — 30-day demand exceeds current stock."
+                    else:
+                        rec_action = "No reorder needed — current stock covers the next 30 days."
+
                 if u_level != "healthy":
                     rec_count += 1
 
-                reorder_q = 0.0
-                if reorder_qty_col and r.get(reorder_qty_col) is not None:
-                    reorder_q = float(re.sub(r"[^\d.-]", "", str(r.get(reorder_qty_col, 0))) or 0)
-                elif u_level != "healthy":
-                    m_re = re.search(r"(\d+)\s*units", rec_action, re.I)
-                    reorder_q = float(m_re.group(1)) if m_re else max(0.0, round(pred_d - stk + 10, 0))
-
-                l_bound = round(pred_d * 0.8, 1)
-                u_bound = round(pred_d * 1.2, 1)
+                l_bound = int(max(0, math.floor(pred_d * 0.8)))
+                u_bound = int(max(pred_d, math.ceil(pred_d * 1.2)))
 
                 forecast_list.append({
                     "item_id": itm_id,
                     "item_name": itm_name,
                     "current_stock": stk,
-                    "historical_sales_velocity_daily": round(vel, 2),
+                    "historical_sales_velocity_daily": vel,
                     "predicted_demand": pred_d,
                     "lower_confidence_bound": l_bound,
                     "upper_confidence_bound": u_bound,
