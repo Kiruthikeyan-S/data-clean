@@ -113,7 +113,8 @@ def get_entity_schemas() -> Dict[str, EntitySchema]:
             "product_type", "product_description", "product_brand", "product_price",
             "item_price", "unit_price", "cost_price", "selling_price", "mrp", "msrp",
             "list_price", "product_weight", "product_size", "product_color", "item_category",
-            "item_type", "item_description"
+            "item_type", "item_description", "stock_quantity", "current_stock", "available_stock",
+            "inventory_qty", "stock_level"
         },
         medium_keywords={
             "category", "subcategory", "sub_category", "brand", "manufacturer", "supplier",

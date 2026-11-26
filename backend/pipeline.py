@@ -1052,17 +1052,13 @@ def process_file_pipeline(filename: str, content_type: Optional[str], file_bytes
                     m_re = re.search(r"(\d+)\s*units", raw_act_str, re.I)
                     reorder_q = int(m_re.group(1)) if m_re else int(max(1, round(pred_d - stk + 10)))
 
-                if action_col and r.get(action_col):
-                    rec_action = str(r.get(action_col)).strip()
-                    if rec_action.lower() in ("monitor stock; no immediate reorder", "stock is currently healthy and covers the forecast horizon."):
-                        rec_action = "No reorder needed — current stock covers the next 30 days."
+                unit_word = "unit" if reorder_q == 1 else "units"
+                if u_level == "critical":
+                    rec_action = f"Reorder {reorder_q:,} {unit_word} now"
+                elif u_level == "medium":
+                    rec_action = f"Reorder {reorder_q:,} {unit_word}"
                 else:
-                    if u_level == "critical":
-                        rec_action = f"Order {reorder_q:,} units immediately — stock runs out in ~{d_stock} days."
-                    elif u_level == "medium":
-                        rec_action = f"Plan order of {reorder_q:,} units — 30-day demand exceeds current stock."
-                    else:
-                        rec_action = "No reorder needed — current stock covers the next 30 days."
+                    rec_action = "No reorder needed"
 
                 if u_level != "healthy":
                     rec_count += 1

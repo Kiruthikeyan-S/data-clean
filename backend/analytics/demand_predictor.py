@@ -185,17 +185,17 @@ class DemandPredictor:
                 shortage_count += 1
                 safety_buffer = raw_velocity * 7  # 7-day safety buffer
                 reorder_qty = int(max(1, math.ceil(upper_bound - curr_stock + safety_buffer)))
+                unit_word = "unit" if reorder_qty == 1 else "units"
                 if curr_stock <= 0 or (days_until_stockout is not None and days_until_stockout <= 7):
                     urgency = "critical"
-                    days_label = days_until_stockout if days_until_stockout is not None else 0
-                    rec_action = f"Order {reorder_qty:,} units immediately — stock runs out in ~{days_label} days."
+                    rec_action = f"Reorder {reorder_qty:,} {unit_word} now"
                 else:
                     urgency = "medium"
-                    rec_action = f"Plan order of {reorder_qty:,} units — 30-day demand exceeds current stock."
+                    rec_action = f"Reorder {reorder_qty:,} {unit_word}"
             else:
                 reorder_qty = 0
                 urgency = "healthy"
-                rec_action = "No reorder needed — current stock covers the next 30 days."
+                rec_action = "No reorder needed"
 
             # Confidence score based on sample size
             confidence_score = min(0.95, round(0.50 + 0.08 * min(5, sales_count), 2))
