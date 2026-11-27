@@ -825,6 +825,10 @@ def generate_data_profile(df: pd.DataFrame, entity_type: Optional[str] = "genera
         
         min_val = None
         max_val = None
+        mean_val = None
+        median_val = None
+        mode_val = None
+        sum_val = None
         quartiles_list = None
         top_freqs = None
         date_range_dict = None
@@ -843,6 +847,12 @@ def generate_data_profile(df: pd.DataFrame, entity_type: Optional[str] = "genera
                 num_series = pd.Series(numeric_cleaned)
                 min_val = float(num_series.min())
                 max_val = float(num_series.max())
+                mean_val = round(float(num_series.mean()), 2)
+                median_val = round(float(num_series.median()), 2)
+                sum_val = round(float(num_series.sum()), 2)
+                num_modes = num_series.mode()
+                if len(num_modes) > 0:
+                    mode_val = round(float(num_modes.iloc[0]), 2)
                 quartiles_list = [
                     round(float(num_series.quantile(0.25)), 2),
                     round(float(num_series.quantile(0.50)), 2),
@@ -859,6 +869,9 @@ def generate_data_profile(df: pd.DataFrame, entity_type: Optional[str] = "genera
             if len(valid_vals) > 0:
                 top_counts = valid_vals.astype(str).value_counts().head(5).to_dict()
                 top_freqs = {str(k): int(v) for k, v in top_counts.items()}
+                cat_modes = valid_vals.astype(str).mode()
+                if len(cat_modes) > 0:
+                    mode_val = str(cat_modes.iloc[0])
                 # Inconsistent casing check (e.g. 'Chennai' and 'CHENNAI' both present)
                 lower_map = {}
                 for v in valid_vals:
@@ -876,6 +889,10 @@ def generate_data_profile(df: pd.DataFrame, entity_type: Optional[str] = "genera
             unique_count=unique_cnt,
             min_value=min_val,
             max_value=max_val,
+            mean_value=mean_val,
+            median_value=median_val,
+            mode_value=mode_val,
+            sum_value=sum_val,
             quartiles=quartiles_list,
             top_frequencies=top_freqs,
             invalid_count=0,

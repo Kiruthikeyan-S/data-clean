@@ -116,6 +116,10 @@ class DataProfileColumnStats(BaseModel):
     unique_count: int
     min_value: Optional[Any] = None
     max_value: Optional[Any] = None
+    mean_value: Optional[float] = None
+    median_value: Optional[float] = None
+    mode_value: Optional[Any] = None
+    sum_value: Optional[float] = None
     quartiles: Optional[List[float]] = None
     top_frequencies: Optional[Dict[str, int]] = None
     invalid_count: int = 0

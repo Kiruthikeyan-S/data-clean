@@ -361,12 +361,16 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-100/90 text-slate-700 border-b border-slate-200 font-semibold">
-                  <th className="px-4 py-3">Column Name</th>
-                  <th className="px-4 py-3">Detected Type</th>
-                  <th className="px-4 py-3">Missing (Null %)</th>
-                  <th className="px-4 py-3">Unique Values</th>
-                  <th className="px-4 py-3">Min / Max</th>
-                  <th className="px-4 py-3">Quartiles (Q1, Q2, Q3)</th>
+                  <th className="px-3 py-3">Column Name</th>
+                  <th className="px-3 py-3">Type</th>
+                  <th className="px-3 py-3">Missing</th>
+                  <th className="px-3 py-3">Distinct</th>
+                  <th className="px-3 py-3 text-indigo-700">Mean (Avg)</th>
+                  <th className="px-3 py-3 text-blue-700">Median</th>
+                  <th className="px-3 py-3 text-purple-700">Mode</th>
+                  <th className="px-3 py-3 text-emerald-700">Sum (Total)</th>
+                  <th className="px-3 py-3">Min → Max</th>
+                  <th className="px-3 py-3">Quartiles [Q1, Q2, Q3]</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
@@ -382,10 +386,10 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
 
                   return (
                     <tr key={colName} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-2.5 font-bold text-slate-900 font-mono">
+                      <td className="px-3 py-2.5 font-bold text-slate-900 font-mono">
                         {colName}
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-3 py-2.5">
                         <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
                           profileViewMode === 'pre'
                             ? 'bg-amber-50 text-amber-800 border-amber-200'
@@ -396,7 +400,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                           {colStat.inferred_type}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-3 py-2.5">
                         <div className="flex items-center gap-1.5">
                           <span className={`font-semibold ${colStat.null_count > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
                             {colStat.null_count} ({colStat.null_percentage}%)
@@ -408,7 +412,7 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 text-slate-700">
+                      <td className="px-3 py-2.5 text-slate-700">
                         {colStat.unique_count} distinct
                         {profileViewMode === 'comparison' && preStat && postStat && preStat.unique_count !== postStat.unique_count && (
                           <span className="text-[10px] text-slate-400 ml-1">
@@ -416,14 +420,44 @@ export const DataQualityInspector: React.FC<DataQualityInspectorProps> = ({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-slate-700 font-mono text-[11px]">
+                      <td className="px-3 py-2.5 text-slate-800 font-mono text-[11px]">
+                        {colStat.mean_value != null ? (
+                          colStat.mean_value.toLocaleString()
+                        ) : (
+                          <span className="text-slate-400 italic">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-slate-800 font-mono text-[11px]">
+                        {colStat.median_value != null ? (
+                          colStat.median_value.toLocaleString()
+                        ) : colStat.quartiles && colStat.quartiles.length === 3 ? (
+                          colStat.quartiles[1].toLocaleString()
+                        ) : (
+                          <span className="text-slate-400 italic">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-slate-800 font-mono text-[11px]">
+                        {colStat.mode_value != null ? (
+                          String(colStat.mode_value)
+                        ) : (
+                          <span className="text-slate-400 italic">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-emerald-800 font-bold font-mono text-[11px]">
+                        {colStat.sum_value != null ? (
+                          colStat.sum_value.toLocaleString()
+                        ) : (
+                          <span className="text-slate-400 italic">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-slate-700 font-mono text-[11px]">
                         {colStat.min_value != null && colStat.max_value != null ? (
                           `${colStat.min_value} → ${colStat.max_value}`
                         ) : (
                           <span className="text-slate-400 italic">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-slate-700 font-mono text-[11px]">
+                      <td className="px-3 py-2.5 text-slate-700 font-mono text-[11px]">
                         {colStat.quartiles && colStat.quartiles.length === 3 ? (
                           `[${colStat.quartiles[0]}, ${colStat.quartiles[1]}, ${colStat.quartiles[2]}]`
                         ) : (

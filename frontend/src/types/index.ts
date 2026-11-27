@@ -122,6 +122,10 @@ export interface DataProfileColumnStats {
   unique_count: number;
   min_value?: any;
   max_value?: any;
+  mean_value?: number;
+  median_value?: number;
+  mode_value?: any;
+  sum_value?: number;
   quartiles?: number[];
   top_frequencies?: Record<string, number>;
   invalid_count: number;
