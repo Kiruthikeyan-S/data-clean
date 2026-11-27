@@ -8,7 +8,11 @@ import {
   Users,
   Store,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Calculator,
+  Info,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { BusinessAnalyticsReport, DemandPredictionReport } from '../types';
 
@@ -22,6 +26,7 @@ const PAGE_SIZE = 15;
 export const BusinessAnalyticsDashboard: React.FC<Props> = ({ analytics, demand }) => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'alerts' | 'healthy'>('all');
   const [page, setPage] = useState(1);
+  const [showFormulas, setShowFormulas] = useState(true);
 
   const forecasts = demand?.forecasts || [];
   const filteredForecasts = useMemo(() => {
@@ -89,7 +94,12 @@ export const BusinessAnalyticsDashboard: React.FC<Props> = ({ analytics, demand 
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="mt-2 text-2xl font-black text-slate-900">{formatCurrency(txn?.total_revenue)}</div>
-          <div className="mt-1 text-[11px] text-emerald-600 font-semibold">Validated sales</div>
+          <div className="mt-1 flex items-center justify-between text-[11px]">
+            <span className="text-emerald-600 font-semibold">Validated sales</span>
+            <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200" title="Total Revenue = Σ (Quantity × Unit Price)">
+              Σ(Qty × Price)
+            </span>
+          </div>
         </div>
 
         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
@@ -100,7 +110,12 @@ export const BusinessAnalyticsDashboard: React.FC<Props> = ({ analytics, demand 
           <div className="mt-2 text-2xl font-black text-slate-900">
             {(txn?.total_transactions ?? 0).toLocaleString()}
           </div>
-          <div className="mt-1 text-[11px] text-slate-500 font-medium">Recorded orders</div>
+          <div className="mt-1 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500 font-medium">Recorded orders</span>
+            <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200" title="Count of total orders">
+              Count(Orders)
+            </span>
+          </div>
         </div>
 
         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
@@ -111,7 +126,12 @@ export const BusinessAnalyticsDashboard: React.FC<Props> = ({ analytics, demand 
           <div className="mt-2 text-2xl font-black text-slate-900">
             {formatCurrency(txn?.average_transaction_value)}
           </div>
-          <div className="mt-1 text-[11px] text-slate-500 font-medium">Per transaction</div>
+          <div className="mt-1 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500 font-medium">Per transaction</span>
+            <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200" title="Average Value = Total Revenue ÷ Total Transactions">
+              Revenue ÷ Orders
+            </span>
+          </div>
         </div>
 
         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
@@ -122,10 +142,155 @@ export const BusinessAnalyticsDashboard: React.FC<Props> = ({ analytics, demand 
           <div className={`mt-2 text-2xl font-black ${alertCount > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
             {alertCount.toLocaleString()}
           </div>
-          <div className={`mt-1 text-[11px] font-semibold ${alertCount > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
-            {alertCount > 0 ? 'Low-stock items' : 'Healthy stock'}
+          <div className="mt-1 flex items-center justify-between text-[11px]">
+            <span className={`font-semibold ${alertCount > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
+              {alertCount > 0 ? 'Low-stock items' : 'Healthy stock'}
+            </span>
+            <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200" title="Low stock trigger when Current Stock ÷ Daily Velocity <= 7 days">
+              Stock ÷ V ≤ 7d
+            </span>
           </div>
         </div>
+      </div>
+
+      {/* Applied Financial & Demand Formulas Section */}
+      <div className="bg-white rounded-xl border border-indigo-200 shadow-xs overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gradient-to-r from-indigo-50/90 via-blue-50/70 to-slate-50 border-b border-indigo-100">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-2xs">
+              <Calculator className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Applied Calculation Formulas & Logic Guide</h4>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                  Business Math
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Exact mathematical formulas used in this dashboard for revenue, daily velocity, 30-day demand, and restocking alerts.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowFormulas(prev => !prev)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 transition-colors shadow-2xs w-fit"
+          >
+            <Info className="w-3.5 h-3.5 text-indigo-600" />
+            <span>{showFormulas ? 'Hide Formulas' : 'Show All Formulas'}</span>
+            {showFormulas ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {showFormulas && (
+          <div className="p-4 sm:p-5 bg-slate-50/50 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {/* Card 1: Total Revenue */}
+              <div className="p-3.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                    1. Total Revenue (Total Value)
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">Revenue</span>
+                </div>
+                <div className="p-2 rounded bg-slate-50 border border-slate-200 font-mono text-xs font-bold text-slate-900">
+                  Total Value = Σ (Quantity Sold × Unit Price)
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Sums the product of quantity sold and unit price across all validated transactions to calculate overall monetary revenue.
+                </p>
+              </div>
+
+              {/* Card 2: Average Value */}
+              <div className="p-3.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
+                    2. Average Transaction Value (ATV / Mean)
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">Mean</span>
+                </div>
+                <div className="p-2 rounded bg-slate-50 border border-slate-200 font-mono text-xs font-bold text-slate-900">
+                  ATV = Total Revenue ÷ Total Transactions
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  The arithmetic mean revenue generated per customer order, indicating typical purchasing ticket size.
+                </p>
+              </div>
+
+              {/* Card 3: Daily Velocity */}
+              <div className="p-3.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5 text-blue-600" />
+                    3. Daily Sales Velocity (V)
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">Velocity</span>
+                </div>
+                <div className="p-2 rounded bg-slate-50 border border-slate-200 font-mono text-xs font-bold text-slate-900">
+                  Velocity (V) = Σ Units Sold ÷ Observed Days
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Average item sales speed per day (min 7-day span). If V &lt; 1.0, displayed as <code>V × 7</code> units per week.
+                </p>
+              </div>
+
+              {/* Card 4: Predicted Demand */}
+              <div className="p-3.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Calculator className="w-3.5 h-3.5 text-purple-600" />
+                    4. 30-Day Demand Forecast (D)
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold border border-purple-200">Forecast</span>
+                </div>
+                <div className="p-2 rounded bg-slate-50 border border-slate-200 font-mono text-xs font-bold text-slate-900">
+                  Demand (D) = ⌈ Velocity (V) × 30 Days ⌉
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Projects unit demand over 30 days, ceiling-rounded to whole physical units so no fractional products are predicted.
+                </p>
+              </div>
+
+              {/* Card 5: Confidence Range */}
+              <div className="p-3.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-amber-600" />
+                    5. Confidence Range (Min – Max)
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-bold border border-amber-200">90% Range</span>
+                </div>
+                <div className="p-2 rounded bg-slate-50 border border-slate-200 font-mono text-xs font-bold text-slate-900">
+                  Range = [ D - 1.645×SE , D + 1.645×SE ]
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  90% statistical uncertainty interval from slow to peak month based on order size standard error SE = (s / √n) × √30.
+                </p>
+              </div>
+
+              {/* Card 6: Reorder Action */}
+              <div className="p-3.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />
+                    6. Reorder Action & Restock Qty
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold border border-rose-200">Restock</span>
+                </div>
+                <div className="p-2 rounded bg-slate-50 border border-slate-200 font-mono text-xs font-bold text-slate-900">
+                  Q = ⌈ Upper Bound - Stock + (V × 7) ⌉
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Alerts if Days of Stock (Stock ÷ V) ≤ 7 days. Reorders enough units to reach peak demand plus a 7-day supplier buffer.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Inventory Demand Forecasting Table */}
@@ -204,12 +369,39 @@ export const BusinessAnalyticsDashboard: React.FC<Props> = ({ analytics, demand 
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                     <th className="py-2.5 px-3">Item Name</th>
-                    <th className="py-2.5 px-3">Current Stock</th>
-                    <th className="py-2.5 px-3">Daily Velocity</th>
-                    <th className="py-2.5 px-3">Predicted Demand</th>
-                    <th className="py-2.5 px-3">Confidence Range</th>
-                    <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3">Reorder Action</th>
+                    <th className="py-2.5 px-3" title="Physical units currently in warehouse inventory">
+                      Current Stock
+                    </th>
+                    <th className="py-2.5 px-3" title="Formula: Total Sold ÷ Observed Days (minimum 7-day span)">
+                      <div className="flex items-center gap-1 cursor-help">
+                        <span>Daily Velocity</span>
+                        <Info className="w-3 h-3 text-slate-400" />
+                      </div>
+                    </th>
+                    <th className="py-2.5 px-3" title="Formula: ⌈ Daily Velocity × 30 Days ⌉ (rounded up to whole integer)">
+                      <div className="flex items-center gap-1 cursor-help">
+                        <span>Predicted Demand</span>
+                        <Info className="w-3 h-3 text-slate-400" />
+                      </div>
+                    </th>
+                    <th className="py-2.5 px-3" title="Formula: 90% Confidence Interval: Demand ± 1.645 × Standard Error">
+                      <div className="flex items-center gap-1 cursor-help">
+                        <span>Confidence Range</span>
+                        <Info className="w-3 h-3 text-slate-400" />
+                      </div>
+                    </th>
+                    <th className="py-2.5 px-3" title="Formula: Days of Stock = Current Stock ÷ Daily Velocity">
+                      <div className="flex items-center gap-1 cursor-help">
+                        <span>Status</span>
+                        <Info className="w-3 h-3 text-slate-400" />
+                      </div>
+                    </th>
+                    <th className="py-2.5 px-3" title="Formula: ⌈ Upper Bound - Current Stock + (Velocity × 7-Day Safety Buffer) ⌉">
+                      <div className="flex items-center gap-1 cursor-help">
+                        <span>Reorder Action</span>
+                        <Info className="w-3 h-3 text-slate-400" />
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
